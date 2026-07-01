@@ -1,13 +1,13 @@
 import { Clock } from "lucide-react";
 
 const DAYS = [
-  { key: "sun", label: "Sunday" },
-  { key: "mon", label: "Monday" },
-  { key: "tue", label: "Tuesday" },
-  { key: "wed", label: "Wednesday" },
-  { key: "thu", label: "Thursday" },
-  { key: "fri", label: "Friday" },
-  { key: "sat", label: "Saturday" },
+  { key: "sun", label: "Sunday الاحد" },
+  { key: "mon", label: "Monday الاثنين" },
+  { key: "tue", label: "Tuesday الثلاثاء" },
+  { key: "wed", label: "Wednesday الأربعاء" },
+  { key: "thu", label: "Thursday الخميس" },
+  { key: "fri", label: "Friday الجمعة" },
+  { key: "sat", label: "Saturday السبت" },
 ];
 
 export function getDefaultWorkingHours() {

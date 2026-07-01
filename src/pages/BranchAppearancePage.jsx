@@ -67,7 +67,11 @@ export default function BranchAppearancePage() {
   const [saving, setSaving] = useState(false);
   const [localForm, setLocalForm] = useState(null);
 
-  const { data: branch, isLoading, error } = useQuery({
+  const {
+    data: branch,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["branch-appearance", branchId],
     queryFn: () => loadBranch(branchId),
   });
@@ -107,7 +111,7 @@ export default function BranchAppearancePage() {
   }
 
   async function save() {
-    if (!dirty) return;
+    if (!dirty || !menu) return;
 
     setSaving(true);
 
@@ -127,8 +131,15 @@ export default function BranchAppearancePage() {
       if (error) throw error;
 
       toast.success("Appearance saved");
-      await queryClient.invalidateQueries({ queryKey: ["branch-appearance", branchId] });
-      await queryClient.invalidateQueries({ queryKey: ["branch-menu", branchId] });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["branch-appearance", branchId],
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["branch-menu", branchId],
+      });
+
       setLocalForm(null);
     } catch (err) {
       toast.error(err.message || "Failed to save appearance");
@@ -139,16 +150,16 @@ export default function BranchAppearancePage() {
 
   if (isLoading) {
     return (
-      <main className="h-full overflow-y-auto p-5">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <SkeletonCard className="h-40" />
         <SkeletonCard className="mt-5 h-[620px]" />
       </main>
     );
   }
 
-  if (error || !menu) {
+  if (error || !branch || !menu) {
     return (
-      <main className="p-5">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           {error?.message || "Menu not found"}
         </p>
@@ -157,13 +168,14 @@ export default function BranchAppearancePage() {
   }
 
   return (
-    <main className="h-full overflow-y-auto">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
         eyebrow="Branch Settings"
         title="Appearance"
         subtitle={`Customize images, colors, and template for ${branch.name}.`}
         action={
           <Button
+            type="button"
             loading={saving}
             loadingText="Saving..."
             disabled={!dirty}
@@ -177,23 +189,27 @@ export default function BranchAppearancePage() {
 
       <BranchTabs branchId={branchId} />
 
-      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6">
         <Link
           to={`/business/${branch.business_id}`}
-          className="mb-5 inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
+          className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
           Back to business
         </Link>
 
-        <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
-          <div className="grid gap-5">
-            <Card className="p-5">
+        <div className="mt-5 grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid min-w-0 gap-5">
+            <Card className="min-w-0 p-5">
               <h2 className="text-2xl font-black tracking-[-0.04em]">
                 Images
               </h2>
 
-              <div className="mt-5 grid gap-5 lg:grid-cols-2">
+              <p className="mt-1 text-sm font-bold leading-6 text-white/40">
+                Upload the logo and cover image used on the public menu.
+              </p>
+
+              <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-2">
                 <ImageUploadField
                   label="Logo"
                   value={form.logo_url}
@@ -220,17 +236,23 @@ export default function BranchAppearancePage() {
               </div>
             </Card>
 
-            <Card className="p-5">
+            <Card className="min-w-0 p-5">
               <h2 className="text-2xl font-black tracking-[-0.04em]">
                 Colors
               </h2>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-3">
+              <p className="mt-1 text-sm font-bold leading-6 text-white/40">
+                Pick the main color, background color, and text color.
+              </p>
+
+              <div className="mt-5 grid min-w-0 gap-4 sm:grid-cols-3">
                 <Field label="Primary color">
                   <Input
                     type="color"
                     value={form.primary_color}
-                    onChange={(e) => updateField("primary_color", e.target.value)}
+                    onChange={(e) =>
+                      updateField("primary_color", e.target.value)
+                    }
                   />
                 </Field>
 
@@ -254,12 +276,16 @@ export default function BranchAppearancePage() {
               </div>
             </Card>
 
-            <Card className="p-5">
+            <Card className="min-w-0 p-5">
               <h2 className="text-2xl font-black tracking-[-0.04em]">
                 Template
               </h2>
 
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <p className="mt-1 text-sm font-bold leading-6 text-white/40">
+                Choose the public menu layout style.
+              </p>
+
+              <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-3">
                 {TEMPLATES.map((template) => {
                   const active = form.template_id === template.id;
 
@@ -268,7 +294,7 @@ export default function BranchAppearancePage() {
                       key={template.id}
                       type="button"
                       onClick={() => updateField("template_id", template.id)}
-                      className={`rounded-[24px] border p-4 text-left transition ${
+                      className={`min-w-0 rounded-[24px] border p-4 text-left transition ${
                         active
                           ? "border-[#ff7a00] bg-[#ff7a00]/10"
                           : "border-white/10 bg-black/25 hover:border-white/20"
@@ -276,7 +302,7 @@ export default function BranchAppearancePage() {
                     >
                       <div className="h-28 rounded-2xl border border-white/10 bg-white/[0.04]" />
 
-                      <h3 className="mt-4 text-lg font-black">
+                      <h3 className="mt-4 truncate text-lg font-black">
                         {template.name}
                       </h3>
 
@@ -298,83 +324,96 @@ export default function BranchAppearancePage() {
             </Card>
           </div>
 
-          <Card className="sticky top-24 h-fit overflow-hidden p-5">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-white/30">
-              Live preview
-            </p>
+          <aside className="min-w-0 2xl:sticky 2xl:top-6 2xl:self-start">
+            <Card className="min-w-0 overflow-hidden p-5">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-white/30">
+                Live preview
+              </p>
 
-            <div
-              className="mt-4 overflow-hidden rounded-[28px] border border-white/10"
-              style={{
-                backgroundColor: form.background_color,
-                color: form.text_color,
-              }}
-            >
-              <div className="h-36 bg-white/10">
-                {form.cover_url ? (
-                  <img
-                    src={form.cover_url}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm font-black opacity-40">
-                    No cover image
-                  </div>
-                )}
-              </div>
-
-              <div className="p-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white/10">
-                    {form.logo_url ? (
-                      <img
-                        src={form.logo_url}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-xs font-black opacity-40">Logo</span>
-                    )}
-                  </div>
-
-                  <div>
-                    <h3 className="text-xl font-black">{branch.name}</h3>
-                    <p className="text-xs font-bold opacity-50">
-                      {form.template_id} template
-                    </p>
-                  </div>
+              <div
+                className="mt-4 overflow-hidden rounded-[28px] border border-white/10"
+                style={{
+                  backgroundColor: form.background_color,
+                  color: form.text_color,
+                }}
+              >
+                <div className="h-36 bg-white/10">
+                  {form.cover_url ? (
+                    <img
+                      src={form.cover_url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center px-4 text-center text-sm font-black opacity-40">
+                      No cover image
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  type="button"
-                  className="mt-5 rounded-2xl px-4 py-2 text-sm font-black"
-                  style={{
-                    backgroundColor: form.primary_color,
-                    color: "#000",
-                  }}
-                >
-                  Example action
-                </button>
+                <div className="p-5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10">
+                      {form.logo_url ? (
+                        <img
+                          src={form.logo_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-black opacity-40">
+                          Logo
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <h3 className="truncate text-xl font-black">
+                        {branch.name}
+                      </h3>
+
+                      <p className="truncate text-xs font-bold opacity-50">
+                        {form.template_id} template
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="mt-5 rounded-2xl px-4 py-2 text-sm font-black"
+                    style={{
+                      backgroundColor: form.primary_color,
+                      color: "#000",
+                    }}
+                  >
+                    Example action
+                  </button>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </aside>
         </div>
       </section>
 
       {dirty && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl lg:left-[19rem]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-black text-[#ffbd7c]">
               You have unsaved appearance changes
             </p>
 
             <div className="flex gap-2">
-              <Button variant="secondary" onClick={discard} disabled={saving}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={discard}
+                disabled={saving}
+              >
                 Discard
               </Button>
 
               <Button
+                type="button"
                 onClick={save}
                 loading={saving}
                 loadingText="Saving..."

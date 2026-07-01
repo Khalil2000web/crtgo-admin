@@ -148,7 +148,7 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="h-full overflow-y-auto">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
         eyebrow="Profile"
         title="Account"

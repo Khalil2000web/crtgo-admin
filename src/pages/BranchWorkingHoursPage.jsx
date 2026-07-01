@@ -113,7 +113,7 @@ export default function BranchWorkingHoursPage() {
 
   if (isLoading) {
     return (
-      <main className="h-full overflow-y-auto p-5">
+     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
         <SkeletonCard className="h-40" />
         <SkeletonCard className="mt-5 h-[560px]" />
       </main>
@@ -122,7 +122,7 @@ export default function BranchWorkingHoursPage() {
 
   if (error) {
     return (
-      <main className="p-5">
+     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           {error.message}
         </p>
@@ -131,7 +131,7 @@ export default function BranchWorkingHoursPage() {
   }
 
   return (
-    <main className="h-full overflow-y-auto">
+   <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
         eyebrow="Branch Settings"
         title="Working Hours"
@@ -161,7 +161,7 @@ export default function BranchWorkingHoursPage() {
 
       <BranchTabs branchId={branchId} />
 
-      <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-6 pb-32 sm:px-6">
         <Link
           to={`/business/${branch.business_id}`}
           className="mb-5 inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"

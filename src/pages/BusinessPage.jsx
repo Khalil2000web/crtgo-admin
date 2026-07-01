@@ -79,7 +79,7 @@ export default function BusinessPage() {
   }
 
   return (
-    <main className="h-full overflow-y-auto bg-[#090909] text-white">
+ <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090909]/85 px-4 py-5 backdrop-blur-xl sm:px-6">
         <Link
           to="/"
@@ -440,7 +440,7 @@ function LoadingPage() {
 
 function ErrorPage({ message }) {
   return (
-    <main className="min-h-screen bg-[#090909] p-5 text-white">
+  <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <Link
         to="/"
         className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"

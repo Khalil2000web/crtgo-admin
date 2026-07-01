@@ -8,7 +8,7 @@ import {
   Loader2,
   Pencil,
   Plus,
-  Save,
+  Settings,
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -16,10 +16,8 @@ import toast from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { getPublicMenuUrl } from "../lib/urls";
 import { useConfirm } from "../components/ConfirmProvider";
+import BranchTabs from "../components/BranchTabs";
 import ImageUploadField from "../components/ImageUploadField";
-import WorkingHoursEditor, {
-  getDefaultWorkingHours,
-} from "../components/WorkingHoursEditor";
 import {
   Badge,
   Button,
@@ -41,13 +39,7 @@ async function loadBranch(branchId) {
       id,
       name,
       slug,
-      address,
-      phone,
-      whatsapp,
-      instagram,
-      facebook,
-      tiktok,
-      working_hours,
+      status,
       business_id,
       businesses (
         id,
@@ -58,13 +50,7 @@ async function loadBranch(branchId) {
         id,
         name,
         status,
-        template_id,
         description_ar,
-        cover_url,
-        logo_url,
-        primary_color,
-        background_color,
-        text_color,
         sections (
           id,
           name_ar,
@@ -95,9 +81,9 @@ export default function MenuEditorPage() {
 
   const [sectionName, setSectionName] = useState("");
   const [addingSection, setAddingSection] = useState(false);
+
   const [sectionModal, setSectionModal] = useState(null);
   const [itemModal, setItemModal] = useState(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [deletingSectionId, setDeletingSectionId] = useState(null);
   const [deletingItemId, setDeletingItemId] = useState(null);
@@ -107,6 +93,7 @@ export default function MenuEditorPage() {
     data: branch,
     isLoading,
     error,
+    isFetching,
   } = useQuery({
     queryKey: ["branch-menu", branchId],
     queryFn: () => loadBranch(branchId),
@@ -137,16 +124,20 @@ export default function MenuEditorPage() {
   const itemsWithoutImages = allItems.filter((item) => !item.image_url);
 
   async function refresh() {
-    await queryClient.invalidateQueries({ queryKey: ["branch-menu", branchId] });
+    await queryClient.invalidateQueries({
+      queryKey: ["branch-menu", branchId],
+    });
   }
 
   async function addSection(e) {
     e.preventDefault();
+
+    if (!sectionName.trim()) return;
+
     setAddingSection(true);
 
     try {
       if (!menu?.id) throw new Error("Menu not found.");
-      if (!sectionName.trim()) throw new Error("Section name is required.");
 
       const { error } = await supabase.from("sections").insert({
         menu_version_id: menu.id,
@@ -179,6 +170,17 @@ export default function MenuEditorPage() {
     setDeletingSectionId(section.id);
 
     try {
+      if (section.items?.length) {
+        const itemIds = section.items.map((item) => item.id);
+
+        const { error: itemsError } = await supabase
+          .from("items")
+          .delete()
+          .in("id", itemIds);
+
+        if (itemsError) throw itemsError;
+      }
+
       const { error } = await supabase
         .from("sections")
         .delete()
@@ -243,8 +245,9 @@ export default function MenuEditorPage() {
 
   if (isLoading) {
     return (
-      <main className="h-full overflow-y-auto p-5">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <SkeletonCard className="h-40" />
+
         <div className="mt-6 grid gap-5">
           <SkeletonCard className="h-72" />
           <SkeletonCard className="h-72" />
@@ -256,7 +259,7 @@ export default function MenuEditorPage() {
 
   if (error) {
     return (
-      <main className="p-5">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           {error.message}
         </p>
@@ -266,7 +269,7 @@ export default function MenuEditorPage() {
 
   if (!branch || !menu) {
     return (
-      <main className="p-5">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           Menu not found.
         </p>
@@ -274,10 +277,11 @@ export default function MenuEditorPage() {
     );
   }
 
-  const publicUrl = getPublicMenuUrl(branch.businesses.slug, branch.slug);
+  const publicUrl = getPublicMenuUrl(branch.businesses?.slug, branch.slug);
+  const archived = branch.status === "archived";
 
   return (
-    <main className="h-full overflow-y-auto">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
         eyebrow="Menu Editor"
         title={branch.name}
@@ -294,48 +298,80 @@ export default function MenuEditorPage() {
               Open Public Menu
             </a>
 
-            <Button onClick={() => setSettingsOpen(true)}>
-              <Save size={17} />
-              Settings
-            </Button>
+            <Link
+              to={`/branch/${branchId}/general`}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-4 text-sm font-black text-black transition hover:bg-white"
+            >
+              <Settings size={17} />
+              Branch Settings
+            </Link>
           </div>
         }
       />
 
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <BranchTabs branchId={branchId} />
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6">
         <Link
           to={`/business/${branch.business_id}`}
-          className="mb-5 inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
+          className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
           Back to business
         </Link>
 
-        <div className="grid gap-4 md:grid-cols-5">
-          <Card className="p-4">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-black tracking-[-0.05em]">
+              {menu.name || "Main Menu"}
+            </h2>
+
+            <p className="mt-1 text-sm font-bold text-white/35">
+              Add sections and items for this branch menu.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {archived && <Badge tone="warning">Archived branch</Badge>}
+
+            {isFetching && (
+              <Badge tone="neutral">
+                <Loader2 size={13} className="animate-spin" />
+                Syncing
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Card className="min-w-0 p-4">
             <Stat label="Sections" value={sections.length} />
           </Card>
 
-          <Card className="p-4">
+          <Card className="min-w-0 p-4">
             <Stat label="Items" value={allItems.length} />
           </Card>
 
-          <Card className="p-4">
+          <Card className="min-w-0 p-4">
             <Stat label="Available" value={availableItems.length} />
           </Card>
 
-          <Card className="p-4">
+          <Card className="min-w-0 p-4">
             <Stat label="Hidden" value={hiddenItems.length} />
           </Card>
 
-          <Card className="p-4">
+          <Card className="min-w-0 p-4">
             <Stat label="No images" value={itemsWithoutImages.length} />
           </Card>
         </div>
 
-        <div className="mt-6 grid gap-5 xl:grid-cols-[360px_1fr]">
-          <aside className="h-fit rounded-[28px] border border-white/10 bg-[#111111] p-5">
+        <div className="mt-6 grid min-w-0 gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <aside className="h-fit min-w-0 rounded-[28px] border border-white/10 bg-[#111111] p-5">
             <h2 className="text-xl font-black">Add Section</h2>
+
+            <p className="mt-1 text-sm font-bold leading-6 text-white/40">
+              Sections are groups like pizza, drinks, burgers, desserts.
+            </p>
 
             <form onSubmit={addSection} className="mt-4 grid gap-3">
               <Input
@@ -346,9 +382,10 @@ export default function MenuEditorPage() {
               />
 
               <Button
+                type="submit"
                 loading={addingSection}
                 loadingText="Adding section..."
-                disabled={!sectionName.trim()}
+                disabled={!sectionName.trim() || archived}
               >
                 <Plus size={16} />
                 Add Section
@@ -361,22 +398,34 @@ export default function MenuEditorPage() {
               </p>
 
               <p className="mt-3 text-sm font-bold leading-6 text-white/55">
-                Add images to menu items for a better public menu experience.
+                Add images and descriptions to items for a better public menu.
               </p>
             </div>
+
+            {archived && (
+              <div className="mt-4 rounded-2xl border border-yellow-400/15 bg-yellow-500/10 p-4">
+                <p className="text-sm font-black text-yellow-100">
+                  This branch is archived.
+                </p>
+
+                <p className="mt-2 text-sm font-bold leading-6 text-yellow-100/55">
+                  Restore it from Branch Settings before editing.
+                </p>
+              </div>
+            )}
           </aside>
 
-          <div className="grid gap-5">
+          <div className="grid min-w-0 gap-5">
             {sections.length ? (
               sections.map((section) => (
                 <section
                   key={section.id}
-                  className="rounded-[28px] border border-white/10 bg-[#111111] p-5"
+                  className="min-w-0 rounded-[28px] border border-white/10 bg-[#111111] p-5"
                 >
                   <div className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <h2
-                        className="text-2xl font-black tracking-[-0.04em]"
+                        className="truncate text-2xl font-black tracking-[-0.04em]"
                         dir="rtl"
                       >
                         {section.name_ar}
@@ -392,6 +441,7 @@ export default function MenuEditorPage() {
                         type="button"
                         variant="secondary"
                         size="sm"
+                        disabled={archived}
                         onClick={() => setSectionModal(section)}
                       >
                         <Pencil size={15} />
@@ -404,6 +454,7 @@ export default function MenuEditorPage() {
                         size="sm"
                         loading={deletingSectionId === section.id}
                         loadingText="Deleting..."
+                        disabled={archived}
                         onClick={() => deleteSection(section)}
                       >
                         <Trash2 size={15} />
@@ -413,6 +464,7 @@ export default function MenuEditorPage() {
                       <Button
                         type="button"
                         size="sm"
+                        disabled={archived}
                         onClick={() => setItemModal({ section, item: null })}
                       >
                         <Plus size={15} />
@@ -426,7 +478,7 @@ export default function MenuEditorPage() {
                       {section.items.map((item) => (
                         <article
                           key={item.id}
-                          className="flex gap-4 rounded-2xl border border-white/10 bg-black/25 p-3"
+                          className="flex min-w-0 gap-4 rounded-2xl border border-white/10 bg-black/25 p-3"
                         >
                           <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
                             {item.image_url ? (
@@ -441,7 +493,7 @@ export default function MenuEditorPage() {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <div className="min-w-0">
                                 <h3
                                   className="truncate text-lg font-black"
@@ -466,7 +518,7 @@ export default function MenuEditorPage() {
                             <div className="mt-3 flex flex-wrap gap-2">
                               <button
                                 type="button"
-                                disabled={togglingItemId === item.id}
+                                disabled={togglingItemId === item.id || archived}
                                 onClick={() => toggleItem(item)}
                                 className={`inline-flex min-h-8 items-center justify-center gap-2 rounded-xl px-3 text-xs font-black disabled:opacity-50 ${
                                   item.is_available
@@ -477,6 +529,7 @@ export default function MenuEditorPage() {
                                 {togglingItemId === item.id && (
                                   <Loader2 size={13} className="animate-spin" />
                                 )}
+
                                 {item.is_available ? "Available" : "Hidden"}
                               </button>
 
@@ -484,9 +537,8 @@ export default function MenuEditorPage() {
                                 type="button"
                                 variant="secondary"
                                 size="sm"
-                                onClick={() =>
-                                  setItemModal({ section, item })
-                                }
+                                disabled={archived}
+                                onClick={() => setItemModal({ section, item })}
                               >
                                 Edit
                               </Button>
@@ -497,6 +549,7 @@ export default function MenuEditorPage() {
                                 size="sm"
                                 loading={deletingItemId === item.id}
                                 loadingText="Deleting..."
+                                disabled={archived}
                                 onClick={() => deleteItem(item)}
                               >
                                 Delete
@@ -515,6 +568,7 @@ export default function MenuEditorPage() {
                       <Button
                         type="button"
                         className="mt-4"
+                        disabled={archived}
                         onClick={() => setItemModal({ section, item: null })}
                       >
                         <Plus size={16} />
@@ -557,17 +611,6 @@ export default function MenuEditorPage() {
           refresh();
         }}
       />
-
-      <MenuSettingsModal
-        open={settingsOpen}
-        branch={branch}
-        menu={menu}
-        onClose={() => setSettingsOpen(false)}
-        onDone={() => {
-          setSettingsOpen(false);
-          refresh();
-        }}
-      />
     </main>
   );
 }
@@ -582,6 +625,9 @@ function SectionRenameModal({ section, onClose, onDone }) {
 
   async function submit(e) {
     e.preventDefault();
+
+    if (!section) return;
+
     setSaving(true);
 
     try {
@@ -615,7 +661,12 @@ function SectionRenameModal({ section, onClose, onDone }) {
           />
         </Field>
 
-        <Button loading={saving} loadingText="Saving..." disabled={!name.trim()}>
+        <Button
+          type="submit"
+          loading={saving}
+          loadingText="Saving..."
+          disabled={!name.trim()}
+        >
           Save name
         </Button>
       </form>
@@ -639,7 +690,7 @@ function ItemModal({ data, onClose, onDone }) {
 
   if (!data) return null;
 
-  const hasImage = Boolean(form.image_url);
+  const hasImage = Boolean(form.image_url?.trim());
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -647,6 +698,7 @@ function ItemModal({ data, onClose, onDone }) {
 
   async function submit(e) {
     e.preventDefault();
+
     setLoading(true);
 
     try {
@@ -735,7 +787,9 @@ function ItemModal({ data, onClose, onDone }) {
         />
 
         <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-black">
-          <span>{form.is_available ? "Item is available" : "Item is hidden"}</span>
+          <span>
+            {form.is_available ? "Item is available" : "Item is hidden"}
+          </span>
 
           <input
             type="checkbox"
@@ -745,338 +799,13 @@ function ItemModal({ data, onClose, onDone }) {
         </label>
 
         <Button
+          type="submit"
           loading={loading}
           loadingText={item ? "Saving item..." : "Creating item..."}
           disabled={!form.name_ar.trim()}
         >
           {item ? "Save Item" : "Create Item"}
         </Button>
-      </form>
-    </Modal>
-  );
-}
-
-function MenuSettingsModal({ open, menu, branch, onClose, onDone }) {
-  const [loading, setLoading] = useState(false);
-
-  const initialForm = useMemo(() => {
-    return {
-      menu_name: menu?.name || "Main Menu",
-      description_ar: menu?.description_ar || "",
-      logo_url: menu?.logo_url || "",
-      cover_url: menu?.cover_url || "",
-      primary_color: menu?.primary_color || "#ff7a00",
-      background_color: menu?.background_color || "#090909",
-      text_color: menu?.text_color || "#ffffff",
-
-      branch_name: branch?.name || "",
-      address: branch?.address || "",
-      phone: branch?.phone || "",
-      whatsapp: branch?.whatsapp || "",
-      instagram: branch?.instagram || "",
-      facebook: branch?.facebook || "",
-      tiktok: branch?.tiktok || "",
-      working_hours: {
-        ...getDefaultWorkingHours(),
-        ...(branch?.working_hours || {}),
-      },
-    };
-  }, [menu, branch]);
-
-  const [form, setForm] = useState(initialForm);
-
-  useEffect(() => {
-    if (open) setForm(initialForm);
-  }, [open, initialForm]);
-
-  const dirty = JSON.stringify(form) !== JSON.stringify(initialForm);
-
-  function updateField(key, value) {
-    setForm((current) => ({ ...current, [key]: value }));
-  }
-
-  function discardChanges() {
-    setForm(initialForm);
-    toast.success("Changes discarded");
-  }
-
-  async function submit(e) {
-    e.preventDefault();
-
-    if (!dirty) return;
-
-    setLoading(true);
-
-    try {
-      const { error: menuError } = await supabase
-        .from("menu_versions")
-        .update({
-          name: form.menu_name.trim() || "Main Menu",
-          description_ar: form.description_ar.trim() || null,
-          logo_url: form.logo_url.trim() || null,
-          cover_url: form.cover_url.trim() || null,
-          primary_color: form.primary_color,
-          background_color: form.background_color,
-          text_color: form.text_color,
-        })
-        .eq("id", menu.id);
-
-      if (menuError) throw menuError;
-
-      const { error: branchError } = await supabase
-        .from("branches")
-        .update({
-          name: form.branch_name.trim() || branch.name,
-          address: form.address.trim() || null,
-          phone: form.phone.trim() || null,
-          whatsapp: form.whatsapp.trim() || null,
-          instagram: form.instagram.trim() || null,
-          facebook: form.facebook.trim() || null,
-          tiktok: form.tiktok.trim() || null,
-          working_hours: form.working_hours,
-        })
-        .eq("id", branch.id);
-
-      if (branchError) throw branchError;
-
-      toast.success("Settings saved");
-      onDone();
-    } catch (err) {
-      toast.error(err.message || "Failed to save settings");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <Modal
-      open={open}
-      title="Menu & Branch Settings"
-      onClose={onClose}
-      maxWidth="max-w-4xl"
-    >
-      <form onSubmit={submit} className="grid gap-5">
-        <Card className="p-5">
-          <h3 className="text-xl font-black">General</h3>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Menu name">
-              <Input
-                value={form.menu_name}
-                onChange={(e) => updateField("menu_name", e.target.value)}
-                placeholder="Main Menu"
-              />
-            </Field>
-
-            <Field label="Branch name">
-              <Input
-                value={form.branch_name}
-                onChange={(e) => updateField("branch_name", e.target.value)}
-                placeholder="Main Branch"
-              />
-            </Field>
-          </div>
-
-          <div className="mt-4">
-            <Field label="Arabic menu description">
-              <Textarea
-                value={form.description_ar}
-                onChange={(e) =>
-                  updateField("description_ar", e.target.value)
-                }
-                placeholder="وصف قصير للقائمة"
-                dir="rtl"
-              />
-            </Field>
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <h3 className="text-xl font-black">Contact & Social</h3>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Address">
-              <Input
-                value={form.address}
-                onChange={(e) => updateField("address", e.target.value)}
-                placeholder="Street, city..."
-              />
-            </Field>
-
-            <Field label="Phone">
-              <Input
-                value={form.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                placeholder="0500000000"
-                dir="ltr"
-              />
-            </Field>
-
-            <Field label="WhatsApp">
-              <Input
-                value={form.whatsapp}
-                onChange={(e) => updateField("whatsapp", e.target.value)}
-                placeholder="972500000000"
-                dir="ltr"
-              />
-            </Field>
-
-            <Field label="Instagram">
-              <Input
-                value={form.instagram}
-                onChange={(e) => updateField("instagram", e.target.value)}
-                placeholder="@restaurant"
-                dir="ltr"
-              />
-            </Field>
-
-            <Field label="Facebook">
-              <Input
-                value={form.facebook}
-                onChange={(e) => updateField("facebook", e.target.value)}
-                placeholder="https://facebook.com/..."
-                dir="ltr"
-              />
-            </Field>
-
-            <Field label="TikTok">
-              <Input
-                value={form.tiktok}
-                onChange={(e) => updateField("tiktok", e.target.value)}
-                placeholder="@restaurant"
-                dir="ltr"
-              />
-            </Field>
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <h3 className="text-xl font-black">Images</h3>
-
-          <div className="mt-4 grid gap-5 lg:grid-cols-2">
-            <ImageUploadField
-              label="Logo"
-              value={form.logo_url}
-              onChange={(url) => updateField("logo_url", url)}
-              folder="menu-logo"
-              hint={
-                form.logo_url
-                  ? "Logo is added. Change or delete it."
-                  : "Add a logo for the public menu header."
-              }
-            />
-
-            <ImageUploadField
-              label="Cover image"
-              value={form.cover_url}
-              onChange={(url) => updateField("cover_url", url)}
-              folder="menu-cover"
-              hint={
-                form.cover_url
-                  ? "Cover image is added. Change or delete it."
-                  : "Add a cover image for the public menu hero."
-              }
-            />
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <h3 className="text-xl font-black">Appearance</h3>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <Field label="Primary color">
-              <Input
-                type="color"
-                value={form.primary_color}
-                onChange={(e) => updateField("primary_color", e.target.value)}
-              />
-            </Field>
-
-            <Field label="Background">
-              <Input
-                type="color"
-                value={form.background_color}
-                onChange={(e) =>
-                  updateField("background_color", e.target.value)
-                }
-              />
-            </Field>
-
-            <Field label="Text">
-              <Input
-                type="color"
-                value={form.text_color}
-                onChange={(e) => updateField("text_color", e.target.value)}
-              />
-            </Field>
-          </div>
-
-          <div
-            className="mt-5 rounded-[24px] border border-white/10 p-5"
-            style={{
-              backgroundColor: form.background_color,
-              color: form.text_color,
-            }}
-          >
-            <p className="text-xs font-black uppercase tracking-[0.18em] opacity-60">
-              Preview
-            </p>
-
-            <h4 className="mt-3 text-2xl font-black">{form.menu_name}</h4>
-
-            <p className="mt-2 text-sm font-bold opacity-65" dir="rtl">
-              {form.description_ar || "وصف القائمة سيظهر هنا"}
-            </p>
-
-            <button
-              type="button"
-              className="mt-4 rounded-2xl px-4 py-2 text-sm font-black"
-              style={{
-                backgroundColor: form.primary_color,
-                color: "#000000",
-              }}
-            >
-              Example button
-            </button>
-          </div>
-        </Card>
-
-        <WorkingHoursEditor
-          value={form.working_hours}
-          onChange={(hours) => updateField("working_hours", hours)}
-        />
-
-        <div className="sticky bottom-0 -mx-5 -mb-5 border-t border-white/10 bg-[#111111]/95 p-4 backdrop-blur-xl">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p
-              className={`text-sm font-black ${
-                dirty ? "text-[#ffbd7c]" : "text-green-200"
-              }`}
-            >
-              {dirty ? "You have unsaved changes" : "Everything saved"}
-            </p>
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={!dirty || loading}
-                onClick={discardChanges}
-              >
-                Discard
-              </Button>
-
-              <Button
-                type="submit"
-                loading={loading}
-                loadingText="Saving settings..."
-                disabled={!dirty}
-              >
-                Save settings
-              </Button>
-            </div>
-          </div>
-        </div>
       </form>
     </Modal>
   );

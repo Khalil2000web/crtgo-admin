@@ -105,14 +105,14 @@ export default function AuthPage() {
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#090909] text-white">
+      <main className="h-[100dvh] overflow-y-auto bg-[#090909] px-4 py-6 text-white">
         <div className="h-9 w-9 animate-spin rounded-full border-2 border-white/15 border-t-[#ff7a00]" />
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#090909] px-4 text-white">
+   <main className="h-[100dvh] overflow-y-auto bg-[#090909] px-4 py-6 text-white">
       <section className="w-full max-w-md rounded-[30px] border border-white/10 bg-[#111111] p-5 shadow-2xl">
         <p className="text-xs font-black uppercase tracking-[0.25em] text-[#ff7a00]">
           CRTGO ADMIN

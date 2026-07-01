@@ -3,21 +3,23 @@ import { ImagePlus, Loader2, Trash2, UploadCloud } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { uploadMenuImage } from "../lib/uploads";
+import { Button, Input } from "./ui";
 
 export default function ImageUploadField({
-  label = "Image",
+  label,
   value,
   onChange,
   folder = "general",
-  hint = "PNG, JPG, or WEBP.",
+  hint,
 }) {
-  const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
-  const hasImage = Boolean(value);
+  const hasImage = Boolean(value?.trim());
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
+    e.target.value = "";
 
     if (!file) return;
 
@@ -28,104 +30,113 @@ export default function ImageUploadField({
       onChange(url);
       toast.success(hasImage ? "Image changed" : "Image added");
     } catch (err) {
-      toast.error(err.message || "Image upload failed");
+      toast.error(err.message || "Failed to upload image");
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
   }
 
-  return (
-    <div className="grid gap-2">
-      <span className="text-xs font-black uppercase tracking-[0.18em] text-white/35">
-        {label}
-      </span>
+  function removeImage() {
+    onChange("");
+    toast.success("Image removed");
+  }
 
-      <div className="rounded-[24px] border border-white/10 bg-black/25 p-3">
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035]">
-          {uploading ? (
-            <div className="flex h-48 flex-col items-center justify-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#ff7a00]/20 bg-[#ff7a00]/10 text-[#ff7a00]">
-                <Loader2 size={24} className="animate-spin" />
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-white/35">
+        {label}
+      </p>
+
+      <div className="mt-3 min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/25">
+        <div className="relative flex aspect-[16/9] min-h-48 w-full min-w-0 items-center justify-center overflow-hidden bg-white/[0.035]">
+          {hasImage ? (
+            <img
+              src={value}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="grid place-items-center px-5 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ff7a00]">
+                <ImagePlus size={25} />
               </div>
 
               <p className="mt-4 text-sm font-black text-white">
-                Uploading image...
+                Add image
               </p>
 
-              <p className="mt-1 text-xs font-bold text-white/35">
-                Please keep this page open.
+              <p className="mt-1 max-w-xs text-xs font-bold leading-5 text-white/35">
+                {hint || "Upload an image or paste an image URL below."}
               </p>
             </div>
-          ) : hasImage ? (
-            <img src={value} alt="" className="h-48 w-full object-cover" />
-          ) : (
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="flex h-48 w-full flex-col items-center justify-center text-center transition hover:bg-[#ff7a00]/10"
-            >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ff7a00]">
-                <ImagePlus size={24} />
+          )}
+
+          {uploading && (
+            <div className="absolute inset-0 grid place-items-center bg-black/70 backdrop-blur-sm">
+              <div className="grid place-items-center gap-3 text-center">
+                <Loader2 className="animate-spin text-[#ff7a00]" size={30} />
+                <p className="text-sm font-black text-white">Uploading...</p>
               </div>
-
-              <p className="mt-4 text-sm font-black text-white">Add image</p>
-
-              <p className="mt-1 text-xs font-bold text-white/35">{hint}</p>
-            </button>
+            </div>
           )}
         </div>
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-          <input
+        <div className="grid min-w-0 gap-2 border-t border-white/10 p-3">
+          <Input
             value={value || ""}
             onChange={(e) => onChange(e.target.value)}
             placeholder="https://..."
             dir="ltr"
-            className="min-h-11 rounded-2xl border border-white/10 bg-black/30 px-4 text-sm font-bold text-white outline-none placeholder:text-white/25 focus:border-[#ff7a00]"
+            disabled={uploading}
           />
 
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-black text-white/65 transition hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
+          <div
+            className={`grid min-w-0 gap-2 ${
+              hasImage ? "sm:grid-cols-2" : "grid-cols-1"
+            }`}
           >
-            {uploading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <UploadCloud size={16} />
-            )}
-            {hasImage ? "Change" : "Add"}
-          </button>
-
-          {hasImage && (
-            <button
+            <Button
               type="button"
-              onClick={() => onChange("")}
+              variant={hasImage ? "secondary" : "primary"}
+              onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 text-sm font-black text-red-200 transition hover:bg-red-500/15 disabled:opacity-50"
+              className="w-full"
             >
-              <Trash2 size={16} />
-              Delete
-            </button>
-          )}
+              {uploading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <UploadCloud size={16} />
+              )}
+              {uploading ? "Uploading..." : hasImage ? "Change" : "Add image"}
+            </Button>
+
+            {hasImage && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={removeImage}
+                disabled={uploading}
+                className="w-full"
+              >
+                <Trash2 size={16} />
+                Delete
+              </Button>
+            )}
+          </div>
+
+          <p className="text-xs font-bold leading-5 text-white/35">
+            {hasImage ? "Image added." : "No image added yet."}
+          </p>
         </div>
-
-        <p className="mt-2 text-xs font-bold text-white/30">
-          {hasImage
-            ? "Image is ready. You can change it or delete it."
-            : "No image added yet."}
-        </p>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
     </div>
   );
 }

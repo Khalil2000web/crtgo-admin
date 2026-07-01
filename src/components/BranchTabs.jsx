@@ -1,8 +1,13 @@
 import { NavLink } from "react-router-dom";
-import { Clock, Languages, MenuSquare, Palette } from "lucide-react";
+import { Clock, Info, Languages, MenuSquare, Palette } from "lucide-react";
 
 export default function BranchTabs({ branchId }) {
   const tabs = [
+    {
+      to: `/branch/${branchId}/general`,
+      label: "General",
+      icon: <Info size={16} />,
+    },
     {
       to: `/branch/${branchId}/menu`,
       label: "Menu",
@@ -26,7 +31,7 @@ export default function BranchTabs({ branchId }) {
   ];
 
   return (
-    <div className="overflow-x-auto border-b border-white/10 bg-[#080808]/80 px-4 py-3 backdrop-blur-xl sm:px-6">
+    <div className="overflow-x-auto border-b border-white/10 bg-[#080808]/80 px-4 py-8 backdrop-blur-xl sm:px-6">
       <div className="flex min-w-max gap-2">
         {tabs.map((tab) => (
           <NavLink

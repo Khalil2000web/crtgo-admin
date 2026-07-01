@@ -49,13 +49,13 @@ export default function AppShell() {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden bg-[#080808] text-white">
+    <main className="flex h-[100dvh] w-full overflow-hidden bg-[#080808] text-white">
       <aside className="hidden h-full w-72 shrink-0 border-r border-white/10 bg-[#0b0b0b] p-4 lg:flex lg:flex-col">
         <SidebarContent user={user} logout={logout} />
       </aside>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-[900] bg-black/70 backdrop-blur-md lg:hidden">
+        <div className="fixed inset-0 z-[900] overflow-hidden bg-black/70 backdrop-blur-md lg:hidden">
           <aside className="flex h-full w-80 max-w-[88vw] flex-col border-r border-white/10 bg-[#0b0b0b] p-4">
             <div className="mb-3 flex items-center justify-between">
               <Brand />
@@ -74,7 +74,7 @@ export default function AppShell() {
         </div>
       )}
 
-      <section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-[#080808]/85 px-4 backdrop-blur-xl lg:hidden">
           <button
             type="button"
@@ -93,7 +93,7 @@ export default function AppShell() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           <Outlet />
         </div>
       </section>
@@ -142,7 +142,8 @@ function SidebarContent({ user, logout, hideBrand = false }) {
           <Settings size={18} />
           Settings
         </button>
-                <button
+
+        <button
           type="button"
           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-white/38 transition hover:bg-white/[0.045] hover:text-white"
         >
@@ -150,16 +151,20 @@ function SidebarContent({ user, logout, hideBrand = false }) {
           Help Center
         </button>
 
+        
+      </nav>
+
+
+      <div className="mt-auto grid gap-2">
         <button
           type="button"
           onClick={logout}
-          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-white/45 transition hover:bg-white/[0.045] hover:text-white"
+          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400/80 transition hover:bg-red-400/[0.099] hover:text-white"
         >
           <LogOut size={18} />
           Log out
         </button>
-      </nav>
-
+      </div>
     </>
   );
 }
