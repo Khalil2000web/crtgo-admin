@@ -185,10 +185,10 @@ export default function AccountPage() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Stat label="User ID" value={user?.id || "Loading..."} />
-            <Stat label="Username" value={form.username || "Not set"} />
-          </div>
+<div className="mt-6 grid min-w-0 gap-3 sm:grid-cols-2">
+  <Stat label="User ID" value={user?.id || "Loading..."} />
+  <Stat label="Username" value={form.username || "Not set"} />
+</div>
         </Card>
 
         <form onSubmit={saveAccount} className="mt-5 grid gap-5">

@@ -191,11 +191,14 @@ export function EmptyState({ icon, title, text, action }) {
 
 export function Stat({ label, value }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
       <p className="text-xs font-black uppercase tracking-[0.16em] text-white/30">
         {label}
       </p>
-      <p className="mt-1 truncate text-lg font-black text-white">{value}</p>
+
+      <p className="mt-2 min-w-0 break-words text-lg font-black tracking-[-0.03em] text-white">
+        {value}
+      </p>
     </div>
   );
 }
