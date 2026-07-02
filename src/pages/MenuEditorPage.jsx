@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
 import { getPublicMenuUrl } from "../lib/urls";
+import { slugify } from "../lib/slug";
 import { useConfirm } from "../components/ConfirmProvider";
 import BranchTabs from "../components/BranchTabs";
 import ImageUploadField from "../components/ImageUploadField";
@@ -51,19 +52,22 @@ async function loadBranch(branchId) {
         name,
         status,
         description_ar,
-        sections (
-          id,
-          name_ar,
-          sort_order,
-          items (
-            id,
-            name_ar,
-            description_ar,
-            price,
-            image_url,
-            is_available,
-            sort_order
-          )
+sections (
+  id,
+  name_ar,
+  slug,
+  cover_url,
+  sort_order,
+  items (
+    id,
+    name_ar,
+    description_ar,
+    price,
+    image_url,
+    is_available,
+    sort_order
+  )
+)
         )
       )
     `)
@@ -139,11 +143,32 @@ export default function MenuEditorPage() {
     try {
       if (!menu?.id) throw new Error("Menu not found.");
 
-      const { error } = await supabase.from("sections").insert({
-        menu_version_id: menu.id,
-        name_ar: sectionName.trim(),
-        sort_order: sections.length + 1,
-      });
+
+const sectionSlug = slugify(sectionName);
+
+const { data: duplicateSection, error: duplicateError } = await supabase
+  .from("sections")
+  .select("id")
+  .eq("menu_version_id", menu.id)
+  .eq("slug", sectionSlug)
+  .maybeSingle();
+
+if (duplicateError) throw duplicateError;
+
+if (duplicateSection) {
+  throw new Error("A section with this slug already exists.");
+}
+
+const { error } = await supabase.from("sections").insert({
+  menu_version_id: menu.id,
+  name_ar: sectionName.trim(),
+  slug: sectionSlug,
+  cover_url: null,
+  sort_order: sections.length + 1,
+});
+
+
+
 
       if (error) throw error;
 
@@ -437,16 +462,16 @@ export default function MenuEditorPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        disabled={archived}
-                        onClick={() => setSectionModal(section)}
-                      >
-                        <Pencil size={15} />
-                        Rename
-                      </Button>
+<Button
+  type="button"
+  variant="secondary"
+  size="sm"
+  disabled={archived}
+  onClick={() => setSectionModal(section)}
+>
+  <Pencil size={15} />
+  Settings
+</Button>
 
                       <Button
                         type="button"
@@ -586,14 +611,15 @@ export default function MenuEditorPage() {
         </div>
       </section>
 
-      <SectionRenameModal
-        section={sectionModal}
-        onClose={() => setSectionModal(null)}
-        onDone={() => {
-          setSectionModal(null);
-          refresh();
-        }}
-      />
+<SectionRenameModal
+  section={sectionModal}
+  menuId={menu.id}
+  onClose={() => setSectionModal(null)}
+  onDone={() => {
+    setSectionModal(null);
+    refresh();
+  }}
+/>
 
       <ItemModal
         key={
@@ -612,64 +638,139 @@ export default function MenuEditorPage() {
   );
 }
 
-function SectionRenameModal({ section, onClose, onDone }) {
-  const [name, setName] = useState(section?.name_ar || "");
+
+function SectionRenameModal({ section, menuId, onClose, onDone }) {
+  const [form, setForm] = useState({
+    name_ar: section?.name_ar || "",
+    slug: section?.slug || "",
+    cover_url: section?.cover_url || "",
+  });
+
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setName(section?.name_ar || "");
+    setForm({
+      name_ar: section?.name_ar || "",
+      slug: section?.slug || "",
+      cover_url: section?.cover_url || "",
+    });
   }, [section]);
+
+  function updateField(key, value) {
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
 
   async function submit(e) {
     e.preventDefault();
 
     if (!section) return;
 
+    const cleanName = form.name_ar.trim();
+    const cleanSlug = slugify(form.slug || form.name_ar);
+
+    if (!cleanName) {
+      toast.error("Section name is required");
+      return;
+    }
+
+    if (!cleanSlug) {
+      toast.error("Section slug is required");
+      return;
+    }
+
     setSaving(true);
 
     try {
-      if (!name.trim()) throw new Error("Section name is required.");
+      const { data: duplicateSection, error: duplicateError } = await supabase
+        .from("sections")
+        .select("id")
+        .eq("menu_version_id", menuId)
+        .eq("slug", cleanSlug)
+        .neq("id", section.id)
+        .maybeSingle();
+
+      if (duplicateError) throw duplicateError;
+
+      if (duplicateSection) {
+        throw new Error("Another section already uses this slug.");
+      }
 
       const { error } = await supabase
         .from("sections")
-        .update({ name_ar: name.trim() })
+        .update({
+          name_ar: cleanName,
+          slug: cleanSlug,
+          cover_url: form.cover_url.trim() || null,
+        })
         .eq("id", section.id);
 
       if (error) throw error;
 
-      toast.success("Section renamed");
+      toast.success("Section saved");
       onDone();
     } catch (err) {
-      toast.error(err.message || "Failed to rename section");
+      toast.error(err.message || "Failed to save section");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal open={Boolean(section)} title="Rename Section" onClose={onClose}>
+    <Modal open={Boolean(section)} title="Section Settings" onClose={onClose}>
       <form onSubmit={submit} className="grid gap-4">
         <Field label="Section name">
           <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={form.name_ar}
+            onChange={(e) => updateField("name_ar", e.target.value)}
             dir="rtl"
             placeholder="اسم القسم"
           />
         </Field>
 
+        <Field label="Section slug">
+          <Input
+            value={form.slug}
+            onChange={(e) => updateField("slug", e.target.value)}
+            onBlur={() => updateField("slug", slugify(form.slug))}
+            dir="ltr"
+            placeholder="breakfast"
+          />
+        </Field>
+
+        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-white/35">
+            Public section URL
+          </p>
+
+          <p className="mt-2 break-all text-sm font-black text-[#ff7a00]" dir="ltr">
+            /{slugify(form.slug || form.name_ar)}
+          </p>
+        </div>
+
+        <ImageUploadField
+          label="Section cover image"
+          value={form.cover_url}
+          onChange={(url) => updateField("cover_url", url)}
+          folder="sections"
+          hint="This image appears on the public section card. If empty, the first item image will be used."
+        />
+
         <Button
           type="submit"
           loading={saving}
           loadingText="Saving..."
-          disabled={!name.trim()}
+          disabled={!form.name_ar.trim()}
         >
-          Save name
+          Save section
         </Button>
       </form>
     </Modal>
   );
 }
+
 
 function ItemModal({ data, onClose, onDone }) {
   const [loading, setLoading] = useState(false);

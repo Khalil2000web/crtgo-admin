@@ -1,18 +1,23 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
   ArrowLeft,
+  ExternalLink,
+  LinkIcon,
+  Loader2,
   RotateCcw,
   Save,
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { supabase } from "../lib/supabase";
 import BranchTabs from "../components/BranchTabs";
 import { useConfirm } from "../components/ConfirmProvider";
+import { supabase } from "../lib/supabase";
+import { slugify } from "../lib/slug";
+import { getPublicMenuUrl } from "../lib/urls";
 import {
   Badge,
   Button,
@@ -29,6 +34,7 @@ async function loadBranch(branchId) {
     .from("branches")
     .select(`
       id,
+      business_id,
       name,
       slug,
       address,
@@ -38,7 +44,7 @@ async function loadBranch(branchId) {
       facebook,
       tiktok,
       status,
-      business_id,
+      is_main,
       businesses (
         id,
         name,
@@ -55,128 +61,180 @@ async function loadBranch(branchId) {
     .single();
 
   if (error) throw error;
+
   return data;
+}
+
+function getActiveMenu(branch) {
+  return (
+    branch?.menu_versions?.find((menu) => menu.status === "active") ||
+    branch?.menu_versions?.[0] ||
+    null
+  );
+}
+
+function emptyToNull(value) {
+  const clean = String(value || "").trim();
+  return clean ? clean : null;
+}
+
+function getInitialForm(branch, menu) {
+  return {
+    branchName: branch?.name || "",
+    branchSlug: branch?.slug || "",
+    address: branch?.address || "",
+    phone: branch?.phone || "",
+    whatsapp: branch?.whatsapp || "",
+    instagram: branch?.instagram || "",
+    facebook: branch?.facebook || "",
+    tiktok: branch?.tiktok || "",
+    menuName: menu?.name || "Main Menu",
+    menuDescription: menu?.description_ar || "",
+  };
 }
 
 export default function BranchGeneralPage() {
   const { branchId } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
 
+  const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [localForm, setLocalForm] = useState(null);
 
   const {
     data: branch,
     isLoading,
     error,
+    isFetching,
   } = useQuery({
     queryKey: ["branch-general", branchId],
     queryFn: () => loadBranch(branchId),
   });
 
-  const menu = useMemo(() => {
-    return (
-      branch?.menu_versions?.find((item) => item.status === "active") ||
-      branch?.menu_versions?.[0] ||
-      null
-    );
-  }, [branch]);
+  const menu = useMemo(() => getActiveMenu(branch), [branch]);
 
   const initialForm = useMemo(() => {
-    return {
-      branch_name: branch?.name || "",
-      menu_name: menu?.name || "Main Menu",
-      description_ar: menu?.description_ar || "",
-      address: branch?.address || "",
-      phone: branch?.phone || "",
-      whatsapp: branch?.whatsapp || "",
-      instagram: branch?.instagram || "",
-      facebook: branch?.facebook || "",
-      tiktok: branch?.tiktok || "",
-    };
+    if (!branch || !menu) return null;
+    return getInitialForm(branch, menu);
   }, [branch, menu]);
 
-  const form = localForm || initialForm;
-  const dirty = JSON.stringify(form) !== JSON.stringify(initialForm);
-  const archived = branch?.status === "archived";
+  const dirty = useMemo(() => {
+    if (!form || !initialForm) return false;
+    return JSON.stringify(form) !== JSON.stringify(initialForm);
+  }, [form, initialForm]);
+
+  useEffect(() => {
+    if (!branch || !menu) return;
+    setForm(getInitialForm(branch, menu));
+  }, [branch?.id, menu?.id]);
 
   function updateField(key, value) {
-    setLocalForm((current) => ({
-      ...(current || initialForm),
+    setForm((current) => ({
+      ...current,
       [key]: value,
     }));
   }
 
-  function discard() {
-    setLocalForm(initialForm);
-    toast.success("Changes discarded");
+  async function refresh() {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["branch-general", branchId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["branch-menu", branchId],
+      }),
+    ]);
   }
 
-  async function save() {
-    if (!dirty || !branch || !menu) return;
+  async function saveChanges(e) {
+    e.preventDefault();
+
+    if (!branch || !menu || !form) return;
+
+    const cleanSlug = slugify(form.branchSlug);
+
+    if (!form.branchName.trim()) {
+      toast.error("Branch name is required");
+      return;
+    }
+
+    if (!cleanSlug) {
+      toast.error("Branch slug is required");
+      return;
+    }
 
     setSaving(true);
 
     try {
-      const { error: menuError } = await supabase
-        .from("menu_versions")
-        .update({
-          name: form.menu_name.trim() || "Main Menu",
-          description_ar: form.description_ar.trim() || null,
-        })
-        .eq("id", menu.id);
+      const { data: duplicateSlug, error: duplicateError } = await supabase
+        .from("branches")
+        .select("id")
+        .eq("business_id", branch.business_id)
+        .eq("slug", cleanSlug)
+        .neq("id", branch.id)
+        .maybeSingle();
 
-      if (menuError) throw menuError;
+      if (duplicateError) throw duplicateError;
+
+      if (duplicateSlug) {
+        throw new Error("Another branch already uses this slug.");
+      }
 
       const { error: branchError } = await supabase
         .from("branches")
         .update({
-          name: form.branch_name.trim() || branch.name,
-          address: form.address.trim() || null,
-          phone: form.phone.trim() || null,
-          whatsapp: form.whatsapp.trim() || null,
-          instagram: form.instagram.trim() || null,
-          facebook: form.facebook.trim() || null,
-          tiktok: form.tiktok.trim() || null,
+          name: form.branchName.trim(),
+          slug: cleanSlug,
+          address: emptyToNull(form.address),
+          phone: emptyToNull(form.phone),
+          whatsapp: emptyToNull(form.whatsapp),
+          instagram: emptyToNull(form.instagram),
+          facebook: emptyToNull(form.facebook),
+          tiktok: emptyToNull(form.tiktok),
         })
         .eq("id", branch.id);
 
       if (branchError) throw branchError;
 
-      toast.success("General info saved");
+      const { error: menuError } = await supabase
+        .from("menu_versions")
+        .update({
+          name: form.menuName.trim() || "Main Menu",
+          description_ar: emptyToNull(form.menuDescription),
+        })
+        .eq("id", menu.id);
 
-      await queryClient.invalidateQueries({
-        queryKey: ["branch-general", branchId],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["branch-menu", branchId],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["business", branch.business_id],
-      });
+      if (menuError) throw menuError;
 
-      setLocalForm(null);
+      setForm((current) => ({
+        ...current,
+        branchSlug: cleanSlug,
+      }));
+
+      toast.success("Branch saved");
+      await refresh();
     } catch (err) {
-      toast.error(err.message || "Failed to save general info");
+      toast.error(err.message || "Failed to save branch");
     } finally {
       setSaving(false);
     }
   }
 
-  async function archiveOrRestore() {
-    const nextStatus = archived ? "active" : "archived";
+  async function archiveOrRestoreBranch() {
+    if (!branch) return;
+
+    const willArchive = branch.status !== "archived";
 
     const ok = await confirm({
-      title: archived ? "Restore branch?" : "Archive branch?",
-      message: archived
-        ? "This branch will become active again."
-        : "This branch will be archived. You can restore it later.",
-      confirmText: archived ? "Restore branch" : "Archive branch",
-      danger: !archived,
+      title: willArchive ? "Archive branch?" : "Restore branch?",
+      message: willArchive
+        ? "This branch will stop appearing on the public menu."
+        : "This branch will become public again.",
+      confirmText: willArchive ? "Archive branch" : "Restore branch",
+      danger: willArchive,
     });
 
     if (!ok) return;
@@ -186,33 +244,30 @@ export default function BranchGeneralPage() {
     try {
       const { error } = await supabase
         .from("branches")
-        .update({ status: nextStatus })
+        .update({
+          status: willArchive ? "archived" : "active",
+        })
         .eq("id", branch.id);
 
       if (error) throw error;
 
-      toast.success(archived ? "Branch restored" : "Branch archived");
-
-      await queryClient.invalidateQueries({
-        queryKey: ["branch-general", branchId],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["business", branch.business_id],
-      });
-      await queryClient.invalidateQueries({ queryKey: ["businesses"] });
+      toast.success(willArchive ? "Branch archived" : "Branch restored");
+      await refresh();
     } catch (err) {
-      toast.error(err.message || "Failed to update branch status");
+      toast.error(err.message || "Failed to update branch");
     } finally {
       setArchiving(false);
     }
   }
 
   async function deleteBranch() {
+    if (!branch) return;
+
     const ok = await confirm({
-      title: "Delete branch permanently?",
+      title: "Delete branch forever?",
       message:
-        "This will delete the branch, its menus, sections, and items. This cannot be undone.",
-      confirmText: "Delete branch",
+        "This will delete the branch, its menu, sections, and all items. This cannot be undone.",
+      confirmText: "Delete forever",
       danger: true,
     });
 
@@ -231,12 +286,12 @@ export default function BranchGeneralPage() {
       const menuIds = (menus || []).map((item) => item.id);
 
       if (menuIds.length) {
-        const { data: sections, error: sectionsError } = await supabase
+        const { data: sections, error: sectionsSelectError } = await supabase
           .from("sections")
           .select("id")
           .in("menu_version_id", menuIds);
 
-        if (sectionsError) throw sectionsError;
+        if (sectionsSelectError) throw sectionsSelectError;
 
         const sectionIds = (sections || []).map((item) => item.id);
 
@@ -249,19 +304,19 @@ export default function BranchGeneralPage() {
           if (itemsError) throw itemsError;
         }
 
-        const { error: deleteSectionsError } = await supabase
+        const { error: sectionsError } = await supabase
           .from("sections")
           .delete()
           .in("menu_version_id", menuIds);
 
-        if (deleteSectionsError) throw deleteSectionsError;
+        if (sectionsError) throw sectionsError;
 
-        const { error: deleteMenusError } = await supabase
+        const { error: menusDeleteError } = await supabase
           .from("menu_versions")
           .delete()
           .eq("branch_id", branch.id);
 
-        if (deleteMenusError) throw deleteMenusError;
+        if (menusDeleteError) throw menusDeleteError;
       }
 
       const { error: branchError } = await supabase
@@ -273,12 +328,9 @@ export default function BranchGeneralPage() {
 
       toast.success("Branch deleted");
 
-      await queryClient.invalidateQueries({
-        queryKey: ["business", branch.business_id],
+      navigate(`/business/${branch.business_id}`, {
+        replace: true,
       });
-      await queryClient.invalidateQueries({ queryKey: ["businesses"] });
-
-      navigate(`/business/${branch.business_id}`, { replace: true });
     } catch (err) {
       toast.error(err.message || "Failed to delete branch");
     } finally {
@@ -290,44 +342,65 @@ export default function BranchGeneralPage() {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <SkeletonCard className="h-40" />
-        <SkeletonCard className="mt-5 h-[620px]" />
+
+        <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <SkeletonCard className="h-96" />
+          <SkeletonCard className="h-96" />
+        </div>
       </main>
     );
   }
 
-  if (error || !branch || !menu) {
+  if (error) {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          {error?.message || "Branch not found"}
+          {error.message}
         </p>
       </main>
     );
   }
 
+  if (!branch || !menu || !form) {
+    return (
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
+        <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
+          Branch not found.
+        </p>
+      </main>
+    );
+  }
+
+  const publicUrl = getPublicMenuUrl(branch.businesses?.slug, form.branchSlug);
+  const archived = branch.status === "archived";
+
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
         eyebrow="Branch Settings"
-        title="General"
-        subtitle={`Manage the main info and social links for ${branch.name}.`}
+        title={branch.name}
+        subtitle="Control this branch details, slug, links, and public status."
         action={
-          <Button
-            type="button"
-            loading={saving}
-            loadingText="Saving..."
-            disabled={!dirty}
-            onClick={save}
-          >
-            <Save size={17} />
-            Save
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
+            >
+              <ExternalLink size={17} />
+              Open Public Page
+            </a>
+          </div>
         }
       />
 
       <BranchTabs branchId={branchId} />
 
-      <section className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6">
+      <form
+        onSubmit={saveChanges}
+        className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6"
+      >
         <Link
           to={`/business/${branch.business_id}`}
           className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
@@ -336,186 +409,287 @@ export default function BranchGeneralPage() {
           Back to business
         </Link>
 
-        <div className="mt-5 grid gap-5">
-          <Card className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-black tracking-[-0.04em]">
-                  General info
-                </h2>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-3xl font-black tracking-[-0.05em]">
+              General
+            </h2>
 
-                <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-                  This controls the branch name, menu name, and public menu description.
+            <p className="mt-1 text-sm font-bold text-white/35">
+              This is the branch information shown on public menu pages.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {archived ? (
+              <Badge tone="warning">Archived</Badge>
+            ) : (
+              <Badge tone="success">Active</Badge>
+            )}
+
+            {isFetching && (
+              <Badge tone="neutral">
+                <Loader2 size={13} className="animate-spin" />
+                Syncing
+              </Badge>
+            )}
+
+            {dirty && <Badge tone="warning">Unsaved changes</Badge>}
+          </div>
+        </div>
+
+        <div className="mt-6 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <section className="grid min-w-0 gap-5">
+            <Card className="min-w-0 p-5">
+              <div className="mb-5">
+                <h3 className="text-xl font-black">Branch identity</h3>
+
+                <p className="mt-1 text-sm font-bold leading-6 text-white/35">
+                  Slug controls the public URL. Example:
+                  <span className="mx-1 font-black text-[#ff7a00]">
+                    /{form.branchSlug}
+                  </span>
                 </p>
               </div>
 
-              <Badge tone={archived ? "warning" : "success"}>
-                {archived ? "Archived" : "Active"}
-              </Badge>
-            </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Branch name">
+                  <Input
+                    value={form.branchName}
+                    onChange={(e) =>
+                      updateField("branchName", e.target.value)
+                    }
+                    placeholder="Haifa"
+                  />
+                </Field>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label="Branch name">
-                <Input
-                  value={form.branch_name}
-                  onChange={(e) => updateField("branch_name", e.target.value)}
-                  placeholder="Main Branch"
-                />
-              </Field>
+                <Field label="Branch slug">
+                  <Input
+                    value={form.branchSlug}
+                    onChange={(e) =>
+                      updateField("branchSlug", e.target.value)
+                    }
+                    onBlur={() =>
+                      updateField("branchSlug", slugify(form.branchSlug))
+                    }
+                    placeholder="haifa"
+                    dir="ltr"
+                  />
+                </Field>
+              </div>
 
-              <Field label="Menu name">
-                <Input
-                  value={form.menu_name}
-                  onChange={(e) => updateField("menu_name", e.target.value)}
-                  placeholder="Main Menu"
-                />
-              </Field>
-            </div>
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/35">
+                  <LinkIcon size={14} />
+                  Public URL
+                </p>
 
-            <div className="mt-4">
-              <Field label="Arabic menu description">
-                <Textarea
-                  value={form.description_ar}
-                  onChange={(e) =>
-                    updateField("description_ar", e.target.value)
-                  }
-                  placeholder="وصف قصير للقائمة"
-                  dir="rtl"
-                />
-              </Field>
-            </div>
-          </Card>
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 block break-all text-sm font-black text-[#ff7a00] hover:underline"
+                  dir="ltr"
+                >
+                  {publicUrl}
+                </a>
+              </div>
+            </Card>
 
-          <Card className="p-5">
-            <h2 className="text-2xl font-black tracking-[-0.04em]">
-              Contact & social
-            </h2>
+            <Card className="min-w-0 p-5">
+              <div className="mb-5">
+                <h3 className="text-xl font-black">Menu text</h3>
 
-            <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-              These links and numbers can appear on the public menu.
-            </p>
+                <p className="mt-1 text-sm font-bold leading-6 text-white/35">
+                  These appear on the public menu pages.
+                </p>
+              </div>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4">
+                <Field label="Menu name">
+                  <Input
+                    value={form.menuName}
+                    onChange={(e) => updateField("menuName", e.target.value)}
+                    placeholder="Main Menu"
+                  />
+                </Field>
+
+                <Field label="Menu description">
+                  <Textarea
+                    value={form.menuDescription}
+                    onChange={(e) =>
+                      updateField("menuDescription", e.target.value)
+                    }
+                    placeholder="وصف قصير للقائمة"
+                    dir="rtl"
+                  />
+                </Field>
+              </div>
+            </Card>
+
+            <Card className="min-w-0 p-5">
+              <div className="mb-5">
+                <h3 className="text-xl font-black">Location</h3>
+
+                <p className="mt-1 text-sm font-bold leading-6 text-white/35">
+                  Address is shown inside the contact area and branch selector.
+                </p>
+              </div>
+
               <Field label="Address">
                 <Input
                   value={form.address}
                   onChange={(e) => updateField("address", e.target.value)}
-                  placeholder="Street, city..."
+                  placeholder="Haifa, Main street..."
                 />
               </Field>
+            </Card>
 
-              <Field label="Phone">
-                <Input
-                  value={form.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
-                  placeholder="0500000000"
-                  dir="ltr"
-                />
-              </Field>
+            <Card className="min-w-0 p-5">
+              <div className="mb-5">
+                <h3 className="text-xl font-black">Contact links</h3>
 
-              <Field label="WhatsApp">
-                <Input
-                  value={form.whatsapp}
-                  onChange={(e) => updateField("whatsapp", e.target.value)}
-                  placeholder="972500000000"
-                  dir="ltr"
-                />
-              </Field>
+                <p className="mt-1 text-sm font-bold leading-6 text-white/35">
+                  These are used by the public bottom nav contact sheet.
+                </p>
+              </div>
 
-              <Field label="Instagram">
-                <Input
-                  value={form.instagram}
-                  onChange={(e) => updateField("instagram", e.target.value)}
-                  placeholder="@restaurant"
-                  dir="ltr"
-                />
-              </Field>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Phone">
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => updateField("phone", e.target.value)}
+                    placeholder="0500000000"
+                    dir="ltr"
+                  />
+                </Field>
 
-              <Field label="Facebook">
-                <Input
-                  value={form.facebook}
-                  onChange={(e) => updateField("facebook", e.target.value)}
-                  placeholder="https://facebook.com/..."
-                  dir="ltr"
-                />
-              </Field>
+                <Field label="WhatsApp">
+                  <Input
+                    value={form.whatsapp}
+                    onChange={(e) => updateField("whatsapp", e.target.value)}
+                    placeholder="972500000000"
+                    dir="ltr"
+                  />
+                </Field>
 
-              <Field label="TikTok">
-                <Input
-                  value={form.tiktok}
-                  onChange={(e) => updateField("tiktok", e.target.value)}
-                  placeholder="@restaurant"
-                  dir="ltr"
-                />
-              </Field>
-            </div>
-          </Card>
+                <Field label="Instagram">
+                  <Input
+                    value={form.instagram}
+                    onChange={(e) =>
+                      updateField("instagram", e.target.value)
+                    }
+                    placeholder="@crtgo"
+                    dir="ltr"
+                  />
+                </Field>
 
-          <Card className="border-red-400/15 bg-red-500/[0.04] p-5">
-            <h2 className="text-2xl font-black tracking-[-0.04em] text-red-100">
-              Danger zone
-            </h2>
+                <Field label="Facebook">
+                  <Input
+                    value={form.facebook}
+                    onChange={(e) => updateField("facebook", e.target.value)}
+                    placeholder="https://facebook.com/..."
+                    dir="ltr"
+                  />
+                </Field>
 
-            <p className="mt-1 text-sm font-bold leading-6 text-red-100/45">
-              These actions affect this branch only. Archive is reversible. Delete is permanent.
-            </p>
+                <Field label="TikTok">
+                  <Input
+                    value={form.tiktok}
+                    onChange={(e) => updateField("tiktok", e.target.value)}
+                    placeholder="@crtgo"
+                    dir="ltr"
+                  />
+                </Field>
+              </div>
+            </Card>
+          </section>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <aside className="grid h-fit min-w-0 gap-5 xl:sticky xl:top-6">
+            <Card className="min-w-0 p-5">
+              <h3 className="text-xl font-black">Status</h3>
+
+              <p className="mt-2 text-sm font-bold leading-6 text-white/35">
+                Archived branches do not appear on the public menu.
+              </p>
+
+              <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-white/30">
+                  Current status
+                </p>
+
+                <p className="mt-2 text-2xl font-black tracking-[-0.05em]">
+                  {archived ? "Archived" : "Active"}
+                </p>
+              </div>
+
               <Button
                 type="button"
-                variant="secondary"
+                className="mt-4 w-full"
+                variant={archived ? "primary" : "secondary"}
                 loading={archiving}
                 loadingText={archived ? "Restoring..." : "Archiving..."}
-                onClick={archiveOrRestore}
+                onClick={archiveOrRestoreBranch}
               >
-                {archived ? <RotateCcw size={17} /> : <Archive size={17} />}
+                {archived ? <RotateCcw size={16} /> : <Archive size={16} />}
                 {archived ? "Restore branch" : "Archive branch"}
               </Button>
+            </Card>
+
+            <Card className="min-w-0 border-red-400/15 bg-red-500/5 p-5">
+              <h3 className="text-xl font-black text-red-100">
+                Danger zone
+              </h3>
+
+              <p className="mt-2 text-sm font-bold leading-6 text-red-100/50">
+                Deleting removes the branch, its menu, sections, and items.
+              </p>
 
               <Button
                 type="button"
                 variant="danger"
+                className="mt-5 w-full"
                 loading={deleting}
                 loadingText="Deleting..."
                 onClick={deleteBranch}
               >
-                <Trash2 size={17} />
-                Delete branch
+                <Trash2 size={16} />
+                Delete branch forever
               </Button>
-            </div>
-          </Card>
+            </Card>
+          </aside>
         </div>
-      </section>
 
-      {dirty && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl lg:left-[19rem]">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-black text-[#ffbd7c]">
-              You have unsaved general changes
-            </p>
+        {dirty && (
+          <div className="fixed bottom-4 left-4 right-4 z-[80] rounded-[26px] border border-white/10 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-2xl lg:left-[19rem]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-black text-white/70">
+                You have unsaved branch changes.
+              </p>
 
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={discard}
-                disabled={saving}
-              >
-                Discard
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setForm(initialForm)}
+                  disabled={saving}
+                >
+                  Discard
+                </Button>
 
-              <Button
-                type="button"
-                onClick={save}
-                loading={saving}
-                loadingText="Saving..."
-              >
-                Save changes
-              </Button>
+                <Button
+                  type="submit"
+                  loading={saving}
+                  loadingText="Saving..."
+                >
+                  <Save size={16} />
+                  Save changes
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </form>
     </main>
   );
 }
