@@ -478,22 +478,42 @@ export default function MenuEditorPage() {
                       {section.items.map((item) => (
                         <article
                           key={item.id}
-                          className="flex min-w-0 gap-4 rounded-2xl border border-white/10 bg-black/25 p-3"
+                          className="flex flex-col min-w-0 gap-4 rounded-2xl border border-white/10 bg-black/25 p-3"
                         >
-                          <div className="flex flex-col gap-2">
-                          <div className="flex h-27 w-27 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
-                            {item.image_url ? (
-                              <img
-                                src={item.image_url}
-                                alt="Image"
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <ImagePlus size={22} />
-                            )}
-                          </div>
+                          
+<div className="flex items-center justify-between gap-2">
+  <div className="flex h-27 w-27 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
+    {item.image_url ? (
+      <img
+        src={item.image_url}
+        alt="Image"
+        className="h-full w-full object-cover"
+      />
+    ) : (
+      <ImagePlus size={22} />
+    )}
+  </div>
 
-                                                      <div className="mt-3 flex flex-wrap gap-2 justify-end">
+  <div className="flex min-w-0 flex-1 flex-col gap-2">
+    <h3 className="text-lg font-black" dir="rtl">
+      {item.name_ar}
+    </h3>
+
+    <p
+      className="mt-1 line-clamp-2 text-sm font-bold text-white/40"
+      dir="rtl"
+    >
+      {item.description_ar || "No description"}
+    </p>
+
+    <p className="shrink-0 text-right text-lg font-black text-[#ff7a00]">
+      ₪{Number(item.price || 0).toFixed(2)}
+    </p>
+  </div>
+</div>
+
+                          
+<div className="mt-3 flex flex-wrap gap-3 justify-center">
                               <button
                                 type="button"
                                 disabled={togglingItemId === item.id || archived}
@@ -533,34 +553,6 @@ export default function MenuEditorPage() {
                                 Delete
                               </Button>
                             </div>
-
-                            </div>
-
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-col gap-3">
-                              
-                                <h3
-                                  className=" text-lg font-black"
-                                  dir="rtl"
-                                >
-                                  {item.name_ar}
-                                </h3>
-
-                                <p
-                                  className="mt-1 line-clamp-2 max-w-2xl text-sm font-bold text-white/40"
-                                  dir="rtl"
-                                >
-                                  {item.description_ar || "No description"}
-                                </p>
-                              
-
-                              <p className="shrink-0 text-lg text-right font-black text-[#ff7a00]">
-                                ₪{Number(item.price || 0).toFixed(2)}
-                              </p>
-                            </div>
-
-
-                          </div>
                         </article>
                       ))}
                     </div>
