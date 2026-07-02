@@ -127,15 +127,19 @@ export default function Dashboard() {
               Refresh
             </Button>
 
-            <Button onClick={() => setNewBusinessOpen(true)}>
-              <Plus size={17} />
-              New Business
-            </Button>
           </div>
         }
       />
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        
+        <div className="flex flex-col gap-2 mb-4 sm:flex-row">
+                <Button onClick={() => setNewBusinessOpen(true)}>
+              <Plus size={17} />
+              New Business
+            </Button>
+        </div>
+        
         <div className="hidden gap-4 md:grid-cols-3">
           <Card className="p-5">
             <Stat label="Businesses" value={businesses.length} />
