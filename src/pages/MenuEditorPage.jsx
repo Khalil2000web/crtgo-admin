@@ -286,8 +286,21 @@ export default function MenuEditorPage() {
         eyebrow="Menu Editor"
         title={branch.name}
         subtitle={publicUrl}
-        action={
-          <div className="flex flex-col gap-2 sm:flex-row">
+
+      />
+
+      <BranchTabs branchId={branchId} />
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6">
+        <Link
+          to={`/business/${branch.business_id}`}
+          className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
+        >
+          <ArrowLeft size={16} />
+          Back to business
+        </Link>
+
+        <div className="flex flex-col gap-2 mt-4 sm:flex-row">
             <a
               href={publicUrl}
               target="_blank"
@@ -306,19 +319,6 @@ export default function MenuEditorPage() {
               Branch Settings
             </Link>
           </div>
-        }
-      />
-
-      <BranchTabs branchId={branchId} />
-
-      <section className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6">
-        <Link
-          to={`/business/${branch.business_id}`}
-          className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
-        >
-          <ArrowLeft size={16} />
-          Back to business
-        </Link>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -343,7 +343,7 @@ export default function MenuEditorPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-5 grid gap-4 grid-cols-2 lg:grid-cols-5">
           <Card className="min-w-0 p-4">
             <Stat label="Sections" value={sections.length} />
           </Card>
@@ -480,11 +480,12 @@ export default function MenuEditorPage() {
                           key={item.id}
                           className="flex min-w-0 gap-4 rounded-2xl border border-white/10 bg-black/25 p-3"
                         >
-                          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
+                          <div className="flex flex-col gap-2">
+                          <div className="flex h-27 w-27 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
                             {item.image_url ? (
                               <img
                                 src={item.image_url}
-                                alt=""
+                                alt="Image"
                                 className="h-full w-full object-cover"
                               />
                             ) : (
@@ -492,30 +493,7 @@ export default function MenuEditorPage() {
                             )}
                           </div>
 
-                          <div className="min-w-0 flex-1">
-                            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="min-w-0">
-                                <h3
-                                  className="truncate text-lg font-black"
-                                  dir="rtl"
-                                >
-                                  {item.name_ar}
-                                </h3>
-
-                                <p
-                                  className="mt-1 line-clamp-2 max-w-2xl text-sm font-bold text-white/40"
-                                  dir="rtl"
-                                >
-                                  {item.description_ar || "No description"}
-                                </p>
-                              </div>
-
-                              <p className="shrink-0 text-lg font-black text-[#ff7a00]">
-                                ₪{Number(item.price || 0).toFixed(2)}
-                              </p>
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap gap-2">
+                                                      <div className="mt-3 flex flex-wrap gap-2 justify-end">
                               <button
                                 type="button"
                                 disabled={togglingItemId === item.id || archived}
@@ -555,6 +533,33 @@ export default function MenuEditorPage() {
                                 Delete
                               </Button>
                             </div>
+
+                            </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-col gap-3">
+                              
+                                <h3
+                                  className=" text-lg font-black"
+                                  dir="rtl"
+                                >
+                                  {item.name_ar}
+                                </h3>
+
+                                <p
+                                  className="mt-1 line-clamp-2 max-w-2xl text-sm font-bold text-white/40"
+                                  dir="rtl"
+                                >
+                                  {item.description_ar || "No description"}
+                                </p>
+                              
+
+                              <p className="shrink-0 text-lg text-right font-black text-[#ff7a00]">
+                                ₪{Number(item.price || 0).toFixed(2)}
+                              </p>
+                            </div>
+
+
                           </div>
                         </article>
                       ))}
@@ -770,7 +775,7 @@ function ItemModal({ data, onClose, onDone }) {
             value={form.price}
             onChange={(e) => updateField("price", e.target.value)}
             placeholder="25"
-            dir="ltr"
+            dir="rtl"
           />
         </Field>
 

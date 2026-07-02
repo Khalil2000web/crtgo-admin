@@ -115,13 +115,13 @@ export default function Dashboard() {
   }
 
   return (
-     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white pb-20">
       <PageHeader
         eyebrow="Workspace"
         title="Businesses"
         subtitle="Manage every client, branch, and menu from one clean workspace."
         action={
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex gap-2">
             <Button variant="secondary" onClick={refresh}>
               <RefreshCw size={17} className={isFetching ? "animate-spin" : ""} />
               Refresh
@@ -136,7 +136,7 @@ export default function Dashboard() {
       />
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="hidden gap-4 md:grid-cols-3">
           <Card className="p-5">
             <Stat label="Businesses" value={businesses.length} />
           </Card>
@@ -150,7 +150,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <Card className="mt-5 p-3">
+        <Card className="p-3">
           <div className="relative">
             <Search
               size={17}

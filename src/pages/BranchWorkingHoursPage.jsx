@@ -113,9 +113,9 @@ export default function BranchWorkingHoursPage() {
 
   if (isLoading) {
     return (
-     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <SkeletonCard className="h-40" />
-        <SkeletonCard className="mt-5 h-[560px]" />
+        <SkeletonCard className="mt-5 h-[620px]" />
       </main>
     );
   }
@@ -137,15 +137,7 @@ export default function BranchWorkingHoursPage() {
         title="Working Hours"
         subtitle={`Set opening times for ${branch.name}.`}
         action={
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button variant="secondary" onClick={openAll}>
-              Open all
-            </Button>
-
-            <Button variant="secondary" onClick={closeAll}>
-              Close all
-            </Button>
-
+          <div className="flex gap-2">
             <Button
               loading={saving}
               loadingText="Saving..."
@@ -169,6 +161,16 @@ export default function BranchWorkingHoursPage() {
           <ArrowLeft size={16} />
           Back to business
         </Link>
+
+        <div className="flex flex-col gap-2 mb-4 sm:flex-row">
+            <Button variant="secondary" onClick={openAll}>
+              Open all
+            </Button>
+
+            <Button variant="secondary" onClick={closeAll}>
+              Close all
+            </Button>
+          </div>
 
         <Card className="p-5">
           <WorkingHoursEditor

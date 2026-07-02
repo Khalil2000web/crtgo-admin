@@ -95,15 +95,21 @@ export default function BusinessPage() {
               Business
             </p>
 
-            <h1 className="mt-1 text-4xl font-black tracking-[-0.06em]">
+            <h1 className="mt-1 text-3xl font-black tracking-[-0.06em]">
               {business.name}
             </h1>
 
-            <p className="mt-2 max-w-2xl text-sm font-bold text-white/40">
+            <p className="mt-2 hidden max-w-sm text-sm font-bold text-white/40">
               {business.description || "Manage branches and menus."}
             </p>
           </div>
 
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-7xl px-4 sm:px-6">
+        
+        <div className="my-4 flex flex-col gap-4 lg:flex-row">
           <button
             type="button"
             onClick={() => setNewBranchOpen(true)}
@@ -112,10 +118,8 @@ export default function BusinessPage() {
             <Plus size={17} />
             New Branch
           </button>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+    </div>
+        
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">

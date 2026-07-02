@@ -138,7 +138,7 @@ export function Modal({ open, title, children, onClose, maxWidth = "max-w-xl" })
 export function PageHeader({ eyebrow, title, subtitle, action }) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#080808]/85 px-4 py-5 backdrop-blur-xl sm:px-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-row justify-between gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           {eyebrow && (
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ff7a00]">
@@ -146,12 +146,12 @@ export function PageHeader({ eyebrow, title, subtitle, action }) {
             </p>
           )}
 
-          <h1 className="mt-1 text-4xl font-black tracking-[-0.06em]">
+          <h1 className="mt-1 text-2xl font-black tracking-[-0.06em]">
             {title}
           </h1>
 
           {subtitle && (
-            <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-white/40">
+            <p className="mt-2 hidden max-w-sm text-sm font-bold leading-6 text-white/40">
               {subtitle}
             </p>
           )}
@@ -178,7 +178,7 @@ export function EmptyState({ icon, title, text, action }) {
         {icon}
       </div>
 
-      <h2 className="mt-6 text-3xl font-black tracking-[-0.05em]">{title}</h2>
+      <h2 className="mt-6 text-2xl font-black tracking-[-0.05em]">{title}</h2>
 
       <p className="mx-auto mt-3 max-w-md text-sm font-bold leading-7 text-white/42">
         {text}
