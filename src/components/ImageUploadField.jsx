@@ -1,5 +1,11 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Loader2, Trash2, UploadCloud } from "lucide-react";
+import {
+  ImagePlus,
+  Loader2,
+  Lock,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 import { uploadMenuImage } from "../lib/uploads";
@@ -11,17 +17,25 @@ export default function ImageUploadField({
   onChange,
   folder = "general",
   hint,
+  disabled = false,
+  disabledReason = "",
 }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
 
   const hasImage = Boolean(value?.trim());
+  const locked = Boolean(disabled);
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
     e.target.value = "";
 
     if (!file) return;
+
+    if (locked) {
+      toast.error(disabledReason || "Image upload is locked.");
+      return;
+    }
 
     setUploading(true);
 
@@ -37,8 +51,22 @@ export default function ImageUploadField({
   }
 
   function removeImage() {
+    if (locked) {
+      toast.error(disabledReason || "Image editing is locked.");
+      return;
+    }
+
     onChange("");
     toast.success("Image removed");
+  }
+
+  function openFilePicker() {
+    if (locked) {
+      toast.error(disabledReason || "Image upload is locked.");
+      return;
+    }
+
+    fileInputRef.current?.click();
   }
 
   return (
@@ -47,23 +75,41 @@ export default function ImageUploadField({
         {label}
       </p>
 
-      <div className="mt-3 min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/25">
+      <div
+        className={`mt-3 min-w-0 overflow-hidden rounded-[24px] border bg-black/25 ${
+          locked ? "border-yellow-400/20" : "border-white/10"
+        }`}
+      >
+        {locked && (
+          <div className="border-b border-yellow-400/15 bg-yellow-500/10 p-3">
+            <div className="flex gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-yellow-400/15 text-yellow-100">
+                <Lock size={16} />
+              </div>
+
+              <div>
+                <p className="text-sm font-black text-yellow-100">
+                  Image locked
+                </p>
+
+                <p className="mt-1 text-xs font-bold leading-5 text-yellow-100/55">
+                  {disabledReason || "This image field is locked by the plan."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="relative flex aspect-[16/9] min-h-48 w-full min-w-0 items-center justify-center overflow-hidden bg-white/[0.035]">
           {hasImage ? (
-            <img
-              src={value}
-              alt=""
-              className="h-full w-full object-cover"
-            />
+            <img src={value} alt="" className="h-full w-full object-cover" />
           ) : (
             <div className="grid place-items-center px-5 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ff7a00]">
                 <ImagePlus size={25} />
               </div>
 
-              <p className="mt-4 text-sm font-black text-white">
-                Add image
-              </p>
+              <p className="mt-4 text-sm font-black text-white">Add image</p>
 
               <p className="mt-1 max-w-xs text-xs font-bold leading-5 text-white/35">
                 {hint || "Upload an image or paste an image URL below."}
@@ -87,7 +133,7 @@ export default function ImageUploadField({
             onChange={(e) => onChange(e.target.value)}
             placeholder="https://..."
             dir="ltr"
-            disabled={uploading}
+            disabled={uploading || locked}
           />
 
           <div
@@ -98,15 +144,18 @@ export default function ImageUploadField({
             <Button
               type="button"
               variant={hasImage ? "secondary" : "primary"}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
+              onClick={openFilePicker}
+              disabled={uploading || locked}
               className="w-full"
             >
               {uploading ? (
                 <Loader2 size={16} className="animate-spin" />
+              ) : locked ? (
+                <Lock size={16} />
               ) : (
                 <UploadCloud size={16} />
               )}
+
               {uploading ? "Uploading..." : hasImage ? "Change" : "Add image"}
             </Button>
 
@@ -115,7 +164,7 @@ export default function ImageUploadField({
                 type="button"
                 variant="secondary"
                 onClick={removeImage}
-                disabled={uploading}
+                disabled={uploading || locked}
                 className="w-full"
               >
                 <Trash2 size={16} />
@@ -136,6 +185,7 @@ export default function ImageUploadField({
         accept="image/*"
         className="hidden"
         onChange={handleFileChange}
+        disabled={locked}
       />
     </div>
   );

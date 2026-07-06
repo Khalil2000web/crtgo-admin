@@ -1,10 +1,17 @@
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import {
   Building2,
   HelpCircle,
   LogOut,
   Menu,
   Settings,
+  ShieldCheck,
   UserCircle2,
   X,
 } from "lucide-react";
@@ -19,16 +26,33 @@ export default function AppShell() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     let alive = true;
 
     async function loadUser() {
-      const { data } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
 
       if (!alive) return;
 
-      setUser(data.user || null);
+      if (error || !data.user) {
+        setUser(null);
+        setIsOwner(false);
+        return;
+      }
+
+      setUser(data.user);
+
+      const { data: ownerData } = await supabase
+        .from("super_admins")
+        .select("user_id")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      if (!alive) return;
+
+      setIsOwner(Boolean(ownerData));
     }
 
     loadUser();
@@ -51,7 +75,7 @@ export default function AppShell() {
   return (
     <main className="flex h-[100dvh] w-full overflow-hidden bg-[#080808] text-white">
       <aside className="hidden h-full w-72 shrink-0 border-r border-white/10 bg-[#0b0b0b] p-4 lg:flex lg:flex-col">
-        <SidebarContent user={user} logout={logout} />
+        <SidebarContent user={user} isOwner={isOwner} logout={logout} />
       </aside>
 
       {mobileOpen && (
@@ -69,7 +93,12 @@ export default function AppShell() {
               </button>
             </div>
 
-            <SidebarContent user={user} logout={logout} hideBrand />
+            <SidebarContent
+              user={user}
+              isOwner={isOwner}
+              logout={logout}
+              hideBrand
+            />
           </aside>
         </div>
       )}
@@ -101,7 +130,7 @@ export default function AppShell() {
   );
 }
 
-function SidebarContent({ user, logout, hideBrand = false }) {
+function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
   return (
     <>
       {!hideBrand && <Brand />}
@@ -125,6 +154,16 @@ function SidebarContent({ user, logout, hideBrand = false }) {
           </div>
         </div>
       </div>
+
+      {isOwner && (
+        <Link
+          to="/owner"
+          className="mt-4 flex items-center gap-3 rounded-[22px] border border-[#ff7a00]/20 bg-[#ff7a00]/10 px-4 py-3 text-sm font-black text-[#ffbd7c] transition hover:bg-[#ff7a00]/15"
+        >
+          <ShieldCheck size={18} />
+          Owner Console
+        </Link>
+      )}
 
       <nav className="mt-6 grid gap-2">
         <SideLink to="/" icon={<Building2 size={18} />} label="Businesses" />
@@ -150,10 +189,7 @@ function SidebarContent({ user, logout, hideBrand = false }) {
           <HelpCircle size={18} />
           Help Center
         </button>
-
-        
       </nav>
-
 
       <div className="mt-auto grid gap-2">
         <button

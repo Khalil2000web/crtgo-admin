@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
 import BranchTabs from "../components/BranchTabs";
+import PlanLimitNotice from "../components/PlanLimitNotice";
 import {
   Badge,
   Button,
@@ -13,6 +14,9 @@ import {
   PageHeader,
   SkeletonCard,
 } from "../components/ui";
+
+import { useBusinessBilling } from "../hooks/useBusinessBilling";
+import { getLimitMessage, isSubscriptionLocked } from "../lib/billing";
 
 const LANGUAGES = [
   {
@@ -41,6 +45,7 @@ async function loadBranch(branchId) {
     .select(`
       id,
       name,
+      status,
       business_id,
       menu_versions (
         id,
@@ -63,10 +68,21 @@ export default function BranchLanguagesPage() {
   const [saving, setSaving] = useState(false);
   const [localForm, setLocalForm] = useState(null);
 
-  const { data: branch, isLoading, error } = useQuery({
+  const {
+    data: branch,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["branch-languages", branchId],
     queryFn: () => loadBranch(branchId),
+    enabled: Boolean(branchId),
   });
+
+  const {
+    data: billing,
+    isLoading: billingLoading,
+    error: billingError,
+  } = useBusinessBilling(branch?.business_id);
 
   const menu = useMemo(() => {
     return (
@@ -88,7 +104,28 @@ export default function BranchLanguagesPage() {
   const form = localForm || initialForm;
   const dirty = JSON.stringify(form) !== JSON.stringify(initialForm);
 
+  const archived = branch?.status === "archived";
+  const subscriptionLocked = Boolean(billing && isSubscriptionLocked(billing));
+
+  const locked =
+    archived || billingLoading || Boolean(billingError) || subscriptionLocked;
+
+  const lockMessage = archived
+    ? "Restore this branch before editing languages."
+    : billingLoading
+      ? "Billing is still loading. Try again in a second."
+      : billingError
+        ? billingError.message
+        : subscriptionLocked
+          ? getLimitMessage("locked", billing)
+          : "";
+
   function toggleLanguage(code) {
+    if (locked) {
+      toast.error(lockMessage || "Language settings are locked.");
+      return;
+    }
+
     const enabled = new Set(form.enabled_languages);
 
     if (enabled.has(code)) {
@@ -115,6 +152,11 @@ export default function BranchLanguagesPage() {
   }
 
   function setDefaultLanguage(code) {
+    if (locked) {
+      toast.error(lockMessage || "Language settings are locked.");
+      return;
+    }
+
     if (!form.enabled_languages.includes(code)) {
       toast.error("Enable this language first");
       return;
@@ -134,6 +176,11 @@ export default function BranchLanguagesPage() {
   async function save() {
     if (!dirty) return;
 
+    if (locked) {
+      toast.error(lockMessage || "Language settings are locked.");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -148,8 +195,17 @@ export default function BranchLanguagesPage() {
       if (error) throw error;
 
       toast.success("Languages saved");
-      await queryClient.invalidateQueries({ queryKey: ["branch-languages", branchId] });
-      await queryClient.invalidateQueries({ queryKey: ["branch-menu", branchId] });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["branch-languages", branchId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["branch-menu", branchId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["branch-appearance", branchId],
+        }),
+      ]);
+
       setLocalForm(null);
     } catch (err) {
       toast.error(err.message || "Failed to save languages");
@@ -160,7 +216,7 @@ export default function BranchLanguagesPage() {
 
   if (isLoading) {
     return (
-      <main className="h-full overflow-y-auto p-5">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <SkeletonCard className="h-40" />
         <SkeletonCard className="mt-5 h-[420px]" />
       </main>
@@ -169,7 +225,7 @@ export default function BranchLanguagesPage() {
 
   if (error || !menu) {
     return (
-     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           {error?.message || "Menu not found"}
         </p>
@@ -178,7 +234,7 @@ export default function BranchLanguagesPage() {
   }
 
   return (
-  <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
         eyebrow="Branch Settings"
         title="Languages"
@@ -187,7 +243,7 @@ export default function BranchLanguagesPage() {
           <Button
             loading={saving}
             loadingText="Saving..."
-            disabled={!dirty}
+            disabled={!dirty || locked}
             onClick={save}
           >
             <Save size={17} />
@@ -197,6 +253,12 @@ export default function BranchLanguagesPage() {
       />
 
       <BranchTabs branchId={branchId} />
+
+      {locked && (
+        <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
+          <PlanLimitNotice title="Languages locked" text={lockMessage} />
+        </section>
+      )}
 
       <section className="mx-auto max-w-7xl px-4 py-6 pb-32 sm:px-6">
         <Link
@@ -229,7 +291,7 @@ export default function BranchLanguagesPage() {
                     enabled
                       ? "border-[#ff7a00]/40 bg-[#ff7a00]/10"
                       : "border-white/10 bg-black/25"
-                  }`}
+                  } ${locked ? "opacity-60" : ""}`}
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -259,6 +321,7 @@ export default function BranchLanguagesPage() {
                     <div className="flex gap-2">
                       <Button
                         variant={enabled ? "secondary" : "primary"}
+                        disabled={locked}
                         onClick={() => toggleLanguage(language.code)}
                       >
                         {enabled ? "Disable" : "Enable"}
@@ -266,7 +329,7 @@ export default function BranchLanguagesPage() {
 
                       <Button
                         variant="secondary"
-                        disabled={!enabled || isDefault}
+                        disabled={!enabled || isDefault || locked}
                         onClick={() => setDefaultLanguage(language.code)}
                       >
                         <Check size={16} />
@@ -282,7 +345,7 @@ export default function BranchLanguagesPage() {
       </section>
 
       {dirty && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl lg:left-[19rem]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-black text-[#ffbd7c]">
               You have unsaved language changes
@@ -297,6 +360,7 @@ export default function BranchLanguagesPage() {
                 onClick={save}
                 loading={saving}
                 loadingText="Saving..."
+                disabled={locked}
               >
                 Save changes
               </Button>

@@ -33,6 +33,14 @@ import {
   Textarea,
 } from "../components/ui";
 
+import { useBusinessBilling } from "../hooks/useBusinessBilling";
+import {
+  canCreateItem,
+  getLimitMessage,
+  isSubscriptionLocked,
+} from "../lib/billing";
+import PlanLimitNotice from "../components/PlanLimitNotice";
+
 async function loadBranch(branchId) {
   const { data, error } = await supabase
     .from("branches")
@@ -52,22 +60,21 @@ async function loadBranch(branchId) {
         name,
         status,
         description_ar,
-sections (
-  id,
-  name_ar,
-  slug,
-  cover_url,
-  sort_order,
-  items (
-    id,
-    name_ar,
-    description_ar,
-    price,
-    image_url,
-    is_available,
-    sort_order
-  )
-)
+        sections (
+          id,
+          name_ar,
+          slug,
+          cover_url,
+          sort_order,
+          items (
+            id,
+            name_ar,
+            description_ar,
+            price,
+            image_url,
+            is_available,
+            sort_order
+          )
         )
       )
     `)
@@ -101,6 +108,7 @@ export default function MenuEditorPage() {
   } = useQuery({
     queryKey: ["branch-menu", branchId],
     queryFn: () => loadBranch(branchId),
+    enabled: Boolean(branchId),
   });
 
   const menu = useMemo(() => {
@@ -127,10 +135,40 @@ export default function MenuEditorPage() {
   const hiddenItems = allItems.filter((item) => !item.is_available);
   const itemsWithoutImages = allItems.filter((item) => !item.image_url);
 
+  const {
+    data: billing,
+    isLoading: billingLoading,
+    error: billingError,
+  } = useBusinessBilling(branch?.business_id);
+
+  const itemCount = allItems.length;
+  const locked = Boolean(billing && isSubscriptionLocked(billing));
+  const itemLimitReached = Boolean(
+    billing && !canCreateItem(billing, itemCount)
+  );
+  const archived = branch?.status === "archived";
+
+  const itemCreateBlocked =
+    billingLoading || Boolean(billingError) || locked || itemLimitReached;
+
+  const itemDisabledMessage = billingLoading
+    ? "Billing is still loading. Try again in a second."
+    : billingError
+      ? billingError.message
+      : locked
+        ? getLimitMessage("locked", billing)
+        : getLimitMessage("items", billing);
+
   async function refresh() {
     await queryClient.invalidateQueries({
       queryKey: ["branch-menu", branchId],
     });
+
+    if (branch?.business_id) {
+      await queryClient.invalidateQueries({
+        queryKey: ["business-billing", branch.business_id],
+      });
+    }
   }
 
   async function addSection(e) {
@@ -138,37 +176,47 @@ export default function MenuEditorPage() {
 
     if (!sectionName.trim()) return;
 
+    if (locked) {
+      toast.error(getLimitMessage("locked", billing));
+      return;
+    }
+
+    if (archived) {
+      toast.error("Restore this branch before editing.");
+      return;
+    }
+
     setAddingSection(true);
 
     try {
       if (!menu?.id) throw new Error("Menu not found.");
 
+      const sectionSlug = slugify(sectionName);
 
-const sectionSlug = slugify(sectionName);
+      if (!sectionSlug) {
+        throw new Error("Section slug is required.");
+      }
 
-const { data: duplicateSection, error: duplicateError } = await supabase
-  .from("sections")
-  .select("id")
-  .eq("menu_version_id", menu.id)
-  .eq("slug", sectionSlug)
-  .maybeSingle();
+      const { data: duplicateSection, error: duplicateError } = await supabase
+        .from("sections")
+        .select("id")
+        .eq("menu_version_id", menu.id)
+        .eq("slug", sectionSlug)
+        .maybeSingle();
 
-if (duplicateError) throw duplicateError;
+      if (duplicateError) throw duplicateError;
 
-if (duplicateSection) {
-  throw new Error("A section with this slug already exists.");
-}
+      if (duplicateSection) {
+        throw new Error("A section with this slug already exists.");
+      }
 
-const { error } = await supabase.from("sections").insert({
-  menu_version_id: menu.id,
-  name_ar: sectionName.trim(),
-  slug: sectionSlug,
-  cover_url: null,
-  sort_order: sections.length + 1,
-});
-
-
-
+      const { error } = await supabase.from("sections").insert({
+        menu_version_id: menu.id,
+        name_ar: sectionName.trim(),
+        slug: sectionSlug,
+        cover_url: null,
+        sort_order: sections.length + 1,
+      });
 
       if (error) throw error;
 
@@ -183,6 +231,16 @@ const { error } = await supabase.from("sections").insert({
   }
 
   async function deleteSection(section) {
+    if (locked) {
+      toast.error(getLimitMessage("locked", billing));
+      return;
+    }
+
+    if (archived) {
+      toast.error("Restore this branch before editing.");
+      return;
+    }
+
     const ok = await confirm({
       title: "Delete section?",
       message: `This will delete "${section.name_ar}" and all items inside it.`,
@@ -223,6 +281,16 @@ const { error } = await supabase.from("sections").insert({
   }
 
   async function toggleItem(item) {
+    if (locked) {
+      toast.error(getLimitMessage("locked", billing));
+      return;
+    }
+
+    if (archived) {
+      toast.error("Restore this branch before editing.");
+      return;
+    }
+
     setTogglingItemId(item.id);
 
     try {
@@ -243,6 +311,16 @@ const { error } = await supabase.from("sections").insert({
   }
 
   async function deleteItem(item) {
+    if (locked) {
+      toast.error(getLimitMessage("locked", billing));
+      return;
+    }
+
+    if (archived) {
+      toast.error("Restore this branch before editing.");
+      return;
+    }
+
     const ok = await confirm({
       title: "Delete item?",
       message: `This will delete "${item.name_ar}".`,
@@ -303,7 +381,6 @@ const { error } = await supabase.from("sections").insert({
   }
 
   const publicUrl = getPublicMenuUrl(branch.businesses?.slug, branch.slug);
-  const archived = branch.status === "archived";
 
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
@@ -311,10 +388,29 @@ const { error } = await supabase.from("sections").insert({
         eyebrow="Menu Editor"
         title={branch.name}
         subtitle={publicUrl}
-
       />
 
       <BranchTabs branchId={branchId} />
+
+      <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 pt-5 sm:px-6">
+        {locked && (
+          <PlanLimitNotice
+            title="Subscription locked"
+            text={getLimitMessage("locked", billing)}
+          />
+        )}
+
+        {billingError && (
+          <PlanLimitNotice title="Billing error" text={billingError.message} />
+        )}
+
+        {itemLimitReached && !locked && (
+          <PlanLimitNotice
+            title="Item limit reached"
+            text={getLimitMessage("items", billing)}
+          />
+        )}
+      </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6">
         <Link
@@ -325,25 +421,25 @@ const { error } = await supabase.from("sections").insert({
           Back to business
         </Link>
 
-        <div className="flex flex-col gap-2 mt-4 sm:flex-row">
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
-            >
-              <ExternalLink size={17} />
-              Open Public Menu
-            </a>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <a
+            href={publicUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
+          >
+            <ExternalLink size={17} />
+            Open Public Menu
+          </a>
 
-            <Link
-              to={`/branch/${branchId}/general`}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-4 text-sm font-black text-black transition hover:bg-white"
-            >
-              <Settings size={17} />
-              Branch Settings
-            </Link>
-          </div>
+          <Link
+            to={`/branch/${branchId}/general`}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-4 text-sm font-black text-black transition hover:bg-white"
+          >
+            <Settings size={17} />
+            Branch Settings
+          </Link>
+        </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -368,7 +464,7 @@ const { error } = await supabase.from("sections").insert({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4 grid-cols-2 lg:grid-cols-5">
+        <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-5">
           <Card className="min-w-0 p-4">
             <Stat label="Sections" value={sections.length} />
           </Card>
@@ -410,7 +506,12 @@ const { error } = await supabase.from("sections").insert({
                 type="submit"
                 loading={addingSection}
                 loadingText="Adding section..."
-                disabled={!sectionName.trim() || archived}
+                disabled={
+                  !sectionName.trim() ||
+                  archived ||
+                  locked ||
+                  Boolean(billingError)
+                }
               >
                 <Plus size={16} />
                 Add Section
@@ -462,16 +563,16 @@ const { error } = await supabase.from("sections").insert({
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-<Button
-  type="button"
-  variant="secondary"
-  size="sm"
-  disabled={archived}
-  onClick={() => setSectionModal(section)}
->
-  <Pencil size={15} />
-  Settings
-</Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={archived || locked}
+                        onClick={() => setSectionModal(section)}
+                      >
+                        <Pencil size={15} />
+                        Settings
+                      </Button>
 
                       <Button
                         type="button"
@@ -479,7 +580,7 @@ const { error } = await supabase.from("sections").insert({
                         size="sm"
                         loading={deletingSectionId === section.id}
                         loadingText="Deleting..."
-                        disabled={archived}
+                        disabled={archived || locked}
                         onClick={() => deleteSection(section)}
                       >
                         <Trash2 size={15} />
@@ -489,7 +590,7 @@ const { error } = await supabase.from("sections").insert({
                       <Button
                         type="button"
                         size="sm"
-                        disabled={archived}
+                        disabled={archived || itemCreateBlocked}
                         onClick={() => setItemModal({ section, item: null })}
                       >
                         <Plus size={15} />
@@ -503,81 +604,81 @@ const { error } = await supabase.from("sections").insert({
                       {section.items.map((item) => (
                         <article
                           key={item.id}
-                          className="flex flex-col min-w-0 gap-4 rounded-2xl border border-white/10 bg-black/25 p-3"
+                          className="flex min-w-0 flex-col gap-4 rounded-2xl border border-white/10 bg-black/25 p-3"
                         >
-                          
-<div className="flex items-center justify-between gap-2">
-  <div className="flex h-27 w-27 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
-    {item.image_url ? (
-      <img
-        src={item.image_url}
-        alt="Image"
-        className="h-full w-full object-cover"
-      />
-    ) : (
-      <ImagePlus size={22} />
-    )}
-  </div>
-
-  <div className="flex min-w-0 flex-1 flex-col gap-2">
-    <h3 className="text-lg font-black" dir="rtl">
-      {item.name_ar}
-    </h3>
-
-    <p
-      className="mt-1 line-clamp-2 text-sm font-bold text-white/40"
-      dir="rtl"
-    >
-      {item.description_ar || "No description"}
-    </p>
-
-    <p className="shrink-0 text-right text-lg font-black text-[#ff7a00]">
-      ₪{Number(item.price || 0).toFixed(2)}
-    </p>
-  </div>
-</div>
-
-                          
-<div className="mt-3 flex flex-wrap gap-3 justify-center">
-                              <button
-                                type="button"
-                                disabled={togglingItemId === item.id || archived}
-                                onClick={() => toggleItem(item)}
-                                className={`inline-flex min-h-8 items-center justify-center gap-2 rounded-xl px-3 text-xs font-black disabled:opacity-50 ${
-                                  item.is_available
-                                    ? "bg-green-500/10 text-green-200"
-                                    : "bg-red-500/10 text-red-200"
-                                }`}
-                              >
-                                {togglingItemId === item.id && (
-                                  <Loader2 size={13} className="animate-spin" />
-                                )}
-
-                                {item.is_available ? "Available" : "Hidden"}
-                              </button>
-
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                disabled={archived}
-                                onClick={() => setItemModal({ section, item })}
-                              >
-                                Edit
-                              </Button>
-
-                              <Button
-                                type="button"
-                                variant="danger"
-                                size="sm"
-                                loading={deletingItemId === item.id}
-                                loadingText="Deleting..."
-                                disabled={archived}
-                                onClick={() => deleteItem(item)}
-                              >
-                                Delete
-                              </Button>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex h-27 w-27 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
+                              {item.image_url ? (
+                                <img
+                                  src={item.image_url}
+                                  alt="Image"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <ImagePlus size={22} />
+                              )}
                             </div>
+
+                            <div className="flex min-w-0 flex-1 flex-col gap-2">
+                              <h3 className="text-lg font-black" dir="rtl">
+                                {item.name_ar}
+                              </h3>
+
+                              <p
+                                className="mt-1 line-clamp-2 text-sm font-bold text-white/40"
+                                dir="rtl"
+                              >
+                                {item.description_ar || "No description"}
+                              </p>
+
+                              <p className="shrink-0 text-right text-lg font-black text-[#ff7a00]">
+                                ₪{Number(item.price || 0).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap justify-center gap-3">
+                            <button
+                              type="button"
+                              disabled={
+                                togglingItemId === item.id || archived || locked
+                              }
+                              onClick={() => toggleItem(item)}
+                              className={`inline-flex min-h-8 items-center justify-center gap-2 rounded-xl px-3 text-xs font-black disabled:opacity-50 ${
+                                item.is_available
+                                  ? "bg-green-500/10 text-green-200"
+                                  : "bg-red-500/10 text-red-200"
+                              }`}
+                            >
+                              {togglingItemId === item.id && (
+                                <Loader2 size={13} className="animate-spin" />
+                              )}
+
+                              {item.is_available ? "Available" : "Hidden"}
+                            </button>
+
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              disabled={archived || locked}
+                              onClick={() => setItemModal({ section, item })}
+                            >
+                              Edit
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="danger"
+                              size="sm"
+                              loading={deletingItemId === item.id}
+                              loadingText="Deleting..."
+                              disabled={archived || locked}
+                              onClick={() => deleteItem(item)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </article>
                       ))}
                     </div>
@@ -590,7 +691,7 @@ const { error } = await supabase.from("sections").insert({
                       <Button
                         type="button"
                         className="mt-4"
-                        disabled={archived}
+                        disabled={archived || itemCreateBlocked}
                         onClick={() => setItemModal({ section, item: null })}
                       >
                         <Plus size={16} />
@@ -611,15 +712,17 @@ const { error } = await supabase.from("sections").insert({
         </div>
       </section>
 
-<SectionRenameModal
-  section={sectionModal}
-  menuId={menu.id}
-  onClose={() => setSectionModal(null)}
-  onDone={() => {
-    setSectionModal(null);
-    refresh();
-  }}
-/>
+      <SectionRenameModal
+        section={sectionModal}
+        menuId={menu.id}
+        locked={locked}
+        lockedMessage={getLimitMessage("locked", billing)}
+        onClose={() => setSectionModal(null)}
+        onDone={() => {
+          setSectionModal(null);
+          refresh();
+        }}
+      />
 
       <ItemModal
         key={
@@ -628,6 +731,9 @@ const { error } = await supabase.from("sections").insert({
             : "empty"
         }
         data={itemModal}
+        locked={locked}
+        itemLimitReached={itemLimitReached}
+        disabledMessage={itemDisabledMessage}
         onClose={() => setItemModal(null)}
         onDone={() => {
           setItemModal(null);
@@ -638,8 +744,14 @@ const { error } = await supabase.from("sections").insert({
   );
 }
 
-
-function SectionRenameModal({ section, menuId, onClose, onDone }) {
+function SectionRenameModal({
+  section,
+  menuId,
+  locked,
+  lockedMessage,
+  onClose,
+  onDone,
+}) {
   const [form, setForm] = useState({
     name_ar: section?.name_ar || "",
     slug: section?.slug || "",
@@ -667,6 +779,11 @@ function SectionRenameModal({ section, menuId, onClose, onDone }) {
     e.preventDefault();
 
     if (!section) return;
+
+    if (locked) {
+      toast.error(lockedMessage || "Editing is locked.");
+      return;
+    }
 
     const cleanName = form.name_ar.trim();
     const cleanSlug = slugify(form.slug || form.name_ar);
@@ -721,6 +838,10 @@ function SectionRenameModal({ section, menuId, onClose, onDone }) {
   return (
     <Modal open={Boolean(section)} title="Section Settings" onClose={onClose}>
       <form onSubmit={submit} className="grid gap-4">
+        {locked && (
+          <PlanLimitNotice title="Editing locked" text={lockedMessage} />
+        )}
+
         <Field label="Section name">
           <Input
             value={form.name_ar}
@@ -745,7 +866,10 @@ function SectionRenameModal({ section, menuId, onClose, onDone }) {
             Public section URL
           </p>
 
-          <p className="mt-2 break-all text-sm font-black text-[#ff7a00]" dir="ltr">
+          <p
+            className="mt-2 break-all text-sm font-black text-[#ff7a00]"
+            dir="ltr"
+          >
             /{slugify(form.slug || form.name_ar)}
           </p>
         </div>
@@ -762,7 +886,7 @@ function SectionRenameModal({ section, menuId, onClose, onDone }) {
           type="submit"
           loading={saving}
           loadingText="Saving..."
-          disabled={!form.name_ar.trim()}
+          disabled={!form.name_ar.trim() || locked}
         >
           Save section
         </Button>
@@ -771,8 +895,14 @@ function SectionRenameModal({ section, menuId, onClose, onDone }) {
   );
 }
 
-
-function ItemModal({ data, onClose, onDone }) {
+function ItemModal({
+  data,
+  locked,
+  itemLimitReached,
+  disabledMessage,
+  onClose,
+  onDone,
+}) {
   const [loading, setLoading] = useState(false);
 
   const section = data?.section;
@@ -789,6 +919,8 @@ function ItemModal({ data, onClose, onDone }) {
   if (!data) return null;
 
   const hasImage = Boolean(form.image_url?.trim());
+  const isNewItem = !item?.id;
+  const blocked = locked || (isNewItem && itemLimitReached);
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -796,6 +928,11 @@ function ItemModal({ data, onClose, onDone }) {
 
   async function submit(e) {
     e.preventDefault();
+
+    if (blocked) {
+      toast.error(disabledMessage || "This action is not available.");
+      return;
+    }
 
     setLoading(true);
 
@@ -842,6 +979,13 @@ function ItemModal({ data, onClose, onDone }) {
   return (
     <Modal open={true} title={item ? "Edit Item" : "New Item"} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-4">
+        {blocked && (
+          <PlanLimitNotice
+            title={locked ? "Editing locked" : "Item limit reached"}
+            text={disabledMessage}
+          />
+        )}
+
         <Field label="Arabic name">
           <Input
             required
@@ -900,7 +1044,7 @@ function ItemModal({ data, onClose, onDone }) {
           type="submit"
           loading={loading}
           loadingText={item ? "Saving item..." : "Creating item..."}
-          disabled={!form.name_ar.trim()}
+          disabled={!form.name_ar.trim() || blocked}
         >
           {item ? "Save Item" : "Create Item"}
         </Button>

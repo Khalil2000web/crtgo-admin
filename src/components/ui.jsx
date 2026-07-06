@@ -9,6 +9,7 @@ export function Button({
   loadingText = "Loading...",
   className = "",
   disabled,
+  type = "button",
   ...props
 }) {
   const variants = {
@@ -30,8 +31,11 @@ export function Button({
   return (
     <button
       {...props}
+      type={type}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 font-black transition disabled:pointer-events-none disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 font-black transition disabled:pointer-events-none disabled:opacity-50 ${
+        variants[variant] || variants.primary
+      } ${sizes[size] || sizes.md} ${className}`}
     >
       {loading && <Loader2 size={16} className="animate-spin" />}
       {loading ? loadingText : children}
@@ -59,7 +63,9 @@ export function Badge({ children, tone = "neutral" }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-black ${tones[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-black ${
+        tones[tone] || tones.neutral
+      }`}
     >
       {children}
     </span>
@@ -72,8 +78,14 @@ export function Field({ label, children, hint }) {
       <span className="text-xs font-black uppercase tracking-[0.18em] text-white/35">
         {label}
       </span>
+
       {children}
-      {hint && <span className="text-xs font-bold text-white/30">{hint}</span>}
+
+      {hint && (
+        <span className="text-xs font-bold leading-5 text-white/30">
+          {hint}
+        </span>
+      )}
     </label>
   );
 }
@@ -82,7 +94,7 @@ export function Input({ className = "", ...props }) {
   return (
     <input
       {...props}
-      className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00] ${className}`}
+      className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00] disabled:cursor-not-allowed disabled:opacity-45 ${className}`}
     />
   );
 }
@@ -91,12 +103,29 @@ export function Textarea({ className = "", ...props }) {
   return (
     <textarea
       {...props}
-      className={`min-h-28 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00] ${className}`}
+      className={`min-h-28 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00] disabled:cursor-not-allowed disabled:opacity-45 ${className}`}
     />
   );
 }
 
-export function Modal({ open, title, children, onClose, maxWidth = "max-w-xl" }) {
+export function Select({ className = "", children, ...props }) {
+  return (
+    <select
+      {...props}
+      className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 text-sm font-bold text-white outline-none transition focus:border-[#ff7a00] disabled:cursor-not-allowed disabled:opacity-45 ${className}`}
+    >
+      {children}
+    </select>
+  );
+}
+
+export function Modal({
+  open,
+  title,
+  children,
+  onClose,
+  maxWidth = "max-w-xl",
+}) {
   return (
     <AnimatePresence>
       {open && (
@@ -114,7 +143,9 @@ export function Modal({ open, title, children, onClose, maxWidth = "max-w-xl" })
             className={`max-h-[90vh] w-full ${maxWidth} overflow-hidden rounded-[30px] border border-white/10 bg-[#111111] shadow-2xl shadow-black/50`}
           >
             <header className="flex items-center justify-between border-b border-white/10 p-5">
-              <h2 className="text-xl font-black tracking-[-0.03em]">{title}</h2>
+              <h2 className="text-xl font-black tracking-[-0.03em]">
+                {title}
+              </h2>
 
               <button
                 type="button"
@@ -139,25 +170,25 @@ export function PageHeader({ eyebrow, title, subtitle, action }) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#080808]/85 px-4 py-5 backdrop-blur-xl sm:px-6">
       <div className="flex flex-row justify-between gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
+        <div className="min-w-0">
           {eyebrow && (
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ff7a00]">
               {eyebrow}
             </p>
           )}
 
-          <h1 className="mt-1 text-2xl font-black tracking-[-0.06em]">
+          <h1 className="mt-1 truncate text-2xl font-black tracking-[-0.06em] sm:text-3xl">
             {title}
           </h1>
 
           {subtitle && (
-            <p className="mt-2 hidden max-w-sm text-sm font-bold leading-6 text-white/40">
+            <p className="mt-2 hidden max-w-sm text-sm font-bold leading-6 text-white/40 md:block">
               {subtitle}
             </p>
           )}
         </div>
 
-        {action && <div>{action}</div>}
+        {action && <div className="shrink-0">{action}</div>}
       </div>
     </header>
   );

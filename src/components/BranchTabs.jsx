@@ -1,5 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { Clock, Info, Languages, MenuSquare, Palette } from "lucide-react";
+import {
+  Clock,
+  Info,
+  Languages,
+  MenuSquare,
+  Palette,
+} from "lucide-react";
 
 export default function BranchTabs({ branchId }) {
   const tabs = [
@@ -31,7 +37,7 @@ export default function BranchTabs({ branchId }) {
   ];
 
   return (
-    <div className="overflow-x-auto border-b border-white/10 bg-[#080808]/80 px-4 py-4 backdrop-blur-xl sm:px-6">
+    <div className="sticky top-[73px] z-30 overflow-x-auto border-b border-white/10 bg-[#080808]/85 px-4 py-4 backdrop-blur-xl sm:px-6 lg:top-0">
       <div className="flex min-w-max gap-2">
         {tabs.map((tab) => (
           <NavLink
@@ -40,7 +46,7 @@ export default function BranchTabs({ branchId }) {
             className={({ isActive }) =>
               `inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black transition ${
                 isActive
-                  ? "bg-[#ff7a00] text-black"
+                  ? "bg-[#ff7a00] text-black shadow-lg shadow-[#ff7a00]/10"
                   : "border border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/[0.07] hover:text-white"
               }`
             }

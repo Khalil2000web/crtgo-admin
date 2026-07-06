@@ -1,15 +1,19 @@
 import { Link, useParams } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Save } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
 import BranchTabs from "../components/BranchTabs";
+import PlanLimitNotice from "../components/PlanLimitNotice";
 import WorkingHoursEditor, {
   getDefaultWorkingHours,
 } from "../components/WorkingHoursEditor";
 import { Button, Card, PageHeader, SkeletonCard } from "../components/ui";
+
+import { useBusinessBilling } from "../hooks/useBusinessBilling";
+import { getLimitMessage, isSubscriptionLocked } from "../lib/billing";
 
 async function loadBranch(branchId) {
   const { data, error } = await supabase
@@ -17,6 +21,7 @@ async function loadBranch(branchId) {
     .select(`
       id,
       name,
+      status,
       working_hours,
       business_id,
       businesses (
@@ -38,10 +43,21 @@ export default function BranchWorkingHoursPage() {
   const [saving, setSaving] = useState(false);
   const [localHours, setLocalHours] = useState(null);
 
-  const { data: branch, isLoading, error } = useQuery({
+  const {
+    data: branch,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["branch-hours", branchId],
     queryFn: () => loadBranch(branchId),
+    enabled: Boolean(branchId),
   });
+
+  const {
+    data: billing,
+    isLoading: billingLoading,
+    error: billingError,
+  } = useBusinessBilling(branch?.business_id);
 
   const initialHours = useMemo(() => {
     return {
@@ -53,7 +69,37 @@ export default function BranchWorkingHoursPage() {
   const hours = localHours || initialHours;
   const dirty = JSON.stringify(hours) !== JSON.stringify(initialHours);
 
+  const archived = branch?.status === "archived";
+  const subscriptionLocked = Boolean(billing && isSubscriptionLocked(billing));
+
+  const locked =
+    archived || billingLoading || Boolean(billingError) || subscriptionLocked;
+
+  const lockMessage = archived
+    ? "Restore this branch before editing working hours."
+    : billingLoading
+      ? "Billing is still loading. Try again in a second."
+      : billingError
+        ? billingError.message
+        : subscriptionLocked
+          ? getLimitMessage("locked", billing)
+          : "";
+
+  function setHoursSafely(next) {
+    if (locked) {
+      toast.error(lockMessage || "Working hours are locked.");
+      return;
+    }
+
+    setLocalHours(next);
+  }
+
   function closeAll() {
+    if (locked) {
+      toast.error(lockMessage || "Working hours are locked.");
+      return;
+    }
+
     const next = {};
 
     Object.keys(getDefaultWorkingHours()).forEach((key) => {
@@ -67,6 +113,11 @@ export default function BranchWorkingHoursPage() {
   }
 
   function openAll() {
+    if (locked) {
+      toast.error(lockMessage || "Working hours are locked.");
+      return;
+    }
+
     const next = {};
 
     Object.keys(getDefaultWorkingHours()).forEach((key) => {
@@ -88,6 +139,11 @@ export default function BranchWorkingHoursPage() {
   async function save() {
     if (!dirty) return;
 
+    if (locked) {
+      toast.error(lockMessage || "Working hours are locked.");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -101,8 +157,15 @@ export default function BranchWorkingHoursPage() {
       if (error) throw error;
 
       toast.success("Working hours saved");
-      await queryClient.invalidateQueries({ queryKey: ["branch-hours", branchId] });
-      await queryClient.invalidateQueries({ queryKey: ["branch-menu", branchId] });
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["branch-hours", branchId] }),
+        queryClient.invalidateQueries({ queryKey: ["branch-menu", branchId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["branch-general", branchId],
+        }),
+      ]);
+
       setLocalHours(null);
     } catch (err) {
       toast.error(err.message || "Failed to save working hours");
@@ -122,7 +185,7 @@ export default function BranchWorkingHoursPage() {
 
   if (error) {
     return (
-     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           {error.message}
         </p>
@@ -130,8 +193,18 @@ export default function BranchWorkingHoursPage() {
     );
   }
 
+  if (!branch) {
+    return (
+      <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
+        <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
+          Branch not found.
+        </p>
+      </main>
+    );
+  }
+
   return (
-   <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
         eyebrow="Branch Settings"
         title="Working Hours"
@@ -141,7 +214,7 @@ export default function BranchWorkingHoursPage() {
             <Button
               loading={saving}
               loadingText="Saving..."
-              disabled={!dirty}
+              disabled={!dirty || locked}
               onClick={save}
             >
               <Save size={17} />
@@ -153,6 +226,12 @@ export default function BranchWorkingHoursPage() {
 
       <BranchTabs branchId={branchId} />
 
+      {locked && (
+        <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
+          <PlanLimitNotice title="Working hours locked" text={lockMessage} />
+        </section>
+      )}
+
       <section className="mx-auto max-w-7xl px-4 py-6 pb-32 sm:px-6">
         <Link
           to={`/business/${branch.business_id}`}
@@ -162,26 +241,28 @@ export default function BranchWorkingHoursPage() {
           Back to business
         </Link>
 
-        <div className="flex flex-col gap-2 mb-4 sm:flex-row">
-            <Button variant="secondary" onClick={openAll}>
-              Open all
-            </Button>
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+          <Button variant="secondary" onClick={openAll} disabled={locked}>
+            Open all
+          </Button>
 
-            <Button variant="secondary" onClick={closeAll}>
-              Close all
-            </Button>
-          </div>
+          <Button variant="secondary" onClick={closeAll} disabled={locked}>
+            Close all
+          </Button>
+        </div>
 
-        <Card className="p-5">
+        <Card className={`p-5 ${locked ? "opacity-60" : ""}`}>
           <WorkingHoursEditor
-            value={hours}
-            onChange={(next) => setLocalHours(next)}
-          />
+  value={hours}
+  onChange={setHoursSafely}
+  disabled={locked}
+  disabledReason={lockMessage}
+/>
         </Card>
       </section>
 
       {dirty && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl">
+        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl lg:left-[19rem]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-black text-[#ffbd7c]">
               You have unsaved working hours changes
@@ -196,6 +277,7 @@ export default function BranchWorkingHoursPage() {
                 onClick={save}
                 loading={saving}
                 loadingText="Saving..."
+                disabled={locked}
               >
                 Save changes
               </Button>

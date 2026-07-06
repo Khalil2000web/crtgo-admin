@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import OwnerRoute from "./components/OwnerRoute";
 import AppShell from "./components/AppShell";
 
 import AuthPage from "./pages/AuthPage";
@@ -12,6 +13,7 @@ import BranchAppearancePage from "./pages/BranchAppearancePage";
 import BranchWorkingHoursPage from "./pages/BranchWorkingHoursPage";
 import BranchLanguagesPage from "./pages/BranchLanguagesPage";
 import AccountPage from "./pages/AccountPage";
+import OwnerBillingPage from "./pages/OwnerBillingPage";
 
 export default function App() {
   return (
@@ -25,11 +27,24 @@ export default function App() {
 
           <Route path="/branch/:branchId/general" element={<BranchGeneralPage />} />
           <Route path="/branch/:branchId/menu" element={<MenuEditorPage />} />
-          <Route path="/branch/:branchId/appearance" element={<BranchAppearancePage />} />
-          <Route path="/branch/:branchId/hours" element={<BranchWorkingHoursPage />} />
-          <Route path="/branch/:branchId/languages" element={<BranchLanguagesPage />} />
+          <Route
+            path="/branch/:branchId/appearance"
+            element={<BranchAppearancePage />}
+          />
+          <Route
+            path="/branch/:branchId/hours"
+            element={<BranchWorkingHoursPage />}
+          />
+          <Route
+            path="/branch/:branchId/languages"
+            element={<BranchLanguagesPage />}
+          />
 
           <Route path="/account" element={<AccountPage />} />
+
+          <Route element={<OwnerRoute />}>
+            <Route path="/owner" element={<OwnerBillingPage />} />
+          </Route>
         </Route>
       </Route>
 

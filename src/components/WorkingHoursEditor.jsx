@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { Clock, Lock } from "lucide-react";
 
 const DAYS = [
   { key: "sun", label: "Sunday الاحد" },
@@ -22,13 +22,20 @@ export function getDefaultWorkingHours() {
   };
 }
 
-export default function WorkingHoursEditor({ value, onChange }) {
+export default function WorkingHoursEditor({
+  value,
+  onChange,
+  disabled = false,
+  disabledReason = "",
+}) {
   const hours = {
     ...getDefaultWorkingHours(),
     ...(value || {}),
   };
 
   function updateDay(dayKey, updates) {
+    if (disabled) return;
+
     onChange({
       ...hours,
       [dayKey]: {
@@ -39,6 +46,8 @@ export default function WorkingHoursEditor({ value, onChange }) {
   }
 
   function setEverydayOpen() {
+    if (disabled) return;
+
     const next = {};
 
     DAYS.forEach((day) => {
@@ -53,6 +62,8 @@ export default function WorkingHoursEditor({ value, onChange }) {
   }
 
   function setWeekendClosed() {
+    if (disabled) return;
+
     onChange({
       ...hours,
       fri: { ...hours.fri, open: false },
@@ -61,7 +72,31 @@ export default function WorkingHoursEditor({ value, onChange }) {
   }
 
   return (
-    <section className="rounded-[24px] border border-white/10 bg-black/25 p-4">
+    <section
+      className={`rounded-[24px] border bg-black/25 p-4 ${
+        disabled ? "border-yellow-400/20" : "border-white/10"
+      }`}
+    >
+      {disabled && (
+        <div className="mb-4 rounded-2xl border border-yellow-400/15 bg-yellow-500/10 p-4">
+          <div className="flex gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-yellow-400/15 text-yellow-100">
+              <Lock size={17} />
+            </div>
+
+            <div>
+              <p className="text-sm font-black text-yellow-100">
+                Working hours locked
+              </p>
+
+              <p className="mt-1 text-xs font-bold leading-5 text-yellow-100/55">
+                {disabledReason || "This setting is locked right now."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="flex items-center gap-2 text-sm font-black text-white">
@@ -78,7 +113,8 @@ export default function WorkingHoursEditor({ value, onChange }) {
           <button
             type="button"
             onClick={setEverydayOpen}
-            className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-white/55 transition hover:text-white"
+            disabled={disabled}
+            className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-white/55 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             Everyday
           </button>
@@ -86,7 +122,8 @@ export default function WorkingHoursEditor({ value, onChange }) {
           <button
             type="button"
             onClick={setWeekendClosed}
-            className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-white/55 transition hover:text-white"
+            disabled={disabled}
+            className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-white/55 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             Weekend closed
           </button>
@@ -104,12 +141,15 @@ export default function WorkingHoursEditor({ value, onChange }) {
           return (
             <div
               key={day.key}
-              className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 md:grid-cols-[1fr_auto_auto_auto]"
+              className={`grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 md:grid-cols-[1fr_auto_auto_auto] ${
+                disabled ? "opacity-60" : ""
+              }`}
             >
               <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
                   checked={Boolean(dayValue.open)}
+                  disabled={disabled}
                   onChange={(e) =>
                     updateDay(day.key, { open: e.target.checked })
                   }
@@ -123,17 +163,17 @@ export default function WorkingHoursEditor({ value, onChange }) {
               <input
                 type="time"
                 value={dayValue.from || "09:00"}
-                disabled={!dayValue.open}
+                disabled={disabled || !dayValue.open}
                 onChange={(e) => updateDay(day.key, { from: e.target.value })}
-                className="min-h-10 rounded-xl border border-white/10 bg-black/30 px-3 text-sm font-bold text-white outline-none disabled:opacity-35"
+                className="min-h-10 rounded-xl border border-white/10 bg-black/30 px-3 text-sm font-bold text-white outline-none disabled:cursor-not-allowed disabled:opacity-35"
               />
 
               <input
                 type="time"
                 value={dayValue.to || "22:00"}
-                disabled={!dayValue.open}
+                disabled={disabled || !dayValue.open}
                 onChange={(e) => updateDay(day.key, { to: e.target.value })}
-                className="min-h-10 rounded-xl border border-white/10 bg-black/30 px-3 text-sm font-bold text-white outline-none disabled:opacity-35"
+                className="min-h-10 rounded-xl border border-white/10 bg-black/30 px-3 text-sm font-bold text-white outline-none disabled:cursor-not-allowed disabled:opacity-35"
               />
 
               <span

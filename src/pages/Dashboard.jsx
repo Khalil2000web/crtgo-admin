@@ -9,6 +9,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  ShieldCheck,
   Sparkles,
   Store,
 } from "lucide-react";
@@ -31,10 +32,35 @@ import {
   Textarea,
 } from "../components/ui";
 
-async function loadBusinesses() {
+async function getCurrentUser() {
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
+
+  if (error) throw error;
+
+  return user;
+}
+
+async function loadOwnerStatus() {
+  const user = await getCurrentUser();
+
+  if (!user) return false;
+
+  const { data, error } = await supabase
+    .from("super_admins")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) return false;
+
+  return Boolean(data);
+}
+
+async function loadBusinesses() {
+  const user = await getCurrentUser();
 
   if (!user) return [];
 
@@ -59,6 +85,16 @@ async function loadBusinesses() {
           name,
           status
         )
+      ),
+      business_subscriptions (
+        business_id,
+        plan_id,
+        status,
+        billing_plans (
+          id,
+          name,
+          limits
+        )
       )
     `)
     .eq("owner_id", user.id)
@@ -82,6 +118,11 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: ["businesses"],
     queryFn: loadBusinesses,
+  });
+
+  const { data: isOwner = false } = useQuery({
+    queryKey: ["owner-status"],
+    queryFn: loadOwnerStatus,
   });
 
   const filteredBusinesses = useMemo(() => {
@@ -111,11 +152,12 @@ export default function Dashboard() {
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["businesses"] });
+    queryClient.invalidateQueries({ queryKey: ["owner-status"] });
     toast.success("Workspace refreshed");
   }
 
   return (
-     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white pb-20">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-20 text-white">
       <PageHeader
         eyebrow="Workspace"
         title="Businesses"
@@ -123,7 +165,10 @@ export default function Dashboard() {
         action={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={refresh}>
-              <RefreshCw size={17} className={isFetching ? "animate-spin" : ""} />
+              <RefreshCw
+                size={17}
+                className={isFetching ? "animate-spin" : ""}
+              />
               Refresh
             </Button>
 
@@ -132,14 +177,38 @@ export default function Dashboard() {
       />
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        
-        <div className="flex flex-col gap-2 mb-4 sm:flex-row">
-                <Button onClick={() => setNewBusinessOpen(true)}>
-              <Plus size={17} />
-              New Business
-            </Button>
+        {isOwner && (
+          <Link
+            to="/owner"
+            className="mb-4 flex items-center justify-between gap-4 rounded-[24px] border border-[#ff7a00]/20 bg-[#ff7a00]/10 p-4 transition hover:bg-[#ff7a00]/15"
+          >
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#ff7a00] text-black">
+                <ShieldCheck size={20} />
+              </div>
+
+              <div>
+                <p className="text-sm font-black text-[#ffbd7c]">
+                  Owner Console
+                </p>
+
+                <p className="mt-1 text-xs font-bold text-white/40">
+                  Manage billing, clients, notes, prices, and limits.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm font-black text-[#ffbd7c]">Open</p>
+          </Link>
+        )}
+
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+          <Button onClick={() => setNewBusinessOpen(true)}>
+            <Plus size={17} />
+            New Business
+          </Button>
         </div>
-        
+
         <div className="hidden gap-4 md:grid-cols-3">
           <Card className="p-5">
             <Stat label="Businesses" value={businesses.length} />
@@ -239,6 +308,11 @@ function BusinessCard({ business, index }) {
     mainBranch?.menu_versions?.find((menu) => menu.status === "active") ||
     mainBranch?.menu_versions?.[0];
 
+  const subscription =
+    Array.isArray(business.business_subscriptions)
+      ? business.business_subscriptions[0]
+      : business.business_subscriptions || null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -262,9 +336,25 @@ function BusinessCard({ business, index }) {
             )}
           </div>
 
-          <Badge tone={business.status === "active" ? "success" : "neutral"}>
-            {business.status || "active"}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge tone={business.status === "active" ? "success" : "neutral"}>
+              {business.status || "active"}
+            </Badge>
+
+            {subscription && (
+              <Badge
+                tone={
+                  subscription.status === "active"
+                    ? "neutral"
+                    : subscription.status === "trial"
+                      ? "neutral"
+                      : "warning"
+                }
+              >
+                {subscription.plan_id || "free"}
+              </Badge>
+            )}
+          </div>
         </div>
 
         <h2 className="mt-7 truncate text-2xl font-black tracking-[-0.05em]">
@@ -329,8 +419,10 @@ function NewBusinessModal({ open, onClose, onDone }) {
     try {
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
+      if (userError) throw userError;
       if (!user) throw new Error("You are not logged in.");
 
       const businessName = form.name.trim();
@@ -341,12 +433,13 @@ function NewBusinessModal({ open, onClose, onDone }) {
       if (!businessName) throw new Error("Business name is required.");
       if (!businessSlug) throw new Error("Business slug is required.");
 
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from("businesses")
         .select("id")
         .eq("slug", businessSlug)
         .maybeSingle();
 
+      if (existingError) throw existingError;
       if (existing) throw new Error("This business slug already exists.");
 
       const { data: business, error: businessError } = await supabase
@@ -388,13 +481,25 @@ function NewBusinessModal({ open, onClose, onDone }) {
         default_language: "ar",
         enabled_languages: ["ar"],
         primary_color: "#ff7a00",
-        background_color: "#090909",
-        text_color: "#ffffff",
+        background_color: "#f7f4ef",
+        text_color: "#111111",
       });
 
       if (menuError) throw menuError;
 
       toast.success("Business created");
+
+      setForm({
+        name: "",
+        slug: "",
+        description: "",
+        branchName: "Main Branch",
+        branchSlug: "main",
+        phone: "",
+        whatsapp: "",
+        instagram: "",
+      });
+
       onDone();
     } catch (err) {
       toast.error(err.message || "Failed to create business");
@@ -427,6 +532,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
             required
             value={form.slug}
             onChange={(e) => updateField("slug", e.target.value)}
+            onBlur={() => updateField("slug", slugify(form.slug))}
             placeholder="burger-house"
             dir="ltr"
           />
@@ -453,6 +559,9 @@ function NewBusinessModal({ open, onClose, onDone }) {
             <Input
               value={form.branchSlug}
               onChange={(e) => updateField("branchSlug", e.target.value)}
+              onBlur={() =>
+                updateField("branchSlug", slugify(form.branchSlug) || "main")
+              }
               placeholder="main"
               dir="ltr"
             />
@@ -489,6 +598,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
         </Field>
 
         <Button
+          type="submit"
           loading={loading}
           loadingText="Creating..."
           disabled={!form.name.trim()}

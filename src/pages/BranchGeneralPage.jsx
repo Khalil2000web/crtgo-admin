@@ -14,10 +14,13 @@ import {
 import toast from "react-hot-toast";
 
 import BranchTabs from "../components/BranchTabs";
+import PlanLimitNotice from "../components/PlanLimitNotice";
 import { useConfirm } from "../components/ConfirmProvider";
 import { supabase } from "../lib/supabase";
 import { slugify } from "../lib/slug";
 import { getPublicMenuUrl } from "../lib/urls";
+import { useBusinessBilling } from "../hooks/useBusinessBilling";
+import { getLimitMessage, isSubscriptionLocked } from "../lib/billing";
 import {
   Badge,
   Button,
@@ -112,7 +115,14 @@ export default function BranchGeneralPage() {
   } = useQuery({
     queryKey: ["branch-general", branchId],
     queryFn: () => loadBranch(branchId),
+    enabled: Boolean(branchId),
   });
+
+  const {
+    data: billing,
+    isLoading: billingLoading,
+    error: billingError,
+  } = useBusinessBilling(branch?.business_id);
 
   const menu = useMemo(() => getActiveMenu(branch), [branch]);
 
@@ -131,6 +141,20 @@ export default function BranchGeneralPage() {
     setForm(getInitialForm(branch, menu));
   }, [branch?.id, menu?.id]);
 
+  const archived = branch?.status === "archived";
+  const subscriptionLocked = Boolean(billing && isSubscriptionLocked(billing));
+
+  const editingLocked =
+    billingLoading || Boolean(billingError) || subscriptionLocked;
+
+  const lockMessage = billingLoading
+    ? "Billing is still loading. Try again in a second."
+    : billingError
+      ? billingError.message
+      : subscriptionLocked
+        ? getLimitMessage("locked", billing)
+        : "";
+
   function updateField(key, value) {
     setForm((current) => ({
       ...current,
@@ -146,6 +170,9 @@ export default function BranchGeneralPage() {
       queryClient.invalidateQueries({
         queryKey: ["branch-menu", branchId],
       }),
+      queryClient.invalidateQueries({
+        queryKey: ["branch-appearance", branchId],
+      }),
     ]);
   }
 
@@ -153,6 +180,11 @@ export default function BranchGeneralPage() {
     e.preventDefault();
 
     if (!branch || !menu || !form) return;
+
+    if (editingLocked) {
+      toast.error(lockMessage || "Editing is locked.");
+      return;
+    }
 
     const cleanSlug = slugify(form.branchSlug);
 
@@ -226,6 +258,11 @@ export default function BranchGeneralPage() {
   async function archiveOrRestoreBranch() {
     if (!branch) return;
 
+    if (editingLocked) {
+      toast.error(lockMessage || "Editing is locked.");
+      return;
+    }
+
     const willArchive = branch.status !== "archived";
 
     const ok = await confirm({
@@ -262,6 +299,11 @@ export default function BranchGeneralPage() {
 
   async function deleteBranch() {
     if (!branch) return;
+
+    if (editingLocked) {
+      toast.error(lockMessage || "Editing is locked.");
+      return;
+    }
 
     const ok = await confirm({
       title: "Delete branch forever?",
@@ -372,7 +414,6 @@ export default function BranchGeneralPage() {
   }
 
   const publicUrl = getPublicMenuUrl(branch.businesses?.slug, form.branchSlug);
-  const archived = branch.status === "archived";
 
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
@@ -397,6 +438,15 @@ export default function BranchGeneralPage() {
 
       <BranchTabs branchId={branchId} />
 
+      {editingLocked && (
+        <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
+          <PlanLimitNotice
+            title="Branch editing locked"
+            text={lockMessage}
+          />
+        </section>
+      )}
+
       <form
         onSubmit={saveChanges}
         className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6"
@@ -411,9 +461,7 @@ export default function BranchGeneralPage() {
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-3xl font-black tracking-[-0.05em]">
-              General
-            </h2>
+            <h2 className="text-3xl font-black tracking-[-0.05em]">General</h2>
 
             <p className="mt-1 text-sm font-bold text-white/35">
               This is the branch information shown on public menu pages.
@@ -456,6 +504,7 @@ export default function BranchGeneralPage() {
                 <Field label="Branch name">
                   <Input
                     value={form.branchName}
+                    disabled={editingLocked}
                     onChange={(e) =>
                       updateField("branchName", e.target.value)
                     }
@@ -466,6 +515,7 @@ export default function BranchGeneralPage() {
                 <Field label="Branch slug">
                   <Input
                     value={form.branchSlug}
+                    disabled={editingLocked}
                     onChange={(e) =>
                       updateField("branchSlug", e.target.value)
                     }
@@ -509,6 +559,7 @@ export default function BranchGeneralPage() {
                 <Field label="Menu name">
                   <Input
                     value={form.menuName}
+                    disabled={editingLocked}
                     onChange={(e) => updateField("menuName", e.target.value)}
                     placeholder="Main Menu"
                   />
@@ -517,6 +568,7 @@ export default function BranchGeneralPage() {
                 <Field label="Menu description">
                   <Textarea
                     value={form.menuDescription}
+                    disabled={editingLocked}
                     onChange={(e) =>
                       updateField("menuDescription", e.target.value)
                     }
@@ -539,6 +591,7 @@ export default function BranchGeneralPage() {
               <Field label="Address">
                 <Input
                   value={form.address}
+                  disabled={editingLocked}
                   onChange={(e) => updateField("address", e.target.value)}
                   placeholder="Haifa, Main street..."
                 />
@@ -558,6 +611,7 @@ export default function BranchGeneralPage() {
                 <Field label="Phone">
                   <Input
                     value={form.phone}
+                    disabled={editingLocked}
                     onChange={(e) => updateField("phone", e.target.value)}
                     placeholder="0500000000"
                     dir="ltr"
@@ -567,6 +621,7 @@ export default function BranchGeneralPage() {
                 <Field label="WhatsApp">
                   <Input
                     value={form.whatsapp}
+                    disabled={editingLocked}
                     onChange={(e) => updateField("whatsapp", e.target.value)}
                     placeholder="972500000000"
                     dir="ltr"
@@ -576,6 +631,7 @@ export default function BranchGeneralPage() {
                 <Field label="Instagram">
                   <Input
                     value={form.instagram}
+                    disabled={editingLocked}
                     onChange={(e) =>
                       updateField("instagram", e.target.value)
                     }
@@ -587,6 +643,7 @@ export default function BranchGeneralPage() {
                 <Field label="Facebook">
                   <Input
                     value={form.facebook}
+                    disabled={editingLocked}
                     onChange={(e) => updateField("facebook", e.target.value)}
                     placeholder="https://facebook.com/..."
                     dir="ltr"
@@ -596,6 +653,7 @@ export default function BranchGeneralPage() {
                 <Field label="TikTok">
                   <Input
                     value={form.tiktok}
+                    disabled={editingLocked}
                     onChange={(e) => updateField("tiktok", e.target.value)}
                     placeholder="@crtgo"
                     dir="ltr"
@@ -607,54 +665,56 @@ export default function BranchGeneralPage() {
 
           <aside className="grid h-fit min-w-0 gap-5 xl:sticky xl:top-6">
             <Card className="min-w-0 p-5">
-              <h3 className="text-xl font-black">Status</h3>
+              <h3 className="text-xl font-black">Branch status</h3>
 
-              <p className="mt-2 text-sm font-bold leading-6 text-white/35">
-                Archived branches do not appear on the public menu.
+              <p className="mt-1 text-sm font-bold leading-6 text-white/35">
+                Archive hides this branch from the public menu. Delete removes
+                it forever.
               </p>
 
-              <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-white/30">
-                  Current status
-                </p>
+              <div className="mt-5 grid gap-3">
+                <Button
+                  type="button"
+                  variant={archived ? "secondary" : "danger"}
+                  loading={archiving}
+                  loadingText={archived ? "Restoring..." : "Archiving..."}
+                  disabled={editingLocked}
+                  onClick={archiveOrRestoreBranch}
+                >
+                  {archived ? <RotateCcw size={16} /> : <Archive size={16} />}
+                  {archived ? "Restore branch" : "Archive branch"}
+                </Button>
 
-                <p className="mt-2 text-2xl font-black tracking-[-0.05em]">
-                  {archived ? "Archived" : "Active"}
-                </p>
+                <Button
+                  type="button"
+                  variant="danger"
+                  loading={deleting}
+                  loadingText="Deleting..."
+                  disabled={editingLocked}
+                  onClick={deleteBranch}
+                >
+                  <Trash2 size={16} />
+                  Delete branch
+                </Button>
               </div>
-
-              <Button
-                type="button"
-                className="mt-4 w-full"
-                variant={archived ? "primary" : "secondary"}
-                loading={archiving}
-                loadingText={archived ? "Restoring..." : "Archiving..."}
-                onClick={archiveOrRestoreBranch}
-              >
-                {archived ? <RotateCcw size={16} /> : <Archive size={16} />}
-                {archived ? "Restore branch" : "Archive branch"}
-              </Button>
             </Card>
 
-            <Card className="min-w-0 border-red-400/15 bg-red-500/5 p-5">
-              <h3 className="text-xl font-black text-red-100">
-                Danger zone
-              </h3>
+            <Card className="min-w-0 p-5">
+              <h3 className="text-xl font-black">Save changes</h3>
 
-              <p className="mt-2 text-sm font-bold leading-6 text-red-100/50">
-                Deleting removes the branch, its menu, sections, and items.
+              <p className="mt-1 text-sm font-bold leading-6 text-white/35">
+                Changes affect the public menu after saving.
               </p>
 
               <Button
-                type="button"
-                variant="danger"
+                type="submit"
                 className="mt-5 w-full"
-                loading={deleting}
-                loadingText="Deleting..."
-                onClick={deleteBranch}
+                loading={saving}
+                loadingText="Saving..."
+                disabled={!dirty || editingLocked}
               >
-                <Trash2 size={16} />
-                Delete branch forever
+                <Save size={16} />
+                Save changes
               </Button>
             </Card>
           </aside>
@@ -681,6 +741,7 @@ export default function BranchGeneralPage() {
                   type="submit"
                   loading={saving}
                   loadingText="Saving..."
+                  disabled={editingLocked}
                 >
                   <Save size={16} />
                   Save changes

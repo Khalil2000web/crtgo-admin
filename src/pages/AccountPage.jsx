@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Mail, Save, UserCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  Mail,
+  Save,
+  ShieldCheck,
+  UserCircle2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
@@ -19,6 +25,7 @@ export default function AccountPage() {
 
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   const [form, setForm] = useState({
     username: "",
@@ -44,16 +51,26 @@ export default function AccountPage() {
 
       setUser(user);
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id, email, username, display_name, created_at, updated_at")
-        .eq("id", user.id)
-        .maybeSingle();
+      const [profileRes, ownerRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, email, username, display_name, created_at, updated_at")
+          .eq("id", user.id)
+          .maybeSingle(),
 
-      if (profileError) throw profileError;
+        supabase
+          .from("super_admins")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
+      if (profileRes.error) throw profileRes.error;
+
+      setIsOwner(Boolean(ownerRes.data && !ownerRes.error));
 
       const finalProfile =
-        profileData || {
+        profileRes.data || {
           id: user.id,
           email: user.email,
           username: user.user_metadata?.username || "",
@@ -140,7 +157,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <main className="h-full overflow-y-auto p-5">
+      <main className="h-full overflow-y-auto bg-[#090909] p-5 text-white">
         <SkeletonCard className="h-40" />
         <SkeletonCard className="mt-5 h-96" />
       </main>
@@ -148,7 +165,7 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white pb-30">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-30 text-white">
       <PageHeader
         eyebrow="Profile"
         title="Account"
@@ -167,6 +184,31 @@ export default function AccountPage() {
       />
 
       <section className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+        {isOwner && (
+          <Link
+            to="/owner"
+            className="mb-5 flex items-center justify-between gap-4 rounded-[24px] border border-[#ff7a00]/20 bg-[#ff7a00]/10 p-4 transition hover:bg-[#ff7a00]/15"
+          >
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#ff7a00] text-black">
+                <ShieldCheck size={20} />
+              </div>
+
+              <div>
+                <p className="text-sm font-black text-[#ffbd7c]">
+                  Owner Console
+                </p>
+
+                <p className="mt-1 text-xs font-bold text-white/40">
+                  Manage billing, plans, notes, and client limits.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm font-black text-[#ffbd7c]">Open</p>
+          </Link>
+        )}
+
         <Card className="p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
             <div className="flex h-24 w-24 items-center justify-center rounded-[30px] border border-white/10 bg-white/[0.04] text-[#ff7a00]">
@@ -185,10 +227,10 @@ export default function AccountPage() {
             </div>
           </div>
 
-<div className="mt-6 grid min-w-0 gap-3 sm:grid-cols-2">
-  <Stat label="User ID" value={user?.id || "Loading..."} />
-  <Stat label="Username" value={form.username || "Not set"} />
-</div>
+          <div className="mt-6 grid min-w-0 gap-3 sm:grid-cols-2">
+            <Stat label="User ID" value={user?.id || "Loading..."} />
+            <Stat label="Username" value={form.username || "Not set"} />
+          </div>
         </Card>
 
         <form onSubmit={saveAccount} className="mt-5 grid gap-5">
@@ -228,8 +270,8 @@ export default function AccountPage() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <Stat label="Auth provider" value="Email" />
-              <Stat label="Plan" value="Trial" />
-              <Stat label="Role" value="Owner" />
+              <Stat label="Plan" value={isOwner ? "Owner" : "Client"} />
+              <Stat label="Role" value={isOwner ? "Super Admin" : "Owner"} />
             </div>
           </Card>
         </form>

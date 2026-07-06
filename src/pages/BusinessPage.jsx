@@ -15,8 +15,15 @@ import toast from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { slugify } from "../lib/slug";
 import { getPublicMenuUrl } from "../lib/urls";
-import Modal from "../components/Modal";
-import { Field, Input } from "../components/Form";
+import { Field, Input, Modal } from "../components/ui";
+
+import { useBusinessBilling } from "../hooks/useBusinessBilling";
+import {
+  canCreateBranch,
+  getLimitMessage,
+  isSubscriptionLocked,
+} from "../lib/billing";
+import PlanLimitNotice from "../components/PlanLimitNotice";
 
 async function loadBusiness(businessId) {
   const { data, error } = await supabase
@@ -68,7 +75,33 @@ export default function BusinessPage() {
   } = useQuery({
     queryKey: ["business", businessId],
     queryFn: () => loadBusiness(businessId),
+    enabled: Boolean(businessId),
   });
+
+  const {
+    data: billing,
+    isLoading: billingLoading,
+    error: billingError,
+  } = useBusinessBilling(businessId);
+
+  const branches = business?.branches || [];
+  const branchCount = branches.length;
+
+  const locked = Boolean(billing && isSubscriptionLocked(billing));
+  const branchLimitReached = Boolean(
+    billing && !canCreateBranch(billing, branchCount)
+  );
+
+  const branchCreateBlocked =
+    billingLoading || Boolean(billingError) || locked || branchLimitReached;
+
+  const disabledMessage = billingLoading
+    ? "Billing is still loading. Try again in a second."
+    : billingError
+      ? billingError.message
+      : locked
+        ? getLimitMessage("locked", billing)
+        : getLimitMessage("branches", billing);
 
   if (isLoading) {
     return <LoadingPage />;
@@ -78,8 +111,12 @@ export default function BusinessPage() {
     return <ErrorPage message={error.message} />;
   }
 
+  if (!business) {
+    return <ErrorPage message="Business not found." />;
+  }
+
   return (
- <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white pb-20">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-20 text-white">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090909]/85 px-4 py-5 backdrop-blur-xl sm:px-6">
         <Link
           to="/"
@@ -99,27 +136,50 @@ export default function BusinessPage() {
               {business.name}
             </h1>
 
-            <p className="mt-2 hidden max-w-sm text-sm font-bold text-white/40">
+            <p className="mt-2 max-w-sm text-sm font-bold text-white/40">
               {business.description || "Manage branches and menus."}
             </p>
           </div>
-
         </div>
       </header>
 
+      <section className="mx-auto grid max-w-7xl gap-4 px-4 pt-5 sm:px-6">
+        {locked && (
+          <PlanLimitNotice
+            title="Subscription locked"
+            text={getLimitMessage("locked", billing)}
+          />
+        )}
+
+        {billingError && (
+          <PlanLimitNotice title="Billing error" text={billingError.message} />
+        )}
+
+        {branchLimitReached && !locked && (
+          <PlanLimitNotice
+            title="Branch limit reached"
+            text={getLimitMessage("branches", billing)}
+          />
+        )}
+      </section>
+
       <section className="mx-auto max-w-7xl px-4 sm:px-6">
-        
         <div className="my-4 flex flex-col gap-4 lg:flex-row">
           <button
             type="button"
+            disabled={branchCreateBlocked}
             onClick={() => setNewBranchOpen(true)}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-5 text-sm font-black text-black transition hover:bg-white"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-5 text-sm font-black text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Plus size={17} />
+            {billingLoading ? (
+              <Loader2 size={17} className="animate-spin" />
+            ) : (
+              <Plus size={17} />
+            )}
             New Branch
           </button>
-    </div>
-        
+        </div>
+
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
@@ -140,7 +200,10 @@ export default function BusinessPage() {
                   {business.name}
                 </h2>
 
-                <p className="mt-1 truncate text-sm font-bold text-white/35" dir="ltr">
+                <p
+                  className="mt-1 truncate text-sm font-bold text-white/35"
+                  dir="ltr"
+                >
                   {business.slug}
                 </p>
               </div>
@@ -150,9 +213,8 @@ export default function BusinessPage() {
               <p className="text-xs font-black uppercase tracking-[0.16em] text-white/30">
                 Branches
               </p>
-              <p className="mt-1 text-2xl font-black">
-                {business.branches?.length || 0}
-              </p>
+
+              <p className="mt-1 text-2xl font-black">{branchCount}</p>
             </div>
           </div>
         </div>
@@ -161,12 +223,13 @@ export default function BusinessPage() {
           <h2 className="text-2xl font-black tracking-[-0.04em]">Branches</h2>
         </div>
 
-        {business.branches?.length ? (
+        {branches.length ? (
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {business.branches.map((branch) => {
+            {branches.map((branch) => {
               const activeMenu =
-                branch.menu_versions?.find((menu) => menu.status === "active") ||
-                branch.menu_versions?.[0];
+                branch.menu_versions?.find(
+                  (menu) => menu.status === "active"
+                ) || branch.menu_versions?.[0];
 
               const publicUrl = getPublicMenuUrl(business.slug, branch.slug);
 
@@ -192,7 +255,10 @@ export default function BusinessPage() {
                     {branch.name}
                   </h3>
 
-                  <p className="mt-2 truncate text-sm font-bold text-white/35" dir="ltr">
+                  <p
+                    className="mt-2 truncate text-sm font-bold text-white/35"
+                    dir="ltr"
+                  >
                     {publicUrl}
                   </p>
 
@@ -233,10 +299,15 @@ export default function BusinessPage() {
 
             <button
               type="button"
+              disabled={branchCreateBlocked}
               onClick={() => setNewBranchOpen(true)}
-              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-5 text-sm font-black text-black transition hover:bg-white"
+              className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-5 text-sm font-black text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Plus size={17} />
+              {billingLoading ? (
+                <Loader2 size={17} className="animate-spin" />
+              ) : (
+                <Plus size={17} />
+              )}
               New Branch
             </button>
           </section>
@@ -246,18 +317,30 @@ export default function BusinessPage() {
       <NewBranchModal
         open={newBranchOpen}
         business={business}
+        disabled={branchCreateBlocked}
+        disabledMessage={disabledMessage}
         onClose={() => setNewBranchOpen(false)}
         onDone={() => {
           setNewBranchOpen(false);
           queryClient.invalidateQueries({ queryKey: ["business", businessId] });
           queryClient.invalidateQueries({ queryKey: ["businesses"] });
+          queryClient.invalidateQueries({
+            queryKey: ["business-billing", businessId],
+          });
         }}
       />
     </main>
   );
 }
 
-function NewBranchModal({ open, onClose, onDone, business }) {
+function NewBranchModal({
+  open,
+  onClose,
+  onDone,
+  business,
+  disabled,
+  disabledMessage,
+}) {
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -268,6 +351,8 @@ function NewBranchModal({ open, onClose, onDone, business }) {
     whatsapp: "",
     instagram: "",
   });
+
+  if (!open || !business) return null;
 
   function updateField(key, value) {
     setForm((current) => {
@@ -283,6 +368,12 @@ function NewBranchModal({ open, onClose, onDone, business }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (disabled) {
+      toast.error(disabledMessage || "This action is not available.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -292,12 +383,14 @@ function NewBranchModal({ open, onClose, onDone, business }) {
       if (!branchName) throw new Error("Branch name is required.");
       if (!branchSlug) throw new Error("Branch slug is required.");
 
-      const { data: existingBranch } = await supabase
+      const { data: existingBranch, error: existingError } = await supabase
         .from("branches")
         .select("id")
         .eq("business_id", business.id)
         .eq("slug", branchSlug)
         .maybeSingle();
+
+      if (existingError) throw existingError;
 
       if (existingBranch) {
         throw new Error("This branch slug already exists in this business.");
@@ -336,6 +429,16 @@ function NewBranchModal({ open, onClose, onDone, business }) {
       if (menuError) throw menuError;
 
       toast.success("Branch created");
+
+      setForm({
+        name: "",
+        slug: "",
+        address: "",
+        phone: "",
+        whatsapp: "",
+        instagram: "",
+      });
+
       onDone();
     } catch (err) {
       toast.error(err.message || "Failed to create branch");
@@ -347,6 +450,13 @@ function NewBranchModal({ open, onClose, onDone, business }) {
   return (
     <Modal open={open} title="New Branch" onClose={onClose}>
       <form onSubmit={handleSubmit} className="grid gap-4">
+        {disabled && (
+          <PlanLimitNotice
+            title="Cannot create branch"
+            text={disabledMessage}
+          />
+        )}
+
         <Field label="Branch name">
           <Input
             required
@@ -361,6 +471,7 @@ function NewBranchModal({ open, onClose, onDone, business }) {
             required
             value={form.slug}
             onChange={(e) => updateField("slug", e.target.value)}
+            onBlur={() => updateField("slug", slugify(form.slug))}
             placeholder="downtown"
             dir="ltr"
           />
@@ -404,8 +515,9 @@ function NewBranchModal({ open, onClose, onDone, business }) {
         </Field>
 
         <button
-          disabled={loading}
-          className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] text-sm font-black text-black transition hover:bg-white disabled:opacity-50"
+          type="submit"
+          disabled={loading || disabled}
+          className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] text-sm font-black text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading && <Loader2 size={17} className="animate-spin" />}
           {loading ? "Creating..." : "Create Branch"}
@@ -421,6 +533,7 @@ function Info({ label, value }) {
       <p className="text-xs font-black uppercase tracking-[0.16em] text-white/30">
         {label}
       </p>
+
       <p className="mt-1 truncate text-sm font-black text-white">{value}</p>
     </div>
   );
@@ -428,8 +541,9 @@ function Info({ label, value }) {
 
 function LoadingPage() {
   return (
-    <main className="min-h-screen bg-[#090909] p-5 text-white">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
       <div className="h-12 w-72 animate-pulse rounded-2xl bg-white/10" />
+
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
           <div
@@ -444,7 +558,7 @@ function LoadingPage() {
 
 function ErrorPage({ message }) {
   return (
-  <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
       <Link
         to="/"
         className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
