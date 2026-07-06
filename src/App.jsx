@@ -13,6 +13,7 @@ import BranchAppearancePage from "./pages/BranchAppearancePage";
 import BranchWorkingHoursPage from "./pages/BranchWorkingHoursPage";
 import BranchLanguagesPage from "./pages/BranchLanguagesPage";
 import AccountPage from "./pages/AccountPage";
+import BranchQrPage from "./pages/BranchQrPage";
 import OwnerBillingPage from "./pages/OwnerBillingPage";
 
 export default function App() {
@@ -39,6 +40,8 @@ export default function App() {
             path="/branch/:branchId/languages"
             element={<BranchLanguagesPage />}
           />
+
+          <Route path="/branch/:branchId/qr" element={<BranchQrPage />} />
 
           <Route path="/account" element={<AccountPage />} />
 

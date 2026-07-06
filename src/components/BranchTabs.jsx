@@ -5,6 +5,7 @@ import {
   Languages,
   MenuSquare,
   Palette,
+  QrCode,
 } from "lucide-react";
 
 export default function BranchTabs({ branchId }) {
@@ -33,6 +34,11 @@ export default function BranchTabs({ branchId }) {
       to: `/branch/${branchId}/languages`,
       label: "Languages",
       icon: <Languages size={16} />,
+    },
+    {
+      to: `/branch/${branchId}/qr`,
+      label: "QR Code",
+      icon: <QrCode size={16} />,
     },
   ];
 
