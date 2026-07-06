@@ -37,7 +37,7 @@ export default function BranchTabs({ branchId }) {
   ];
 
   return (
-    <div className="sticky top-[73px] z-30 overflow-x-auto border-b border-white/10 bg-[#080808]/85 px-4 py-4 backdrop-blur-xl sm:px-6 lg:top-0">
+    <div className="overflow-x-auto border-b border-white/10 px-4 py-6 sm:px-6">
       <div className="flex min-w-max gap-2">
         {tabs.map((tab) => (
           <NavLink
