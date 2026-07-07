@@ -6,9 +6,13 @@ import {
   ArrowLeft,
   ArrowUpRight,
   ExternalLink,
+  Languages,
   Loader2,
+  Lock,
   MapPin,
+  Palette,
   Plus,
+  QrCode,
   RotateCcw,
   Settings,
   Store,
@@ -33,6 +37,8 @@ import {
 import { useBusinessBilling } from "../hooks/useBusinessBilling";
 import {
   canCreateBranch,
+  canUseQrCodes,
+  getAllowedLanguages,
   getLimitMessage,
   isSubscriptionLocked,
 } from "../lib/billing";
@@ -62,10 +68,18 @@ async function loadBusiness(businessId) {
         tiktok,
         is_main,
         status,
+        branch_qr_codes (
+          id,
+          code,
+          enabled,
+          scan_count
+        ),
         menu_versions (
           id,
           name,
-          status
+          status,
+          template_id,
+          enabled_languages
         )
       )
     `)
@@ -117,6 +131,21 @@ export default function BusinessPage() {
 
   const branchCreateBlocked =
     billingLoading || Boolean(billingError) || locked || branchLimitReached;
+
+const allowedLanguages = billing ? getAllowedLanguages(billing) : [];
+
+const businessLocked =
+  business?.status === "archived" ||
+  billingLoading ||
+  Boolean(billingError) ||
+  locked;
+
+const languagesPlanLocked =
+  Boolean(billing) && allowedLanguages.length === 0;
+
+const qrPlanLocked =
+  Boolean(billing) && !canUseQrCodes(billing);
+
 
   const disabledMessage = billingLoading
     ? "Billing is still loading. Try again in a second."
@@ -178,7 +207,7 @@ export default function BusinessPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="hidden flex-wrap gap-2">
             {businessPublicUrl && (
               <a
                 href={businessPublicUrl}
@@ -298,72 +327,126 @@ export default function BusinessPage() {
 
         {branches.length ? (
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {branches.map((branch) => {
-              const activeMenu =
-                branch.menu_versions?.find(
-                  (menu) => menu.status === "active"
-                ) || branch.menu_versions?.[0];
 
-              const publicUrl = getPublicMenuUrl(business.slug, branch.slug);
-              const branchArchived = branch.status === "archived";
 
-              return (
-                <article
-                  key={branch.id}
-                  className={`group rounded-[28px] border border-white/10 bg-[#111111] p-5 transition hover:-translate-y-0.5 hover:border-[#ff7a00]/50 hover:bg-[#151515] ${
-                    branchArchived ? "opacity-60" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ff7a00]">
-                      <MapPin size={24} />
-                    </div>
 
-                    <Link
-                      to={`/branch/${branch.id}/menu`}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 text-white/35 transition hover:border-[#ff7a00]/50 hover:text-[#ff7a00]"
-                    >
-                      <ArrowUpRight size={18} />
-                    </Link>
-                  </div>
+{branches.map((branch) => {
+  const activeMenu =
+    branch.menu_versions?.find((menu) => menu.status === "active") ||
+    branch.menu_versions?.[0];
 
-                  <h3 className="mt-6 truncate text-2xl font-black tracking-[-0.04em]">
-                    {branch.name}
-                  </h3>
+  const qr =
+    branch.branch_qr_codes?.find?.((item) => item.enabled) ||
+    branch.branch_qr_codes?.[0] ||
+    null;
 
-                  <p
-                    className="mt-2 truncate text-sm font-bold text-white/35"
-                    dir="ltr"
-                  >
-                    {publicUrl}
-                  </p>
+  const publicUrl = getPublicMenuUrl(business.slug, branch.slug);
+  const branchArchived = branch.status === "archived";
 
-                  <div className="mt-5 grid grid-cols-2 gap-2">
-                    <Info label="Menu" value={activeMenu?.name || "Main Menu"} />
-                    <Info label="Status" value={branch.status || "active"} />
-                  </div>
+  const enabledLanguages = Array.isArray(activeMenu?.enabled_languages)
+    ? activeMenu.enabled_languages
+    : ["ar"];
 
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    <Link
-                      to={`/branch/${branch.id}/menu`}
-                      className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-[#ff7a00] px-4 text-sm font-black text-black transition hover:bg-white"
-                    >
-                      Edit Menu
-                    </Link>
+  const branchLocked = businessLocked || branchArchived;
+  const languagesLocked = branchLocked || languagesPlanLocked;
+  const qrLocked = branchLocked || qrPlanLocked;
 
-                    <a
-                      href={publicUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm font-black text-white/60 transition hover:bg-white/[0.07] hover:text-white"
-                    >
-                      <ExternalLink size={16} />
-                      Public
-                    </a>
-                  </div>
-                </article>
-              );
-            })}
+  return (
+    <article
+      key={branch.id}
+      className={`group rounded-[28px] border border-white/10 bg-[#111111] p-5 transition hover:-translate-y-0.5 hover:border-[#ff7a00]/50 hover:bg-[#151515] ${
+        branchArchived ? "opacity-60" : ""
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ff7a00]">
+          <MapPin size={24} />
+        </div>
+
+        <div className="flex flex-wrap justify-end gap-2">
+          {branch.is_main && <MiniBadge tone="warning">Main</MiniBadge>}
+
+          <MiniBadge tone={branchArchived ? "danger" : "success"}>
+            {branch.status || "active"}
+          </MiniBadge>
+
+          {businessLocked && !branchArchived && (
+            <MiniBadge tone="danger">Locked</MiniBadge>
+          )}
+
+          {qr && (
+            <MiniBadge tone={qr.enabled ? "success" : "danger"}>
+              QR {qr.enabled ? "on" : "off"}
+            </MiniBadge>
+          )}
+        </div>
+      </div>
+
+      <h3 className="mt-6 truncate text-2xl font-black tracking-[-0.04em]">
+        {branch.name}
+      </h3>
+
+      <p className="mt-2 truncate text-sm font-bold text-white/35" dir="ltr">
+        {publicUrl}
+      </p>
+
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        <Info label="Menu" value={activeMenu?.name || "Main Menu"} />
+        <Info label="Template" value={activeMenu?.template_id || "classic"} />
+        <Info label="Languages" value={enabledLanguages.join(", ")} />
+        <Info label="QR scans" value={qr?.scan_count || 0} />
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <QuickAction
+          to={`/branch/${branch.id}/menu`}
+          icon={<ArrowUpRight size={16} />}
+          label="Edit Menu"
+          primary
+          locked={branchLocked}
+        />
+
+        <QuickAction
+          to={`/branch/${branch.id}/appearance`}
+          icon={<Palette size={16} />}
+          label="Appearance"
+          locked={branchLocked}
+        />
+
+        <QuickAction
+          to={`/branch/${branch.id}/languages`}
+          icon={<Languages size={16} />}
+          label="Languages"
+          locked={languagesLocked}
+        />
+
+        <QuickAction
+          to={`/branch/${branch.id}/qr`}
+          icon={<QrCode size={16} />}
+          label="QR Code"
+          locked={qrLocked}
+        />
+      </div>
+
+      <a
+        href={publicUrl}
+        target="_blank"
+        rel="noreferrer"
+        className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-black transition ${
+          branchLocked
+            ? "border-red-400/15 bg-red-500/10 text-red-100/60"
+            : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07] hover:text-white"
+        }`}
+      >
+        {branchLocked ? <Lock size={16} /> : <ExternalLink size={16} />}
+        {branchLocked ? "Public Menu Locked" : "Open Public Menu"}
+      </a>
+    </article>
+  );
+})}
+
+
+
           </div>
         ) : (
           <section className="mt-5 rounded-[28px] border border-dashed border-white/10 bg-[#111111] p-10 text-center">
@@ -1025,6 +1108,47 @@ function Info({ label, value }) {
     </div>
   );
 }
+
+
+function QuickAction({ to, icon, label, primary = false, locked = false }) {
+  return (
+    <Link
+      to={to}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-black transition ${
+        locked
+          ? "border border-red-400/15 bg-red-500/10 text-red-100/65 hover:bg-red-500/15 hover:text-red-100"
+          : primary
+            ? "bg-[#ff7a00] text-black hover:bg-white"
+            : "border border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07] hover:text-white"
+      }`}
+    >
+      {locked ? <Lock size={16} /> : icon}
+      {label}
+    </Link>
+  );
+}
+
+function MiniBadge({ children, tone = "neutral" }) {
+  const tones = {
+    neutral: "border-white/10 bg-white/[0.06] text-white/55",
+    success: "border-green-400/15 bg-green-500/10 text-green-200",
+    warning: "border-yellow-400/15 bg-yellow-500/10 text-yellow-100",
+    danger: "border-red-400/15 bg-red-500/10 text-red-100",
+    orange: "border-[#ff7a00]/20 bg-[#ff7a00]/10 text-[#ffbd7c]",
+  };
+
+  return (
+    <span
+      className={`inline-flex min-h-7 items-center rounded-full border px-3 text-xs font-black ${
+        tones[tone] || tones.neutral
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+
 
 function LoadingPage() {
   return (

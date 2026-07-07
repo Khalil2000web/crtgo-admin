@@ -41,6 +41,7 @@ import {
 } from "../lib/billing";
 import PlanLimitNotice from "../components/PlanLimitNotice";
 
+
 async function loadBranch(branchId) {
   const { data, error } = await supabase
     .from("branches")
@@ -58,18 +59,25 @@ async function loadBranch(branchId) {
       menu_versions (
         id,
         name,
+        name_i18n,
         status,
         description_ar,
+        description_i18n,
+        enabled_languages,
+        default_language,
         sections (
           id,
           name_ar,
+          name_i18n,
           slug,
           cover_url,
           sort_order,
           items (
             id,
             name_ar,
+            name_i18n,
             description_ar,
+            description_i18n,
             price,
             image_url,
             is_available,
@@ -85,12 +93,68 @@ async function loadBranch(branchId) {
   return data;
 }
 
+const LANGUAGE_META = {
+  ar: {
+    code: "ar",
+    label: "Arabic",
+    nativeLabel: "العربية",
+    dir: "rtl",
+  },
+  he: {
+    code: "he",
+    label: "Hebrew",
+    nativeLabel: "עברית",
+    dir: "rtl",
+  },
+  en: {
+    code: "en",
+    label: "English",
+    nativeLabel: "English",
+    dir: "ltr",
+  },
+};
+
+function normalizeEnabledLanguages(menu) {
+  const enabled = Array.isArray(menu?.enabled_languages)
+    ? menu.enabled_languages
+    : ["ar"];
+
+  const clean = enabled.filter((code) => LANGUAGE_META[code]);
+
+  if (!clean.includes("ar")) clean.unshift("ar");
+
+  return [...new Set(clean)];
+}
+
+function getExtraLanguages(menu) {
+  return normalizeEnabledLanguages(menu).filter((code) => code !== "ar");
+}
+
+function cleanI18n(value) {
+  const source =
+    value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+  return Object.fromEntries(
+    Object.entries(source)
+      .map(([key, text]) => [key, typeof text === "string" ? text.trim() : ""])
+      .filter(([key, text]) => LANGUAGE_META[key] && text)
+  );
+}
+
+function setI18nValue(source, language, value) {
+  return {
+    ...(source || {}),
+    [language]: value,
+  };
+}
+
 export default function MenuEditorPage() {
   const { branchId } = useParams();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
 
   const [sectionName, setSectionName] = useState("");
+  const [sectionNameI18n, setSectionNameI18n] = useState({});
   const [addingSection, setAddingSection] = useState(false);
 
   const [sectionModal, setSectionModal] = useState(null);
@@ -118,6 +182,10 @@ export default function MenuEditorPage() {
       null
     );
   }, [branch]);
+
+  const enabledLanguages = useMemo(() => normalizeEnabledLanguages(menu), [menu]);
+  const extraLanguages = useMemo(() => getExtraLanguages(menu), [menu]);
+
 
   const sections = useMemo(() => {
     return [...(menu?.sections || [])]
@@ -171,64 +239,67 @@ export default function MenuEditorPage() {
     }
   }
 
+
   async function addSection(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!sectionName.trim()) return;
+  if (!sectionName.trim()) return;
 
-    if (locked) {
-      toast.error(getLimitMessage("locked", billing));
-      return;
-    }
-
-    if (archived) {
-      toast.error("Restore this branch before editing.");
-      return;
-    }
-
-    setAddingSection(true);
-
-    try {
-      if (!menu?.id) throw new Error("Menu not found.");
-
-      const sectionSlug = slugify(sectionName);
-
-      if (!sectionSlug) {
-        throw new Error("Section slug is required.");
-      }
-
-      const { data: duplicateSection, error: duplicateError } = await supabase
-        .from("sections")
-        .select("id")
-        .eq("menu_version_id", menu.id)
-        .eq("slug", sectionSlug)
-        .maybeSingle();
-
-      if (duplicateError) throw duplicateError;
-
-      if (duplicateSection) {
-        throw new Error("A section with this slug already exists.");
-      }
-
-      const { error } = await supabase.from("sections").insert({
-        menu_version_id: menu.id,
-        name_ar: sectionName.trim(),
-        slug: sectionSlug,
-        cover_url: null,
-        sort_order: sections.length + 1,
-      });
-
-      if (error) throw error;
-
-      setSectionName("");
-      toast.success("Section added");
-      refresh();
-    } catch (err) {
-      toast.error(err.message || "Failed to add section");
-    } finally {
-      setAddingSection(false);
-    }
+  if (locked) {
+    toast.error(getLimitMessage("locked", billing));
+    return;
   }
+
+  if (archived) {
+    toast.error("Restore this branch before editing.");
+    return;
+  }
+
+  setAddingSection(true);
+
+  try {
+    if (!menu?.id) throw new Error("Menu not found.");
+
+    const sectionSlug = slugify(sectionName);
+
+    if (!sectionSlug) {
+      throw new Error("Section slug is required.");
+    }
+
+    const { data: duplicateSection, error: duplicateError } = await supabase
+      .from("sections")
+      .select("id")
+      .eq("menu_version_id", menu.id)
+      .eq("slug", sectionSlug)
+      .maybeSingle();
+
+    if (duplicateError) throw duplicateError;
+
+    if (duplicateSection) {
+      throw new Error("A section with this slug already exists.");
+    }
+
+    const { error } = await supabase.from("sections").insert({
+      menu_version_id: menu.id,
+      name_ar: sectionName.trim(),
+      name_i18n: cleanI18n(sectionNameI18n),
+      slug: sectionSlug,
+      cover_url: null,
+      sort_order: sections.length + 1,
+    });
+
+    if (error) throw error;
+
+    setSectionName("");
+    setSectionNameI18n({});
+    toast.success("Section added");
+    refresh();
+  } catch (err) {
+    toast.error(err.message || "Failed to add section");
+  } finally {
+    setAddingSection(false);
+  }
+}
 
   async function deleteSection(section) {
     if (locked) {
@@ -502,6 +573,14 @@ export default function MenuEditorPage() {
                 dir="rtl"
               />
 
+              <TranslationInputGroup
+  title="Section translations"
+  languages={extraLanguages}
+  value={sectionNameI18n}
+  onChange={setSectionNameI18n}
+  fieldLabel="Section name"
+/>
+
               <Button
                 type="submit"
                 loading={addingSection}
@@ -712,48 +791,55 @@ export default function MenuEditorPage() {
         </div>
       </section>
 
-      <SectionRenameModal
-        section={sectionModal}
-        menuId={menu.id}
-        locked={locked}
-        lockedMessage={getLimitMessage("locked", billing)}
-        onClose={() => setSectionModal(null)}
-        onDone={() => {
-          setSectionModal(null);
-          refresh();
-        }}
-      />
+<SectionRenameModal
+  section={sectionModal}
+  menuId={menu.id}
+  enabledLanguages={enabledLanguages}
+  locked={locked}
+  lockedMessage={getLimitMessage("locked", billing)}
+  onClose={() => setSectionModal(null)}
+  onDone={() => {
+    setSectionModal(null);
+    refresh();
+  }}
+/>
 
-      <ItemModal
-        key={
-          itemModal
-            ? `${itemModal.section.id}-${itemModal.item?.id || "new"}`
-            : "empty"
-        }
-        data={itemModal}
-        locked={locked}
-        itemLimitReached={itemLimitReached}
-        disabledMessage={itemDisabledMessage}
-        onClose={() => setItemModal(null)}
-        onDone={() => {
-          setItemModal(null);
-          refresh();
-        }}
-      />
+<ItemModal
+  key={
+    itemModal
+      ? `${itemModal.section.id}-${itemModal.item?.id || "new"}`
+      : "empty"
+  }
+  data={itemModal}
+  enabledLanguages={enabledLanguages}
+  locked={locked}
+  itemLimitReached={itemLimitReached}
+  disabledMessage={itemDisabledMessage}
+  onClose={() => setItemModal(null)}
+  onDone={() => {
+    setItemModal(null);
+    refresh();
+  }}
+/>
     </main>
   );
 }
 
+
 function SectionRenameModal({
   section,
   menuId,
+  enabledLanguages,
   locked,
   lockedMessage,
   onClose,
   onDone,
 }) {
+  const extraLanguages = enabledLanguages.filter((code) => code !== "ar");
+
   const [form, setForm] = useState({
     name_ar: section?.name_ar || "",
+    name_i18n: section?.name_i18n || {},
     slug: section?.slug || "",
     cover_url: section?.cover_url || "",
   });
@@ -763,6 +849,7 @@ function SectionRenameModal({
   useEffect(() => {
     setForm({
       name_ar: section?.name_ar || "",
+      name_i18n: section?.name_i18n || {},
       slug: section?.slug || "",
       cover_url: section?.cover_url || "",
     });
@@ -819,6 +906,7 @@ function SectionRenameModal({
         .from("sections")
         .update({
           name_ar: cleanName,
+          name_i18n: cleanI18n(form.name_i18n),
           slug: cleanSlug,
           cover_url: form.cover_url.trim() || null,
         })
@@ -842,7 +930,7 @@ function SectionRenameModal({
           <PlanLimitNotice title="Editing locked" text={lockedMessage} />
         )}
 
-        <Field label="Section name">
+        <Field label="Arabic section name">
           <Input
             value={form.name_ar}
             onChange={(e) => updateField("name_ar", e.target.value)}
@@ -850,6 +938,14 @@ function SectionRenameModal({
             placeholder="اسم القسم"
           />
         </Field>
+
+        <TranslationInputGroup
+          title="Section translations"
+          languages={extraLanguages}
+          value={form.name_i18n}
+          onChange={(next) => updateField("name_i18n", next)}
+          fieldLabel="Section name"
+        />
 
         <Field label="Section slug">
           <Input
@@ -895,14 +991,18 @@ function SectionRenameModal({
   );
 }
 
+
 function ItemModal({
   data,
+  enabledLanguages,
   locked,
   itemLimitReached,
   disabledMessage,
   onClose,
   onDone,
 }) {
+  const extraLanguages = enabledLanguages.filter((code) => code !== "ar");
+
   const [loading, setLoading] = useState(false);
 
   const section = data?.section;
@@ -910,7 +1010,9 @@ function ItemModal({
 
   const [form, setForm] = useState({
     name_ar: item?.name_ar || "",
+    name_i18n: item?.name_i18n || {},
     description_ar: item?.description_ar || "",
+    description_i18n: item?.description_i18n || {},
     price: item?.price ?? "",
     image_url: item?.image_url || "",
     is_available: item?.is_available ?? true,
@@ -939,7 +1041,9 @@ function ItemModal({
     try {
       const payload = {
         name_ar: form.name_ar.trim(),
+        name_i18n: cleanI18n(form.name_i18n),
         description_ar: form.description_ar.trim() || null,
+        description_i18n: cleanI18n(form.description_i18n),
         price: Number(form.price || 0),
         image_url: form.image_url.trim() || null,
         is_available: Boolean(form.is_available),
@@ -986,7 +1090,7 @@ function ItemModal({
           />
         )}
 
-        <Field label="Arabic name">
+        <Field label="Arabic item name">
           <Input
             required
             value={form.name_ar}
@@ -996,6 +1100,14 @@ function ItemModal({
           />
         </Field>
 
+        <TranslationInputGroup
+          title="Item name translations"
+          languages={extraLanguages}
+          value={form.name_i18n}
+          onChange={(next) => updateField("name_i18n", next)}
+          fieldLabel="Item name"
+        />
+
         <Field label="Arabic description">
           <Textarea
             value={form.description_ar}
@@ -1004,6 +1116,14 @@ function ItemModal({
             dir="rtl"
           />
         </Field>
+
+        <TranslationTextareaGroup
+          title="Description translations"
+          languages={extraLanguages}
+          value={form.description_i18n}
+          onChange={(next) => updateField("description_i18n", next)}
+          fieldLabel="Item description"
+        />
 
         <Field label="Price">
           <Input
@@ -1050,5 +1170,76 @@ function ItemModal({
         </Button>
       </form>
     </Modal>
+  );
+}
+
+
+function TranslationInputGroup({
+  title,
+  languages,
+  value,
+  onChange,
+  fieldLabel,
+}) {
+  if (!languages?.length) return null;
+
+  return (
+    <div className="grid gap-3 rounded-[22px] border border-white/10 bg-black/25 p-4">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/35">
+        {title}
+      </p>
+
+      {languages.map((language) => {
+        const meta = LANGUAGE_META[language];
+
+        return (
+          <Field key={language} label={`${fieldLabel} · ${meta.label}`}>
+            <Input
+              value={value?.[language] || ""}
+              onChange={(e) =>
+                onChange(setI18nValue(value, language, e.target.value))
+              }
+              placeholder={`${fieldLabel} in ${meta.nativeLabel}`}
+              dir={meta.dir}
+            />
+          </Field>
+        );
+      })}
+    </div>
+  );
+}
+
+function TranslationTextareaGroup({
+  title,
+  languages,
+  value,
+  onChange,
+  fieldLabel,
+}) {
+  if (!languages?.length) return null;
+
+  return (
+    <div className="grid gap-3 rounded-[22px] border border-white/10 bg-black/25 p-4">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/35">
+        {title}
+      </p>
+
+      {languages.map((language) => {
+        const meta = LANGUAGE_META[language];
+
+        return (
+          <Field key={language} label={`${fieldLabel} · ${meta.label}`}>
+            <Textarea
+              value={value?.[language] || ""}
+              onChange={(e) =>
+                onChange(setI18nValue(value, language, e.target.value))
+              }
+              placeholder={`${fieldLabel} in ${meta.nativeLabel}`}
+              dir={meta.dir}
+            />
+          </Field>
+        );
+      })}
+    </div>
   );
 }

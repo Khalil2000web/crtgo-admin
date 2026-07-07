@@ -983,6 +983,7 @@ function SelectBox({ value, onChange, children }) {
   );
 }
 
+
 function PlanLimitsCard({ client, plans }) {
   const plan =
     client.plan ||
@@ -998,19 +999,23 @@ function PlanLimitsCard({ client, plans }) {
       </h2>
 
       <p className="mt-1 text-sm font-bold text-white/35">
-        These limits are enforced in the client dashboard.
+        These limits are controlled from Owner Plans and applied to the client.
       </p>
 
       <div className="mt-5 grid gap-2">
-        <LimitRow label="Plan" value={plan?.name || "Free"} />
+        <LimitRow label="Plan" value={plan?.name || "No plan"} />
         <LimitRow
           label="Branches"
-          value={`${client.branches.length} / ${limits.max_branches ?? "∞"}`}
+          value={`${client.branches.length} / ${formatLimit(limits.max_branches)}`}
         />
-        <LimitRow label="Items" value={limits.max_items ?? "∞"} />
+        <LimitRow label="Items" value={formatLimit(limits.max_items)} />
         <LimitRow
           label="Templates"
           value={(limits.templates || []).join(", ") || "—"}
+        />
+        <LimitRow
+          label="Languages"
+          value={(limits.languages || ["ar"]).join(", ")}
         />
         <LimitRow
           label="Custom cover"
@@ -1020,10 +1025,20 @@ function PlanLimitsCard({ client, plans }) {
           label="Section pages"
           value={limits.section_pages === false ? "Locked" : "Allowed"}
         />
+        <LimitRow
+          label="QR codes"
+          value={limits.qr_codes === false ? "Locked" : "Allowed"}
+        />
       </div>
     </Card>
   );
 }
+
+function formatLimit(value) {
+  if (value === null || value === undefined || value === "") return "∞";
+  return value;
+}
+
 
 function LimitRow({ label, value }) {
   return (

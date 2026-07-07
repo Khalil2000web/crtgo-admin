@@ -8,7 +8,7 @@ import {
   Download,
   ExternalLink,
   LinkIcon,
-  Loader2,
+  Lock,
   Power,
   QrCode,
   RefreshCw,
@@ -19,6 +19,7 @@ import { supabase } from "../lib/supabase";
 import { getPublicMenuUrl } from "../lib/urls";
 import BranchTabs from "../components/BranchTabs";
 import { useConfirm } from "../components/ConfirmProvider";
+import PlanLimitNotice from "../components/PlanLimitNotice";
 import {
   Badge,
   Button,
@@ -28,6 +29,12 @@ import {
   PageHeader,
   SkeletonCard,
 } from "../components/ui";
+import { useBusinessBilling } from "../hooks/useBusinessBilling";
+import {
+  canUseQrCodes,
+  getLimitMessage,
+  isSubscriptionLocked,
+} from "../lib/billing";
 
 async function loadQrPayload(branchId) {
   const { data: branch, error: branchError } = await supabase
@@ -124,6 +131,35 @@ export default function BranchQrPage() {
   const qr = data?.qr || null;
   const business = branch?.businesses || null;
 
+  const {
+    data: billing,
+    isLoading: billingLoading,
+    error: billingError,
+  } = useBusinessBilling(branch?.business_id);
+
+  const archived = branch?.status === "archived";
+  const subscriptionLocked = Boolean(billing && isSubscriptionLocked(billing));
+  const qrPlanLocked = Boolean(billing && !canUseQrCodes(billing));
+
+  const qrLocked =
+    archived ||
+    billingLoading ||
+    Boolean(billingError) ||
+    subscriptionLocked ||
+    qrPlanLocked;
+
+  const qrLockMessage = archived
+    ? "Restore this branch before using QR codes."
+    : billingLoading
+      ? "Billing is still loading. Try again in a second."
+      : billingError
+        ? billingError.message
+        : subscriptionLocked
+          ? getLimitMessage("locked", billing)
+          : qrPlanLocked
+            ? getLimitMessage("qr", billing)
+            : "";
+
   const directMenuUrl =
     business && branch ? getPublicMenuUrl(business.slug, branch.slug) : "";
 
@@ -144,6 +180,11 @@ export default function BranchQrPage() {
 
   async function createPermanentQr() {
     if (!branch || !business) return;
+
+    if (qrLocked) {
+      toast.error(qrLockMessage || "QR codes are locked.");
+      return;
+    }
 
     setCreating(true);
 
@@ -179,6 +220,11 @@ export default function BranchQrPage() {
 
   async function toggleQrEnabled() {
     if (!qr) return;
+
+    if (qrLocked) {
+      toast.error(qrLockMessage || "QR codes are locked.");
+      return;
+    }
 
     const nextEnabled = !qr.enabled;
 
@@ -216,6 +262,11 @@ export default function BranchQrPage() {
 
   async function regenerateQrCode() {
     if (!qr) return;
+
+    if (qrLocked) {
+      toast.error(qrLockMessage || "QR codes are locked.");
+      return;
+    }
 
     const ok = await confirm({
       title: "Regenerate QR code?",
@@ -285,6 +336,11 @@ export default function BranchQrPage() {
   }
 
   function downloadQrOnly() {
+    if (qrLocked) {
+      toast.error(qrLockMessage || "QR codes are locked.");
+      return;
+    }
+
     const canvas = qrRef.current?.querySelector("canvas");
 
     if (!canvas) {
@@ -296,6 +352,11 @@ export default function BranchQrPage() {
   }
 
   function downloadPrintCard() {
+    if (qrLocked) {
+      toast.error(qrLockMessage || "QR codes are locked.");
+      return;
+    }
+
     const sourceCanvas = qrRef.current?.querySelector("canvas");
 
     if (!sourceCanvas) {
@@ -388,6 +449,15 @@ export default function BranchQrPage() {
 
       <BranchTabs branchId={branchId} />
 
+      {qrLocked && (
+        <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
+          <PlanLimitNotice
+            title={archived ? "Branch archived" : "QR codes locked"}
+            text={qrLockMessage}
+          />
+        </section>
+      )}
+
       <section className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6">
         <Link
           to={`/business/${branch.business_id}`}
@@ -400,8 +470,14 @@ export default function BranchQrPage() {
         {!qr ? (
           <Card className="mt-5 p-6">
             <div className="mx-auto max-w-xl text-center">
-              <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-[#ff7a00] text-black">
-                <QrCode size={30} />
+              <div
+                className={`mx-auto grid h-16 w-16 place-items-center rounded-3xl ${
+                  qrLocked
+                    ? "bg-white/10 text-white/30"
+                    : "bg-[#ff7a00] text-black"
+                }`}
+              >
+                {qrLocked ? <Lock size={30} /> : <QrCode size={30} />}
               </div>
 
               <h2 className="mt-5 text-3xl font-black tracking-[-0.06em]">
@@ -418,6 +494,7 @@ export default function BranchQrPage() {
                 className="mt-6"
                 loading={creating}
                 loadingText="Creating QR..."
+                disabled={qrLocked}
                 onClick={createPermanentQr}
               >
                 <QrCode size={17} />
@@ -428,10 +505,16 @@ export default function BranchQrPage() {
         ) : (
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div className="grid gap-5">
-              <Card className="p-5">
+              <Card className={`p-5 ${qrLocked ? "opacity-75" : ""}`}>
                 <div className="flex items-start gap-4">
-                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#ff7a00] text-black">
-                    <QrCode size={25} />
+                  <div
+                    className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl ${
+                      qrLocked
+                        ? "bg-white/10 text-white/35"
+                        : "bg-[#ff7a00] text-black"
+                    }`}
+                  >
+                    {qrLocked ? <Lock size={25} /> : <QrCode size={25} />}
                   </div>
 
                   <div>
@@ -443,6 +526,8 @@ export default function BranchQrPage() {
                       <Badge tone={qr.enabled ? "success" : "danger"}>
                         {qr.enabled ? "Active" : "Disabled"}
                       </Badge>
+
+                      {qrLocked && <Badge tone="danger">Plan locked</Badge>}
                     </div>
 
                     <p className="mt-2 text-sm font-bold leading-6 text-white/40">
@@ -489,13 +574,18 @@ export default function BranchQrPage() {
                   >
                     <Input
                       value={customLabel}
+                      disabled={qrLocked}
                       onChange={(e) => setCustomLabel(e.target.value)}
                       placeholder={`${business?.name} - ${branch.name}`}
                     />
                   </Field>
 
                   <div className="flex flex-wrap gap-2">
-                    <Button type="button" onClick={downloadQrOnly}>
+                    <Button
+                      type="button"
+                      onClick={downloadQrOnly}
+                      disabled={qrLocked}
+                    >
                       <Download size={16} />
                       Download QR PNG
                     </Button>
@@ -504,6 +594,7 @@ export default function BranchQrPage() {
                       type="button"
                       variant="secondary"
                       onClick={downloadPrintCard}
+                      disabled={qrLocked}
                     >
                       <Download size={16} />
                       Download Print Card
@@ -514,6 +605,7 @@ export default function BranchQrPage() {
                       variant={qr.enabled ? "danger" : "secondary"}
                       loading={updating}
                       loadingText={qr.enabled ? "Disabling..." : "Enabling..."}
+                      disabled={qrLocked}
                       onClick={toggleQrEnabled}
                     >
                       <Power size={16} />
@@ -525,6 +617,7 @@ export default function BranchQrPage() {
                       variant="danger"
                       loading={regenerating}
                       loadingText="Regenerating..."
+                      disabled={qrLocked}
                       onClick={regenerateQrCode}
                     >
                       <RefreshCw size={16} />
