@@ -8,6 +8,7 @@ import {
 import {
   Building2,
   HelpCircle,
+  Languages,
   LogOut,
   Menu,
   Settings,
@@ -19,6 +20,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
+import { useAdminI18n } from "../lib/adminI18n";
 
 export default function AppShell() {
   const navigate = useNavigate();
@@ -27,6 +29,8 @@ export default function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
+
+  const { dir } = useAdminI18n();
 
   useEffect(() => {
     let alive = true;
@@ -73,7 +77,10 @@ export default function AppShell() {
   }
 
   return (
-    <main className="flex h-[100dvh] w-full overflow-hidden bg-[#080808] text-white">
+    <main
+      dir={dir}
+      className="flex h-[100dvh] w-full overflow-hidden bg-[#080808] text-white"
+    >
       <aside className="hidden h-full w-72 shrink-0 border-r border-white/10 bg-[#0b0b0b] p-4 lg:flex lg:flex-col">
         <SidebarContent user={user} isOwner={isOwner} logout={logout} />
       </aside>
@@ -115,10 +122,14 @@ export default function AppShell() {
 
           <Brand small />
 
-          <div className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#ff7a00] text-sm font-black text-black">
-            {(user?.user_metadata?.display_name ||
-              user?.email ||
-              "K")[0]?.toUpperCase()}
+          <div className="ml-auto flex items-center gap-2">
+            <AdminLanguageSwitcher />
+
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff7a00] text-sm font-black text-black">
+              {(user?.user_metadata?.display_name ||
+                user?.email ||
+                "K")[0]?.toUpperCase()}
+            </div>
           </div>
         </div>
 
@@ -131,6 +142,8 @@ export default function AppShell() {
 }
 
 function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
+  const { t } = useAdminI18n();
+
   return (
     <>
       {!hideBrand && <Brand />}
@@ -149,10 +162,14 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
             </p>
 
             <p className="truncate text-xs font-bold text-white/35">
-              {user?.email || "Loading..."}
+              {user?.email || t("common.loading")}
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="mt-3">
+        <AdminLanguageSwitcher />
       </div>
 
       {isOwner && (
@@ -161,17 +178,21 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
           className="mt-4 flex items-center gap-3 rounded-[22px] border border-[#ff7a00]/20 bg-[#ff7a00]/10 px-4 py-3 text-sm font-black text-[#ffbd7c] transition hover:bg-[#ff7a00]/15"
         >
           <ShieldCheck size={18} />
-          Owner Console
+          {t("nav.ownerConsole")}
         </Link>
       )}
 
       <nav className="mt-6 grid gap-2">
-        <SideLink to="/" icon={<Building2 size={18} />} label="Businesses" />
+        <SideLink
+          to="/"
+          icon={<Building2 size={18} />}
+          label={t("nav.businesses")}
+        />
 
         <SideLink
           to="/account"
           icon={<UserCircle2 size={18} />}
-          label="Account"
+          label={t("nav.account")}
         />
 
         <button
@@ -179,7 +200,7 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-white/38 transition hover:bg-white/[0.045] hover:text-white"
         >
           <Settings size={18} />
-          Settings
+          {t("nav.settings")}
         </button>
 
         <button
@@ -187,7 +208,7 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-white/38 transition hover:bg-white/[0.045] hover:text-white"
         >
           <HelpCircle size={18} />
-          Help Center
+          {t("nav.help")}
         </button>
       </nav>
 
@@ -198,7 +219,7 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
           className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400/80 transition hover:bg-red-400/[0.099] hover:text-white"
         >
           <LogOut size={18} />
-          Log out
+          {t("nav.logout")}
         </button>
       </div>
     </>
@@ -206,6 +227,8 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
 }
 
 function Brand({ small = false }) {
+  const { t } = useAdminI18n();
+
   return (
     <Link
       to="/"
@@ -221,7 +244,7 @@ function Brand({ small = false }) {
 
       {!small && (
         <p className="mt-1 text-xs font-black uppercase tracking-[0.28em] text-white/30">
-          Admin
+          {t("brand.admin")}
         </p>
       )}
     </Link>
@@ -244,5 +267,35 @@ function SideLink({ to, icon, label }) {
       {icon}
       {label}
     </NavLink>
+  );
+}
+
+function AdminLanguageSwitcher() {
+  const { language, setLanguage, languages, t } = useAdminI18n();
+
+  return (
+    <div className="inline-flex items-center gap-1 rounded-2xl border border-white/10 bg-white/[0.04] p-1">
+      <Languages size={15} className="mx-1 text-white/35" />
+
+      {languages.map((item) => {
+        const active = item.code === language;
+
+        return (
+          <button
+            key={item.code}
+            type="button"
+            title={t("header.language")}
+            onClick={() => setLanguage(item.code)}
+            className={`min-h-8 rounded-xl px-3 text-xs font-black transition ${
+              active
+                ? "bg-[#ff7a00] text-black"
+                : "text-white/45 hover:bg-white/[0.06] hover:text-white"
+            }`}
+          >
+            {item.short}
+          </button>
+        );
+      })}
+    </div>
   );
 }
