@@ -23,6 +23,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { slugify } from "../lib/slug";
 import { getPublicMenuUrl } from "../lib/urls";
+import { useAdminI18n } from "../lib/adminI18n";
 import { useConfirm } from "../components/ConfirmProvider";
 import ImageUploadField from "../components/ImageUploadField";
 import {
@@ -96,10 +97,16 @@ function emptyToNull(value) {
   return clean ? clean : null;
 }
 
+function statusLabel(status, t) {
+  const clean = status || "active";
+  return t(`status.${clean}`, clean);
+}
+
 export default function BusinessPage() {
   const { businessId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
 
   const [newBranchOpen, setNewBranchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -121,7 +128,9 @@ export default function BusinessPage() {
   } = useBusinessBilling(businessId);
 
   const branches = business?.branches || [];
-  const activeBranches = branches.filter((branch) => branch.status !== "archived");
+  const activeBranches = branches.filter(
+    (branch) => branch.status !== "archived"
+  );
   const branchCount = branches.length;
 
   const locked = Boolean(billing && isSubscriptionLocked(billing));
@@ -132,20 +141,16 @@ export default function BusinessPage() {
   const branchCreateBlocked =
     billingLoading || Boolean(billingError) || locked || branchLimitReached;
 
-const allowedLanguages = billing ? getAllowedLanguages(billing) : [];
+  const allowedLanguages = billing ? getAllowedLanguages(billing) : [];
 
-const businessLocked =
-  business?.status === "archived" ||
-  billingLoading ||
-  Boolean(billingError) ||
-  locked;
+  const businessLocked =
+    business?.status === "archived" ||
+    billingLoading ||
+    Boolean(billingError) ||
+    locked;
 
-const languagesPlanLocked =
-  Boolean(billing) && allowedLanguages.length === 0;
-
-const qrPlanLocked =
-  Boolean(billing) && !canUseQrCodes(billing);
-
+  const languagesPlanLocked = Boolean(billing) && allowedLanguages.length === 0;
+  const qrPlanLocked = Boolean(billing) && !canUseQrCodes(billing);
 
   const disabledMessage = billingLoading
     ? "Billing is still loading. Try again in a second."
@@ -174,12 +179,11 @@ const qrPlanLocked =
   }
 
   if (!business) {
-    return <ErrorPage message="Business not found." />;
+    return <ErrorPage message={t("business.notFound", "Business not found.")} />;
   }
 
   const businessPublicUrl =
-    activeBranches[0] &&
-    getPublicMenuUrl(business.slug, activeBranches[0].slug);
+    activeBranches[0] && getPublicMenuUrl(business.slug, activeBranches[0].slug);
 
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-20 text-white">
@@ -189,13 +193,13 @@ const qrPlanLocked =
           className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
-          Back to businesses
+          {t("business.backToBusinesses")}
         </Link>
 
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#ff7a00]">
-              Business
+              {t("business.eyebrow")}
             </p>
 
             <h1 className="mt-1 truncate text-3xl font-black tracking-[-0.06em]">
@@ -203,7 +207,7 @@ const qrPlanLocked =
             </h1>
 
             <p className="mt-2 max-w-sm text-sm font-bold text-white/40">
-              {business.description || "Manage branches and menus."}
+              {business.description || t("business.fallbackDescription")}
             </p>
           </div>
 
@@ -216,7 +220,7 @@ const qrPlanLocked =
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
               >
                 <ExternalLink size={17} />
-                Public
+                {t("business.public")}
               </a>
             )}
 
@@ -226,7 +230,7 @@ const qrPlanLocked =
               onClick={() => setSettingsOpen(true)}
             >
               <Settings size={17} />
-              Business Settings
+              {t("business.settings")}
             </Button>
           </div>
         </div>
@@ -235,26 +239,29 @@ const qrPlanLocked =
       <section className="mx-auto grid max-w-7xl gap-4 px-4 pt-5 sm:px-6">
         {locked && (
           <PlanLimitNotice
-            title="Subscription locked"
+            title={t("business.subscriptionLocked")}
             text={getLimitMessage("locked", billing)}
           />
         )}
 
         {billingError && (
-          <PlanLimitNotice title="Billing error" text={billingError.message} />
+          <PlanLimitNotice
+            title={t("business.billingError")}
+            text={billingError.message}
+          />
         )}
 
         {branchLimitReached && !locked && (
           <PlanLimitNotice
-            title="Branch limit reached"
+            title={t("business.branchLimitReached")}
             text={getLimitMessage("branches", billing)}
           />
         )}
 
         {business.status === "archived" && (
           <PlanLimitNotice
-            title="Business archived"
-            text="This business is archived. Restore it from Business Settings before using it publicly."
+            title={t("business.businessArchived")}
+            text={t("business.businessArchivedText")}
           />
         )}
       </section>
@@ -271,7 +278,7 @@ const qrPlanLocked =
             ) : (
               <Plus size={17} />
             )}
-            New Branch
+            {t("business.newBranch")}
           </Button>
 
           <Button
@@ -280,7 +287,7 @@ const qrPlanLocked =
             onClick={() => setSettingsOpen(true)}
           >
             <Settings size={17} />
-            Edit Business
+            {t("business.editBusiness")}
           </Button>
         </div>
 
@@ -314,146 +321,177 @@ const qrPlanLocked =
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Info label="Branches" value={branchCount} />
-              <Info label="Active" value={activeBranches.length} />
-              <Info label="Status" value={business.status || "active"} />
+              <Info label={t("business.branches")} value={branchCount} />
+              <Info label={t("business.active")} value={activeBranches.length} />
+              <Info
+                label={t("business.status")}
+                value={statusLabel(business.status, t)}
+              />
             </div>
           </div>
         </div>
 
         <div className="mt-6 flex items-center justify-between">
-          <h2 className="text-2xl font-black tracking-[-0.04em]">Branches</h2>
+          <h2 className="text-2xl font-black tracking-[-0.04em]">
+            {t("business.branches")}
+          </h2>
         </div>
 
         {branches.length ? (
           <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {branches.map((branch) => {
+              const activeMenu =
+                branch.menu_versions?.find((menu) => menu.status === "active") ||
+                branch.menu_versions?.[0];
 
+              const qr =
+                branch.branch_qr_codes?.find?.((item) => item.enabled) ||
+                branch.branch_qr_codes?.[0] ||
+                null;
 
+              const publicUrl = getPublicMenuUrl(business.slug, branch.slug);
+              const branchArchived = branch.status === "archived";
 
-{branches.map((branch) => {
-  const activeMenu =
-    branch.menu_versions?.find((menu) => menu.status === "active") ||
-    branch.menu_versions?.[0];
+              const enabledLanguages = Array.isArray(
+                activeMenu?.enabled_languages
+              )
+                ? activeMenu.enabled_languages
+                : ["ar"];
 
-  const qr =
-    branch.branch_qr_codes?.find?.((item) => item.enabled) ||
-    branch.branch_qr_codes?.[0] ||
-    null;
+              const branchLocked = businessLocked || branchArchived;
+              const languagesLocked = branchLocked || languagesPlanLocked;
+              const qrLocked = branchLocked || qrPlanLocked;
 
-  const publicUrl = getPublicMenuUrl(business.slug, branch.slug);
-  const branchArchived = branch.status === "archived";
+              return (
+                <article
+                  key={branch.id}
+                  className={`group rounded-[28px] border border-white/10 bg-[#111111] p-5 transition hover:-translate-y-0.5 hover:border-[#ff7a00]/50 hover:bg-[#151515] ${
+                    branchArchived ? "opacity-60" : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ff7a00]">
+                      <MapPin size={24} />
+                    </div>
 
-  const enabledLanguages = Array.isArray(activeMenu?.enabled_languages)
-    ? activeMenu.enabled_languages
-    : ["ar"];
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {branch.is_main && (
+                        <MiniBadge tone="warning">
+                          {t("business.main")}
+                        </MiniBadge>
+                      )}
 
-  const branchLocked = businessLocked || branchArchived;
-  const languagesLocked = branchLocked || languagesPlanLocked;
-  const qrLocked = branchLocked || qrPlanLocked;
+                      <MiniBadge tone={branchArchived ? "danger" : "success"}>
+                        {statusLabel(branch.status, t)}
+                      </MiniBadge>
 
-  return (
-    <article
-      key={branch.id}
-      className={`group rounded-[28px] border border-white/10 bg-[#111111] p-5 transition hover:-translate-y-0.5 hover:border-[#ff7a00]/50 hover:bg-[#151515] ${
-        branchArchived ? "opacity-60" : ""
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[#ff7a00]">
-          <MapPin size={24} />
-        </div>
+                      {businessLocked && !branchArchived && (
+                        <MiniBadge tone="danger">
+                          {t("business.locked")}
+                        </MiniBadge>
+                      )}
 
-        <div className="flex flex-wrap justify-end gap-2">
-          {branch.is_main && <MiniBadge tone="warning">Main</MiniBadge>}
+                      {qr && (
+                        <MiniBadge tone={qr.enabled ? "success" : "danger"}>
+                          {qr.enabled ? t("business.qrOn") : t("business.qrOff")}
+                        </MiniBadge>
+                      )}
+                    </div>
+                  </div>
 
-          <MiniBadge tone={branchArchived ? "danger" : "success"}>
-            {branch.status || "active"}
-          </MiniBadge>
+                  <h3 className="mt-6 truncate text-2xl font-black tracking-[-0.04em]">
+                    {branch.name}
+                  </h3>
 
-          {businessLocked && !branchArchived && (
-            <MiniBadge tone="danger">Locked</MiniBadge>
-          )}
+                  <p
+                    className="mt-2 truncate text-sm font-bold text-white/35"
+                    dir="ltr"
+                  >
+                    {publicUrl}
+                  </p>
 
-          {qr && (
-            <MiniBadge tone={qr.enabled ? "success" : "danger"}>
-              QR {qr.enabled ? "on" : "off"}
-            </MiniBadge>
-          )}
-        </div>
-      </div>
+                  <div className="mt-5 grid grid-cols-2 gap-2">
+                    <Info
+                      label={t("business.menu")}
+                      value={
+                        activeMenu?.name ||
+                        t("business.mainMenu", "Main Menu")
+                      }
+                    />
+                    <Info
+                      label={t("business.template")}
+                      value={activeMenu?.template_id || "classic"}
+                    />
+                    <Info
+                      label={t("business.languages")}
+                      value={enabledLanguages.join(", ")}
+                    />
+                    <Info
+                      label={t("business.qrScans")}
+                      value={qr?.scan_count || 0}
+                    />
+                  </div>
 
-      <h3 className="mt-6 truncate text-2xl font-black tracking-[-0.04em]">
-        {branch.name}
-      </h3>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <QuickAction
+                      to={`/branch/${branch.id}/menu`}
+                      icon={<ArrowUpRight size={16} />}
+                      label={t("business.editMenu")}
+                      primary
+                      locked={branchLocked}
+                    />
 
-      <p className="mt-2 truncate text-sm font-bold text-white/35" dir="ltr">
-        {publicUrl}
-      </p>
+                    <QuickAction
+                      to={`/branch/${branch.id}/appearance`}
+                      icon={<Palette size={16} />}
+                      label={t("business.appearance")}
+                      locked={branchLocked}
+                    />
 
-      <div className="mt-5 grid grid-cols-2 gap-2">
-        <Info label="Menu" value={activeMenu?.name || "Main Menu"} />
-        <Info label="Template" value={activeMenu?.template_id || "classic"} />
-        <Info label="Languages" value={enabledLanguages.join(", ")} />
-        <Info label="QR scans" value={qr?.scan_count || 0} />
-      </div>
+                    <QuickAction
+                      to={`/branch/${branch.id}/languages`}
+                      icon={<Languages size={16} />}
+                      label={t("business.languages")}
+                      locked={languagesLocked}
+                    />
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <QuickAction
-          to={`/branch/${branch.id}/menu`}
-          icon={<ArrowUpRight size={16} />}
-          label="Edit Menu"
-          primary
-          locked={branchLocked}
-        />
+                    <QuickAction
+                      to={`/branch/${branch.id}/qr`}
+                      icon={<QrCode size={16} />}
+                      label={t("business.qrCode")}
+                      locked={qrLocked}
+                    />
+                  </div>
 
-        <QuickAction
-          to={`/branch/${branch.id}/appearance`}
-          icon={<Palette size={16} />}
-          label="Appearance"
-          locked={branchLocked}
-        />
-
-        <QuickAction
-          to={`/branch/${branch.id}/languages`}
-          icon={<Languages size={16} />}
-          label="Languages"
-          locked={languagesLocked}
-        />
-
-        <QuickAction
-          to={`/branch/${branch.id}/qr`}
-          icon={<QrCode size={16} />}
-          label="QR Code"
-          locked={qrLocked}
-        />
-      </div>
-
-      <a
-        href={publicUrl}
-        target="_blank"
-        rel="noreferrer"
-        className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-black transition ${
-          branchLocked
-            ? "border-red-400/15 bg-red-500/10 text-red-100/60"
-            : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07] hover:text-white"
-        }`}
-      >
-        {branchLocked ? <Lock size={16} /> : <ExternalLink size={16} />}
-        {branchLocked ? "Public Menu Locked" : "Open Public Menu"}
-      </a>
-    </article>
-  );
-})}
-
-
-
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-black transition ${
+                      branchLocked
+                        ? "border-red-400/15 bg-red-500/10 text-red-100/60"
+                        : "border-white/10 bg-white/[0.04] text-white/60 hover:bg-white/[0.07] hover:text-white"
+                    }`}
+                  >
+                    {branchLocked ? (
+                      <Lock size={16} />
+                    ) : (
+                      <ExternalLink size={16} />
+                    )}
+                    {branchLocked
+                      ? t("business.publicMenuLocked")
+                      : t("business.openPublicMenu")}
+                  </a>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <section className="mt-5 rounded-[28px] border border-dashed border-white/10 bg-[#111111] p-10 text-center">
             <MapPin className="mx-auto text-[#ff7a00]" size={42} />
 
             <h3 className="mt-5 text-3xl font-black tracking-[-0.05em]">
-              No branches yet
+              {t("business.noBranches")}
             </h3>
 
             <Button
@@ -467,7 +505,7 @@ const qrPlanLocked =
               ) : (
                 <Plus size={17} />
               )}
-              New Branch
+              {t("business.newBranch")}
             </Button>
           </section>
         )}
@@ -492,13 +530,13 @@ const qrPlanLocked =
       <NewBranchModal
         open={newBranchOpen}
         business={business}
-        disabled={
-          branchCreateBlocked ||
-          business.status === "archived"
-        }
+        disabled={branchCreateBlocked || business.status === "archived"}
         disabledMessage={
           business.status === "archived"
-            ? "Restore this business before creating branches."
+            ? t(
+                "business.restoreBeforeBranch",
+                "Restore this business before creating branches."
+              )
             : disabledMessage
         }
         onClose={() => setNewBranchOpen(false)}
@@ -521,6 +559,7 @@ function BusinessSettingsModal({
   lockedMessage,
 }) {
   const confirm = useConfirm();
+  const { t } = useAdminI18n();
 
   const [form, setForm] = useState({
     name: "",
@@ -753,10 +792,7 @@ function BusinessSettingsModal({
         .delete()
         .eq("business_id", business.id);
 
-      await supabase
-        .from("client_notes")
-        .delete()
-        .eq("business_id", business.id);
+      await supabase.from("client_notes").delete().eq("business_id", business.id);
 
       await supabase
         .from("subscription_events")
@@ -780,17 +816,22 @@ function BusinessSettingsModal({
   }
 
   return (
-    <Modal open={open} title="Business Settings" onClose={onClose} maxWidth="max-w-3xl">
+    <Modal
+      open={open}
+      title={t("business.settingsTitle")}
+      onClose={onClose}
+      maxWidth="max-w-3xl"
+    >
       <form onSubmit={saveBusiness} className="grid gap-5">
         {editingLocked && (
           <PlanLimitNotice
-            title="Business editing locked"
+            title={t("business.editingLocked")}
             text={lockedMessage}
           />
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Business name">
+          <Field label={t("business.businessName")}>
             <Input
               value={form.name}
               disabled={editingLocked}
@@ -799,7 +840,7 @@ function BusinessSettingsModal({
             />
           </Field>
 
-          <Field label="Business slug">
+          <Field label={t("business.businessSlug")}>
             <Input
               value={form.slug}
               disabled={editingLocked}
@@ -811,7 +852,7 @@ function BusinessSettingsModal({
           </Field>
         </div>
 
-        <Field label="Description">
+        <Field label={t("business.description")}>
           <Textarea
             value={form.description}
             disabled={editingLocked}
@@ -820,36 +861,38 @@ function BusinessSettingsModal({
           />
         </Field>
 
-        <Field label="Landing mode">
+        <Field label={t("business.landingMode")}>
           <Select
             value={form.landing_mode}
             disabled={editingLocked}
             onChange={(e) => updateField("landing_mode", e.target.value)}
           >
-            <option value="branches">Show branch selector page</option>
-            <option value="redirect_main">Redirect to main branch</option>
+            <option value="branches">{t("business.showBranchSelector")}</option>
+            <option value="redirect_main">
+              {t("business.redirectMainBranch")}
+            </option>
           </Select>
         </Field>
 
         <div className="grid gap-5 xl:grid-cols-2">
           <ImageUploadField
-            label="Business logo"
+            label={t("business.logo")}
             value={form.logo_url}
             onChange={(url) => updateField("logo_url", url)}
             folder="business-logo"
             disabled={editingLocked}
             disabledReason={lockedMessage}
-            hint="This logo appears on the public business landing page."
+            hint={t("business.logoHint")}
           />
 
           <ImageUploadField
-            label="Landing cover image"
+            label={t("business.cover")}
             value={form.landing_cover_url}
             onChange={(url) => updateField("landing_cover_url", url)}
             folder="business-cover"
             disabled={editingLocked}
             disabledReason={lockedMessage}
-            hint="This cover appears on the branch selector page."
+            hint={t("business.coverHint")}
           />
         </div>
 
@@ -857,31 +900,36 @@ function BusinessSettingsModal({
           <Button
             type="submit"
             loading={saving}
-            loadingText="Saving business..."
+            loadingText={t("business.savingBusiness")}
             disabled={editingLocked || !form.name.trim()}
           >
-            Save Business
+            {t("business.saveBusiness")}
           </Button>
 
           <Button
             type="button"
             variant={archived ? "secondary" : "danger"}
             loading={changingStatus}
-            loadingText={archived ? "Restoring..." : "Archiving..."}
+            loadingText={
+              archived ? t("business.restoring") : t("business.archiving")
+            }
             disabled={editingLocked}
             onClick={archiveOrRestoreBusiness}
           >
             {archived ? <RotateCcw size={16} /> : <Archive size={16} />}
-            {archived ? "Restore Business" : "Archive Business"}
+            {archived
+              ? t("business.restoreBusiness")
+              : t("business.archiveBusiness")}
           </Button>
         </div>
 
         <div className="rounded-[24px] border border-red-400/15 bg-red-500/10 p-4">
-          <p className="text-sm font-black text-red-200">Danger zone</p>
+          <p className="text-sm font-black text-red-200">
+            {t("business.dangerZone")}
+          </p>
 
           <p className="mt-1 text-sm font-bold leading-6 text-red-100/50">
-            Deleting a business removes all branches, menus, sections, items,
-            billing notes, and subscription history connected to it.
+            {t("business.dangerText")}
           </p>
 
           <Button
@@ -889,12 +937,12 @@ function BusinessSettingsModal({
             variant="danger"
             className="mt-4"
             loading={deleting}
-            loadingText="Deleting..."
+            loadingText={t("business.deleting")}
             disabled={editingLocked}
             onClick={deleteBusiness}
           >
             <Trash2 size={16} />
-            Delete Business Forever
+            {t("business.deleteForever")}
           </Button>
         </div>
       </form>
@@ -910,6 +958,8 @@ function NewBranchModal({
   disabled,
   disabledMessage,
 }) {
+  const { t } = useAdminI18n();
+
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -1017,16 +1067,16 @@ function NewBranchModal({
   }
 
   return (
-    <Modal open={open} title="New Branch" onClose={onClose}>
+    <Modal open={open} title={t("business.newBranch")} onClose={onClose}>
       <form onSubmit={handleSubmit} className="grid gap-4">
         {disabled && (
           <PlanLimitNotice
-            title="Cannot create branch"
+            title={t("branch.cannotCreate")}
             text={disabledMessage}
           />
         )}
 
-        <Field label="Branch name">
+        <Field label={t("branch.name")}>
           <Input
             required
             value={form.name}
@@ -1035,7 +1085,7 @@ function NewBranchModal({
           />
         </Field>
 
-        <Field label="Branch slug">
+        <Field label={t("branch.slug")}>
           <Input
             required
             value={form.slug}
@@ -1046,7 +1096,7 @@ function NewBranchModal({
           />
         </Field>
 
-        <Field label="Address">
+        <Field label={t("branch.address")}>
           <Input
             value={form.address}
             onChange={(e) => updateField("address", e.target.value)}
@@ -1055,7 +1105,7 @@ function NewBranchModal({
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Phone">
+          <Field label={t("branch.phone")}>
             <Input
               value={form.phone}
               onChange={(e) => updateField("phone", e.target.value)}
@@ -1064,7 +1114,7 @@ function NewBranchModal({
             />
           </Field>
 
-          <Field label="WhatsApp">
+          <Field label={t("branch.whatsapp")}>
             <Input
               value={form.whatsapp}
               onChange={(e) => updateField("whatsapp", e.target.value)}
@@ -1074,7 +1124,7 @@ function NewBranchModal({
           </Field>
         </div>
 
-        <Field label="Instagram">
+        <Field label={t("branch.instagram")}>
           <Input
             value={form.instagram}
             onChange={(e) => updateField("instagram", e.target.value)}
@@ -1087,10 +1137,10 @@ function NewBranchModal({
           type="submit"
           size="lg"
           loading={loading}
-          loadingText="Creating..."
+          loadingText={t("branch.creating")}
           disabled={loading || disabled}
         >
-          Create Branch
+          {t("branch.create")}
         </Button>
       </form>
     </Modal>
@@ -1108,7 +1158,6 @@ function Info({ label, value }) {
     </div>
   );
 }
-
 
 function QuickAction({ to, icon, label, primary = false, locked = false }) {
   return (
@@ -1148,8 +1197,6 @@ function MiniBadge({ children, tone = "neutral" }) {
   );
 }
 
-
-
 function LoadingPage() {
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
@@ -1168,6 +1215,8 @@ function LoadingPage() {
 }
 
 function ErrorPage({ message }) {
+  const { t } = useAdminI18n();
+
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
       <Link
@@ -1175,7 +1224,7 @@ function ErrorPage({ message }) {
         className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
       >
         <ArrowLeft size={16} />
-        Back
+        {t("common.back", "Back")}
       </Link>
 
       <p className="mt-5 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
