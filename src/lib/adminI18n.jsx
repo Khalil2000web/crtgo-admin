@@ -152,6 +152,11 @@ const DICTIONARY = {
 "branch.instagram": "Instagram",
 "branch.creating": "Creating...",
 "branch.create": "Create Branch",
+
+"business.mainMenu": "Main Menu",
+"business.notFound": "Business not found.",
+"business.restoreBeforeBranch": "Restore this business before creating branches.",
+"common.back": "Back",
   },
 
 
@@ -290,6 +295,12 @@ const DICTIONARY = {
 "branch.instagram": "إنستغرام",
 "branch.creating": "جارٍ الإنشاء...",
 "branch.create": "إنشاء الفرع",
+
+
+"business.mainMenu": "القائمة الرئيسية",
+"business.notFound": "المطعم غير موجود.",
+"business.restoreBeforeBranch": "قم باستعادة المطعم قبل إنشاء فروع جديدة.",
+"common.back": "رجوع",
   },
 };
 
