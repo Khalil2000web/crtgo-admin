@@ -1,13 +1,15 @@
 import { Clock, Lock } from "lucide-react";
 
+import { useAdminI18n } from "../lib/adminI18n";
+
 const DAYS = [
-  { key: "sun", label: "Sunday الاحد" },
-  { key: "mon", label: "Monday الاثنين" },
-  { key: "tue", label: "Tuesday الثلاثاء" },
-  { key: "wed", label: "Wednesday الأربعاء" },
-  { key: "thu", label: "Thursday الخميس" },
-  { key: "fri", label: "Friday الجمعة" },
-  { key: "sat", label: "Saturday السبت" },
+  { key: "sun", labelKey: "days.sun" },
+  { key: "mon", labelKey: "days.mon" },
+  { key: "tue", labelKey: "days.tue" },
+  { key: "wed", labelKey: "days.wed" },
+  { key: "thu", labelKey: "days.thu" },
+  { key: "fri", labelKey: "days.fri" },
+  { key: "sat", labelKey: "days.sat" },
 ];
 
 export function getDefaultWorkingHours() {
@@ -28,6 +30,8 @@ export default function WorkingHoursEditor({
   disabled = false,
   disabledReason = "",
 }) {
+  const { t } = useAdminI18n();
+
   const hours = {
     ...getDefaultWorkingHours(),
     ...(value || {}),
@@ -86,11 +90,11 @@ export default function WorkingHoursEditor({
 
             <div>
               <p className="text-sm font-black text-yellow-100">
-                Working hours locked
+                {t("hoursEditor.lockedTitle")}
               </p>
 
               <p className="mt-1 text-xs font-bold leading-5 text-yellow-100/55">
-                {disabledReason || "This setting is locked right now."}
+                {disabledReason || t("hoursEditor.lockedFallback")}
               </p>
             </div>
           </div>
@@ -101,11 +105,11 @@ export default function WorkingHoursEditor({
         <div>
           <p className="flex items-center gap-2 text-sm font-black text-white">
             <Clock size={16} className="text-[#ff7a00]" />
-            Working hours
+            {t("hoursEditor.title")}
           </p>
 
           <p className="mt-1 text-xs font-bold text-white/35">
-            Set opening and closing times for this branch.
+            {t("hoursEditor.subtitle")}
           </p>
         </div>
 
@@ -116,7 +120,7 @@ export default function WorkingHoursEditor({
             disabled={disabled}
             className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-white/55 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Everyday
+            {t("hoursEditor.everyday")}
           </button>
 
           <button
@@ -125,7 +129,7 @@ export default function WorkingHoursEditor({
             disabled={disabled}
             className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-white/55 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Weekend closed
+            {t("hoursEditor.weekendClosed")}
           </button>
         </div>
       </div>
@@ -156,7 +160,7 @@ export default function WorkingHoursEditor({
                 />
 
                 <span className="text-sm font-black text-white">
-                  {day.label}
+                  {t(day.labelKey)}
                 </span>
               </label>
 
@@ -183,7 +187,9 @@ export default function WorkingHoursEditor({
                     : "bg-red-500/10 text-red-200"
                 }`}
               >
-                {dayValue.open ? "Open" : "Closed"}
+                {dayValue.open
+                  ? t("hoursEditor.open")
+                  : t("hoursEditor.closed")}
               </span>
             </div>
           );

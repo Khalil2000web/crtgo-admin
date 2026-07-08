@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
+import { useAdminI18n } from "../lib/adminI18n";
 import BranchTabs from "../components/BranchTabs";
 import PlanLimitNotice from "../components/PlanLimitNotice";
 import {
@@ -37,21 +38,21 @@ import {
 const LANGUAGES = [
   {
     code: "ar",
-    name: "Arabic",
+    nameKey: "language.ar",
     native: "العربية",
     dir: "rtl",
     recommended: true,
   },
   {
     code: "he",
-    name: "Hebrew",
+    nameKey: "language.he",
     native: "עברית",
     dir: "rtl",
     recommended: false,
   },
   {
     code: "en",
-    name: "English",
+    nameKey: "language.en",
     native: "English",
     dir: "ltr",
     recommended: false,
@@ -167,7 +168,8 @@ function makeInitialForm(branch, menu) {
     : ["ar"];
 
   const defaultLanguage =
-    menu?.default_language && finalEnabledLanguages.includes(menu.default_language)
+    menu?.default_language &&
+    finalEnabledLanguages.includes(menu.default_language)
       ? menu.default_language
       : finalEnabledLanguages[0];
 
@@ -260,6 +262,7 @@ function countTranslations({ form, menu, language }) {
 export default function BranchLanguagesPage() {
   const { branchId } = useParams();
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
 
   const [saving, setSaving] = useState(false);
   const [localForm, setLocalForm] = useState(null);
@@ -476,9 +479,7 @@ export default function BranchLanguagesPage() {
     );
 
     if (invalidLanguages.length) {
-      toast.error(
-        `Your plan does not include: ${invalidLanguages.join(", ")}`
-      );
+      toast.error(`Your plan does not include: ${invalidLanguages.join(", ")}`);
       return;
     }
 
@@ -587,7 +588,7 @@ export default function BranchLanguagesPage() {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          {error?.message || "Menu not found"}
+          {error?.message || t("languagesPage.menuNotFound")}
         </p>
       </main>
     );
@@ -624,21 +625,23 @@ export default function BranchLanguagesPage() {
       .includes(q);
   });
 
+  const subtitle = t("languagesPage.subtitle").replace("{name}", branch.name);
+
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
-        eyebrow="Branch Settings"
-        title="Languages"
-        subtitle={`Enable languages and translate menu content for ${branch.name}.`}
+        eyebrow={t("languagesPage.eyebrow")}
+        title={t("languagesPage.title")}
+        subtitle={subtitle}
         action={
           <Button
             loading={saving}
-            loadingText="Saving..."
+            loadingText={t("languagesPage.saving")}
             disabled={!dirty || locked || hasNoAllowedLanguages}
             onClick={save}
           >
             <Save size={17} />
-            Save
+            {t("languagesPage.save")}
           </Button>
         }
       />
@@ -647,15 +650,18 @@ export default function BranchLanguagesPage() {
 
       {locked && (
         <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
-          <PlanLimitNotice title="Languages locked" text={lockMessage} />
+          <PlanLimitNotice
+            title={t("languagesPage.languagesLocked")}
+            text={lockMessage}
+          />
         </section>
       )}
 
       {hasNoAllowedLanguages && (
         <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
           <PlanLimitNotice
-            title="No languages available"
-            text="This plan does not include any languages. Add at least Arabic to the plan from Owner Plans."
+            title={t("languagesPage.noLanguagesAvailable")}
+            text={t("languagesPage.noLanguagesAvailableText")}
           />
         </section>
       )}
@@ -666,29 +672,27 @@ export default function BranchLanguagesPage() {
           className="mb-5 inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
-          Back to business
+          {t("languagesPage.backToBusiness")}
         </Link>
 
         <div className="grid gap-5">
           <Card className="p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <h2 className="flex items-center gap-2 text-2xl font-black tracking-[-0.04em]">
+                <h2 className="flex items-center gap-2 text-2xl font-black">
                   <Globe2 size={24} className="text-[#ff7a00]" />
-                  Active languages
+                  {t("languagesPage.activeLanguages")}
                 </h2>
 
                 <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-white/42">
-                  Owner Plans controls which languages are available. Arabic
-                  uses the main fields from the menu editor. Hebrew and English
-                  use the translation fields below.
+                  {t("languagesPage.activeLanguagesText")}
                 </p>
               </div>
 
               {activeLanguage && (
                 <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-white/30">
-                    {activeMeta?.name} progress
+                    {t(activeMeta?.nameKey)} {t("languagesPage.progress")}
                   </p>
 
                   <p className="mt-2 text-2xl font-black text-white">
@@ -728,7 +732,7 @@ export default function BranchLanguagesPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-xl font-black">
-                            {language.name}
+                            {t(language.nameKey)}
                           </h3>
 
                           <span className="text-sm font-bold text-white/45">
@@ -736,15 +740,21 @@ export default function BranchLanguagesPage() {
                           </span>
 
                           {language.recommended && (
-                            <Badge tone="warning">Main</Badge>
+                            <Badge tone="warning">
+                              {t("languagesPage.main")}
+                            </Badge>
                           )}
 
-                          {isDefault && <Badge tone="success">Default</Badge>}
+                          {isDefault && (
+                            <Badge tone="success">
+                              {t("languagesPage.default")}
+                            </Badge>
+                          )}
 
                           {planLocked && (
                             <Badge tone="danger">
                               <Lock size={12} />
-                              Plan locked
+                              {t("languagesPage.planLocked")}
                             </Badge>
                           )}
                         </div>
@@ -753,8 +763,8 @@ export default function BranchLanguagesPage() {
                           {planLocked
                             ? getLimitMessage("languages", billing)
                             : enabled
-                              ? "This language is visible on the public menu."
-                              : "This language is currently disabled."}
+                              ? t("languagesPage.visibleText")
+                              : t("languagesPage.disabledText")}
                         </p>
                       </div>
 
@@ -764,7 +774,9 @@ export default function BranchLanguagesPage() {
                           disabled={locked || (!enabled && planLocked)}
                           onClick={() => toggleLanguage(language.code)}
                         >
-                          {enabled ? "Disable" : "Enable"}
+                          {enabled
+                            ? t("languagesPage.disable")
+                            : t("languagesPage.enable")}
                         </Button>
 
                         <Button
@@ -775,7 +787,7 @@ export default function BranchLanguagesPage() {
                           onClick={() => setDefaultLanguage(language.code)}
                         >
                           <Check size={16} />
-                          Set default
+                          {t("languagesPage.setDefault")}
                         </Button>
                       </div>
                     </div>
@@ -792,12 +804,11 @@ export default function BranchLanguagesPage() {
                   <div>
                     <h2 className="flex items-center gap-2 text-2xl font-black tracking-[-0.04em]">
                       <Languages size={24} className="text-[#ff7a00]" />
-                      Translations
+                      {t("languagesPage.translations")}
                     </h2>
 
                     <p className="mt-2 text-sm font-bold leading-6 text-white/42">
-                      Choose a language and add the public text for business,
-                      branch, sections, and items.
+                      {t("languagesPage.translationsText")}
                     </p>
                   </div>
 
@@ -831,7 +842,7 @@ export default function BranchLanguagesPage() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search sections or items..."
+                    placeholder={t("languagesPage.searchPlaceholder")}
                     className="min-w-0 flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:text-white/30"
                   />
                 </label>
@@ -839,12 +850,12 @@ export default function BranchLanguagesPage() {
 
               <Card className="p-5">
                 <h2 className="text-2xl font-black tracking-[-0.04em]">
-                  Business, branch, and menu text
+                  {t("languagesPage.businessBranchMenuText")}
                 </h2>
 
                 <div className="mt-5 grid gap-4 xl:grid-cols-2">
                   <TranslationInput
-                    label="Business name"
+                    label={t("languagesPage.businessName")}
                     original={branch.businesses?.name}
                     value={form.business.name_i18n?.[activeLanguage] || ""}
                     language={activeLanguage}
@@ -855,7 +866,7 @@ export default function BranchLanguagesPage() {
                   />
 
                   <TranslationInput
-                    label="Business description"
+                    label={t("languagesPage.businessDescription")}
                     original={branch.businesses?.description}
                     value={
                       form.business.description_i18n?.[activeLanguage] || ""
@@ -873,7 +884,7 @@ export default function BranchLanguagesPage() {
                   />
 
                   <TranslationInput
-                    label="Branch name"
+                    label={t("languagesPage.branchName")}
                     original={branch.name}
                     value={form.branch.name_i18n?.[activeLanguage] || ""}
                     language={activeLanguage}
@@ -884,7 +895,7 @@ export default function BranchLanguagesPage() {
                   />
 
                   <TranslationInput
-                    label="Branch address"
+                    label={t("languagesPage.branchAddress")}
                     original={branch.address}
                     value={form.branch.address_i18n?.[activeLanguage] || ""}
                     language={activeLanguage}
@@ -895,7 +906,7 @@ export default function BranchLanguagesPage() {
                   />
 
                   <TranslationInput
-                    label="Menu name"
+                    label={t("languagesPage.menuName")}
                     original={menu.name}
                     value={form.menu.name_i18n?.[activeLanguage] || ""}
                     language={activeLanguage}
@@ -906,7 +917,7 @@ export default function BranchLanguagesPage() {
                   />
 
                   <TranslationInput
-                    label="Menu description"
+                    label={t("languagesPage.menuDescription")}
                     original={menu.description_ar}
                     value={form.menu.description_i18n?.[activeLanguage] || ""}
                     language={activeLanguage}
@@ -925,7 +936,7 @@ export default function BranchLanguagesPage() {
 
               <Card className="p-5">
                 <h2 className="text-2xl font-black tracking-[-0.04em]">
-                  Sections and items
+                  {t("languagesPage.sectionsAndItems")}
                 </h2>
 
                 <div className="mt-5 grid gap-5">
@@ -935,7 +946,7 @@ export default function BranchLanguagesPage() {
                       className="rounded-[28px] border border-white/10 bg-black/25 p-4"
                     >
                       <TranslationInput
-                        label="Section name"
+                        label={t("languagesPage.sectionName")}
                         original={section.name_ar}
                         value={
                           form.sections?.[section.id]?.name_i18n?.[
@@ -962,7 +973,7 @@ export default function BranchLanguagesPage() {
                           >
                             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                               <p className="text-sm font-black text-white/60">
-                                Item
+                                {t("languagesPage.item")}
                               </p>
 
                               <Badge tone="neutral">₪{item.price}</Badge>
@@ -970,7 +981,7 @@ export default function BranchLanguagesPage() {
 
                             <div className="grid gap-4 xl:grid-cols-2">
                               <TranslationInput
-                                label="Item name"
+                                label={t("languagesPage.itemName")}
                                 original={item.name_ar}
                                 value={
                                   form.items?.[item.id]?.name_i18n?.[
@@ -990,7 +1001,7 @@ export default function BranchLanguagesPage() {
                               />
 
                               <TranslationInput
-                                label="Item description"
+                                label={t("languagesPage.itemDescription")}
                                 original={item.description_ar}
                                 value={
                                   form.items?.[item.id]?.description_i18n?.[
@@ -1023,12 +1034,11 @@ export default function BranchLanguagesPage() {
               <Languages className="mx-auto text-[#ff7a00]" size={42} />
 
               <h2 className="mt-4 text-3xl font-black tracking-[-0.05em]">
-                No translation language enabled
+                {t("languagesPage.noTranslationLanguageTitle")}
               </h2>
 
               <p className="mx-auto mt-2 max-w-md text-sm font-bold leading-6 text-white/42">
-                Enable Hebrew or English above. If they are locked, allow them
-                from Owner Plans first.
+                {t("languagesPage.noTranslationLanguageText")}
               </p>
             </Card>
           )}
@@ -1039,21 +1049,21 @@ export default function BranchLanguagesPage() {
         <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl lg:left-[19rem]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-black text-[#ffbd7c]">
-              You have unsaved language and translation changes
+              {t("languagesPage.unsavedMessage")}
             </p>
 
             <div className="flex gap-2">
               <Button variant="secondary" onClick={discard} disabled={saving}>
-                Discard
+                {t("languagesPage.discard")}
               </Button>
 
               <Button
                 onClick={save}
                 loading={saving}
-                loadingText="Saving..."
+                loadingText={t("languagesPage.saving")}
                 disabled={locked}
               >
-                Save changes
+                {t("languagesPage.saveChanges")}
               </Button>
             </div>
           </div>
@@ -1072,19 +1082,26 @@ function TranslationInput({
   multiline = false,
   disabled = false,
 }) {
+  const { t } = useAdminI18n();
+
   const meta = getLanguageMeta(language);
   const originalText = String(original || "").trim();
+
+  const placeholder = t("languagesPage.addTranslation").replace(
+    "{language}",
+    t(meta.nameKey)
+  );
 
   return (
     <Field label={label}>
       <div className="grid gap-2 rounded-[22px] border border-white/10 bg-black/25 p-3">
         <div className="rounded-2xl bg-white/[0.04] p-3">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-white/25">
-            Main text
+            {t("languagesPage.mainText")}
           </p>
 
           <p className="mt-1 text-sm font-bold leading-6 text-white/55">
-            {originalText || "No main text"}
+            {originalText || t("languagesPage.noMainText")}
           </p>
         </div>
 
@@ -1094,7 +1111,7 @@ function TranslationInput({
             disabled={disabled}
             dir={meta.dir}
             onChange={(event) => onChange(event.target.value)}
-            placeholder={`Add ${meta.name} translation...`}
+            placeholder={placeholder}
             rows={4}
           />
         ) : (
@@ -1103,7 +1120,7 @@ function TranslationInput({
             disabled={disabled}
             dir={meta.dir}
             onChange={(event) => onChange(event.target.value)}
-            placeholder={`Add ${meta.name} translation...`}
+            placeholder={placeholder}
           />
         )}
       </div>

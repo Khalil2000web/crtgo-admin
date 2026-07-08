@@ -253,7 +253,6 @@ export default function AccountPage() {
                   value={form.username}
                   onChange={(e) => updateField("username", e.target.value)}
                   placeholder="khaliil"
-                  dir="ltr"
                 />
               </Field>
 

@@ -247,8 +247,7 @@ export default function Dashboard() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("dashboard.searchPlaceholder")}
-              dir="auto"
+              placeholder={t("dashboard.searchPlaceholder")} 
               className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/25 ${searchPadding} text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00]`}
             />
           </div>
@@ -348,7 +347,7 @@ function BusinessCard({ business, index }) {
             {business.logo_url ? (
               <img
                 src={business.logo_url}
-                alt=""
+                alt="image"
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -381,7 +380,7 @@ function BusinessCard({ business, index }) {
           {business.name}
         </h2>
 
-        <p className="mt-2 truncate text-sm font-bold text-white/35" dir="ltr">
+        <p className="mt-2 truncate text-sm font-bold text-white/35" >
           {mainBranch
             ? getPublicMenuUrl(business.slug, mainBranch.slug)
             : `menu.crtgo.com/${business.slug}`}
@@ -399,7 +398,7 @@ function BusinessCard({ business, index }) {
         </div>
 
         <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-          <span className="text-xs font-black uppercase tracking-[0.18em] text-white/30">
+          <span className="text-xs font-black uppercase text-white/30">
             {t("dashboard.openBusiness")}
           </span>
 

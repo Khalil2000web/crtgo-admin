@@ -188,13 +188,6 @@ export default function BusinessPage() {
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-20 text-white">
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#090909]/85 px-4 py-5 backdrop-blur-xl sm:px-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
-        >
-          <ArrowLeft size={16} />
-          {t("business.backToBusinesses")}
-        </Link>
 
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
@@ -237,6 +230,16 @@ export default function BusinessPage() {
       </header>
 
       <section className="mx-auto grid max-w-7xl gap-4 px-4 pt-5 sm:px-6">
+        
+        <Link
+          to="/"
+          dir="ltr"
+          className="inline-flex py-2 items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
+        >
+          <ArrowLeft size={16} />
+          {t("business.backToBusinesses")}
+        </Link>
+        
         {locked && (
           <PlanLimitNotice
             title={t("business.subscriptionLocked")}
@@ -405,7 +408,7 @@ export default function BusinessPage() {
 
                   <p
                     className="mt-2 truncate text-sm font-bold text-white/35"
-                    dir="ltr"
+                    
                   >
                     {publicUrl}
                   </p>
@@ -434,13 +437,12 @@ export default function BusinessPage() {
 
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <QuickAction
-                      to={`/branch/${branch.id}/menu`}
-                      icon={<ArrowUpRight size={16} />}
-                      label={t("business.editMenu")}
-                      primary
-                      locked={branchLocked}
+                    to={`/branch/${branch.id}/menu`}
+                    icon={<ArrowUpRight size={16} />}
+                    label={t("business.editMenu")}
+                    primary
+                    locked={branchLocked}
                     />
-
                     <QuickAction
                       to={`/branch/${branch.id}/appearance`}
                       icon={<Palette size={16} />}

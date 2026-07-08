@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "../lib/supabase";
+import { useAdminI18n } from "../lib/adminI18n";
 import { useBusinessBilling } from "../hooks/useBusinessBilling";
 import {
   canUseQrCodes,
@@ -38,6 +39,8 @@ async function loadBranchTabsMeta(branchId) {
 }
 
 export default function BranchTabs({ branchId }) {
+  const { t } = useAdminI18n();
+
   const { data: branchMeta } = useQuery({
     queryKey: ["branch-tabs-meta", branchId],
     queryFn: () => loadBranchTabsMeta(branchId),
@@ -74,31 +77,31 @@ export default function BranchTabs({ branchId }) {
   const tabs = [
     {
       to: `/branch/${branchId}/general`,
-      label: "General",
+      label: t("branchTabs.general"),
       icon: <Info size={16} />,
       locked: lockedState.globalLocked,
     },
     {
       to: `/branch/${branchId}/menu`,
-      label: "Menu",
+      label: t("branchTabs.menu"),
       icon: <Menu size={16} />,
       locked: lockedState.globalLocked,
     },
     {
       to: `/branch/${branchId}/appearance`,
-      label: "Appearance",
+      label: t("branchTabs.appearance"),
       icon: <Palette size={16} />,
       locked: lockedState.globalLocked,
     },
     {
       to: `/branch/${branchId}/hours`,
-      label: "Working Hours",
+      label: t("branchTabs.hours"),
       icon: <Clock size={16} />,
       locked: lockedState.globalLocked,
     },
     {
       to: `/branch/${branchId}/languages`,
-      label: "Languages",
+      label: t("branchTabs.languages"),
       icon: <Languages size={16} />,
       locked: lockedState.languagesLocked,
       badge:
@@ -108,7 +111,7 @@ export default function BranchTabs({ branchId }) {
     },
     {
       to: `/branch/${branchId}/qr`,
-      label: "QR Code",
+      label: t("branchTabs.qr"),
       icon: <QrCode size={16} />,
       locked: lockedState.qrLocked,
     },
@@ -137,7 +140,7 @@ export default function BranchTabs({ branchId }) {
             {tab.label}
 
             {tab.badge && !tab.locked && (
-              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black tracking-[0.12em] text-white/45">
+              <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-black text-white/45">
                 {tab.badge}
               </span>
             )}

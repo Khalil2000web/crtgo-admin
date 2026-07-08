@@ -19,6 +19,7 @@ import { useConfirm } from "../components/ConfirmProvider";
 import { supabase } from "../lib/supabase";
 import { slugify } from "../lib/slug";
 import { getPublicMenuUrl } from "../lib/urls";
+import { useAdminI18n } from "../lib/adminI18n";
 import { useBusinessBilling } from "../hooks/useBusinessBilling";
 import { getLimitMessage, isSubscriptionLocked } from "../lib/billing";
 import {
@@ -101,6 +102,7 @@ export default function BranchGeneralPage() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
 
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -407,7 +409,7 @@ export default function BranchGeneralPage() {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          Branch not found.
+          {t("branchGeneral.notFound")}
         </p>
       </main>
     );
@@ -418,9 +420,9 @@ export default function BranchGeneralPage() {
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
-        eyebrow="Branch Settings"
+        eyebrow={t("branchGeneral.eyebrow")}
         title={branch.name}
-        subtitle="Control this branch details, slug, links, and public status."
+        subtitle={t("branchGeneral.subtitle")}
         action={
           <div className="flex flex-col gap-2 sm:flex-row">
             <a
@@ -430,7 +432,7 @@ export default function BranchGeneralPage() {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
             >
               <ExternalLink size={17} />
-              Open Public Page
+              {t("branchGeneral.openPublicPage")}
             </a>
           </div>
         }
@@ -441,7 +443,7 @@ export default function BranchGeneralPage() {
       {editingLocked && (
         <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
           <PlanLimitNotice
-            title="Branch editing locked"
+            title={t("branchGeneral.editingLocked")}
             text={lockMessage}
           />
         </section>
@@ -451,38 +453,44 @@ export default function BranchGeneralPage() {
         onSubmit={saveChanges}
         className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6"
       >
+
         <Link
           to={`/business/${branch.business_id}`}
-          className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
+          dir="ltr"
+          className="inline-flex py-2 items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
-          Back to business
+          {t("business.backToBusinesses")}
         </Link>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-3xl font-black tracking-[-0.05em]">General</h2>
+            <h2 className="text-3xl font-black tracking-[-0.05em]">
+              {t("branchGeneral.general")}
+            </h2>
 
             <p className="mt-1 text-sm font-bold text-white/35">
-              This is the branch information shown on public menu pages.
+              {t("branchGeneral.generalSubtitle")}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {archived ? (
-              <Badge tone="warning">Archived</Badge>
+              <Badge tone="warning">{t("branchGeneral.archived")}</Badge>
             ) : (
-              <Badge tone="success">Active</Badge>
+              <Badge tone="success">{t("branchGeneral.active")}</Badge>
             )}
 
             {isFetching && (
               <Badge tone="neutral">
                 <Loader2 size={13} className="animate-spin" />
-                Syncing
+                {t("branchGeneral.syncing")}
               </Badge>
             )}
 
-            {dirty && <Badge tone="warning">Unsaved changes</Badge>}
+            {dirty && (
+              <Badge tone="warning">{t("branchGeneral.unsavedChanges")}</Badge>
+            )}
           </div>
         </div>
 
@@ -490,18 +498,20 @@ export default function BranchGeneralPage() {
           <section className="grid min-w-0 gap-5">
             <Card className="min-w-0 p-5">
               <div className="mb-5">
-                <h3 className="text-xl font-black">Branch identity</h3>
+                <h3 className="text-xl font-black">
+                  {t("branchGeneral.identity")}
+                </h3>
 
                 <p className="mt-1 text-sm font-bold leading-6 text-white/35">
-                  Slug controls the public URL. Example:
-                  <span className="mx-1 font-black text-[#ff7a00]">
+                  {t("branchGeneral.identityText")}
+                  <span className="mx-1 font-black text-[#ff7a00]" dir="ltr">
                     /{form.branchSlug}
                   </span>
                 </p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Branch name">
+                <Field label={t("branchGeneral.branchName")}>
                   <Input
                     value={form.branchName}
                     disabled={editingLocked}
@@ -512,7 +522,7 @@ export default function BranchGeneralPage() {
                   />
                 </Field>
 
-                <Field label="Branch slug">
+                <Field label={t("branchGeneral.branchSlug")}>
                   <Input
                     value={form.branchSlug}
                     disabled={editingLocked}
@@ -523,7 +533,7 @@ export default function BranchGeneralPage() {
                       updateField("branchSlug", slugify(form.branchSlug))
                     }
                     placeholder="haifa"
-                    dir="ltr"
+                    
                   />
                 </Field>
               </div>
@@ -531,7 +541,7 @@ export default function BranchGeneralPage() {
               <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
                 <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/35">
                   <LinkIcon size={14} />
-                  Public URL
+                  {t("branchGeneral.publicUrl")}
                 </p>
 
                 <a
@@ -539,7 +549,7 @@ export default function BranchGeneralPage() {
                   target="_blank"
                   rel="noreferrer"
                   className="mt-2 block break-all text-sm font-black text-[#ff7a00] hover:underline"
-                  dir="ltr"
+                  
                 >
                   {publicUrl}
                 </a>
@@ -548,15 +558,17 @@ export default function BranchGeneralPage() {
 
             <Card className="min-w-0 p-5">
               <div className="mb-5">
-                <h3 className="text-xl font-black">Menu text</h3>
+                <h3 className="text-xl font-black">
+                  {t("branchGeneral.menuText")}
+                </h3>
 
                 <p className="mt-1 text-sm font-bold leading-6 text-white/35">
-                  These appear on the public menu pages.
+                  {t("branchGeneral.menuTextSubtitle")}
                 </p>
               </div>
 
               <div className="grid gap-4">
-                <Field label="Menu name">
+                <Field label={t("branchGeneral.menuName")}>
                   <Input
                     value={form.menuName}
                     disabled={editingLocked}
@@ -565,7 +577,7 @@ export default function BranchGeneralPage() {
                   />
                 </Field>
 
-                <Field label="Menu description">
+                <Field label={t("branchGeneral.menuDescription")}>
                   <Textarea
                     value={form.menuDescription}
                     disabled={editingLocked}
@@ -573,7 +585,7 @@ export default function BranchGeneralPage() {
                       updateField("menuDescription", e.target.value)
                     }
                     placeholder="وصف قصير للقائمة"
-                    dir="rtl"
+                    
                   />
                 </Field>
               </div>
@@ -581,14 +593,16 @@ export default function BranchGeneralPage() {
 
             <Card className="min-w-0 p-5">
               <div className="mb-5">
-                <h3 className="text-xl font-black">Location</h3>
+                <h3 className="text-xl font-black">
+                  {t("branchGeneral.location")}
+                </h3>
 
                 <p className="mt-1 text-sm font-bold leading-6 text-white/35">
-                  Address is shown inside the contact area and branch selector.
+                  {t("branchGeneral.locationSubtitle")}
                 </p>
               </div>
 
-              <Field label="Address">
+              <Field label={t("branchGeneral.address")}>
                 <Input
                   value={form.address}
                   disabled={editingLocked}
@@ -600,15 +614,17 @@ export default function BranchGeneralPage() {
 
             <Card className="min-w-0 p-5">
               <div className="mb-5">
-                <h3 className="text-xl font-black">Contact links</h3>
+                <h3 className="text-xl font-black">
+                  {t("branchGeneral.contactLinks")}
+                </h3>
 
                 <p className="mt-1 text-sm font-bold leading-6 text-white/35">
-                  These are used by the public bottom nav contact sheet.
+                  {t("branchGeneral.contactLinksSubtitle")}
                 </p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Phone">
+                <Field label={t("branchGeneral.phone")}>
                   <Input
                     value={form.phone}
                     disabled={editingLocked}
@@ -618,7 +634,7 @@ export default function BranchGeneralPage() {
                   />
                 </Field>
 
-                <Field label="WhatsApp">
+                <Field label={t("branchGeneral.whatsapp")}>
                   <Input
                     value={form.whatsapp}
                     disabled={editingLocked}
@@ -628,7 +644,7 @@ export default function BranchGeneralPage() {
                   />
                 </Field>
 
-                <Field label="Instagram">
+                <Field label={t("branchGeneral.instagram")}>
                   <Input
                     value={form.instagram}
                     disabled={editingLocked}
@@ -640,7 +656,7 @@ export default function BranchGeneralPage() {
                   />
                 </Field>
 
-                <Field label="Facebook">
+                <Field label={t("branchGeneral.facebook")}>
                   <Input
                     value={form.facebook}
                     disabled={editingLocked}
@@ -650,7 +666,7 @@ export default function BranchGeneralPage() {
                   />
                 </Field>
 
-                <Field label="TikTok">
+                <Field label={t("branchGeneral.tiktok")}>
                   <Input
                     value={form.tiktok}
                     disabled={editingLocked}
@@ -665,11 +681,12 @@ export default function BranchGeneralPage() {
 
           <aside className="grid h-fit min-w-0 gap-5 xl:sticky xl:top-6">
             <Card className="min-w-0 p-5">
-              <h3 className="text-xl font-black">Branch status</h3>
+              <h3 className="text-xl font-black">
+                {t("branchGeneral.branchStatus")}
+              </h3>
 
               <p className="mt-1 text-sm font-bold leading-6 text-white/35">
-                Archive hides this branch from the public menu. Delete removes
-                it forever.
+                {t("branchGeneral.branchStatusSubtitle")}
               </p>
 
               <div className="mt-5 grid gap-3">
@@ -677,44 +694,52 @@ export default function BranchGeneralPage() {
                   type="button"
                   variant={archived ? "secondary" : "danger"}
                   loading={archiving}
-                  loadingText={archived ? "Restoring..." : "Archiving..."}
+                  loadingText={
+                    archived
+                      ? t("branchGeneral.restoring")
+                      : t("branchGeneral.archiving")
+                  }
                   disabled={editingLocked}
                   onClick={archiveOrRestoreBranch}
                 >
                   {archived ? <RotateCcw size={16} /> : <Archive size={16} />}
-                  {archived ? "Restore branch" : "Archive branch"}
+                  {archived
+                    ? t("branchGeneral.restoreBranch")
+                    : t("branchGeneral.archiveBranch")}
                 </Button>
 
                 <Button
                   type="button"
                   variant="danger"
                   loading={deleting}
-                  loadingText="Deleting..."
+                  loadingText={t("branchGeneral.deleting")}
                   disabled={editingLocked}
                   onClick={deleteBranch}
                 >
                   <Trash2 size={16} />
-                  Delete branch
+                  {t("branchGeneral.deleteBranch")}
                 </Button>
               </div>
             </Card>
 
             <Card className="min-w-0 p-5">
-              <h3 className="text-xl font-black">Save changes</h3>
+              <h3 className="text-xl font-black">
+                {t("branchGeneral.saveTitle")}
+              </h3>
 
               <p className="mt-1 text-sm font-bold leading-6 text-white/35">
-                Changes affect the public menu after saving.
+                {t("branchGeneral.saveSubtitle")}
               </p>
 
               <Button
                 type="submit"
                 className="mt-5 w-full"
                 loading={saving}
-                loadingText="Saving..."
+                loadingText={t("branchGeneral.saving")}
                 disabled={!dirty || editingLocked}
               >
                 <Save size={16} />
-                Save changes
+                {t("branchGeneral.saveChanges")}
               </Button>
             </Card>
           </aside>
@@ -724,7 +749,7 @@ export default function BranchGeneralPage() {
           <div className="fixed bottom-4 left-4 right-4 z-[80] rounded-[26px] border border-white/10 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-2xl lg:left-[19rem]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-black text-white/70">
-                You have unsaved branch changes.
+                {t("branchGeneral.unsavedMessage")}
               </p>
 
               <div className="flex gap-2">
@@ -734,17 +759,17 @@ export default function BranchGeneralPage() {
                   onClick={() => setForm(initialForm)}
                   disabled={saving}
                 >
-                  Discard
+                  {t("branchGeneral.discard")}
                 </Button>
 
                 <Button
                   type="submit"
                   loading={saving}
-                  loadingText="Saving..."
+                  loadingText={t("branchGeneral.saving")}
                   disabled={editingLocked}
                 >
                   <Save size={16} />
-                  Save changes
+                  {t("branchGeneral.saveChanges")}
                 </Button>
               </div>
             </div>

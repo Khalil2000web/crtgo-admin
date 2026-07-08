@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   UserCircle2,
   X,
+  User,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -87,7 +88,7 @@ export default function AppShell() {
 
       {mobileOpen && (
         <div className="fixed inset-0 z-[900] overflow-hidden bg-black/70 backdrop-blur-md lg:hidden">
-          <aside className="flex h-full w-80 max-w-[88vw] flex-col border-r border-white/10 bg-[#0b0b0b] p-4">
+          <aside className="flex h-full w-80 max-w-[88vw] overflow-y-auto no-scrollbar flex-col border-r border-white/10 bg-[#0b0b0b] p-4">
             <div className="mb-3 flex items-center justify-between">
               <Brand />
 
@@ -111,7 +112,7 @@ export default function AppShell() {
       )}
 
       <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 bg-[#080808]/85 px-4 backdrop-blur-xl lg:hidden">
+        <div dir="ltr" className="flex h-16 shrink-0 w-full items-center gap-3 border-b border-white/10 bg-[#080808]/85 px-4 backdrop-blur-xl lg:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -125,10 +126,10 @@ export default function AppShell() {
           <div className="ml-auto flex items-center gap-2">
             <AdminLanguageSwitcher />
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff7a00] text-sm font-black text-black">
+            <div className="hidden h-9 w-9 items-center justify-center rounded-full bg-[#ff7a00] text-sm font-black text-black">
               {(user?.user_metadata?.display_name ||
                 user?.email ||
-                "K")[0]?.toUpperCase()}
+                <User />)[0]?.toUpperCase()}
             </div>
           </div>
         </div>
@@ -153,7 +154,7 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#ff7a00] text-sm font-black text-black">
             {(user?.user_metadata?.display_name ||
               user?.email ||
-              "K")[0]?.toUpperCase()}
+              <User />)[0]?.toUpperCase()}
           </div>
 
           <div className="min-w-0">
@@ -212,7 +213,7 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
         </button>
       </nav>
 
-      <div className="mt-auto grid gap-2">
+      <div className="mt-auto grid pt-12 pb-5 gap-2">
         <button
           type="button"
           onClick={logout}
@@ -237,7 +238,7 @@ function Brand({ small = false }) {
       <h1
         className={`${
           small ? "text-2xl" : "text-4xl"
-        } font-black tracking-[-0.07em]`}
+        } font-black tracking-[-0.04em]`}
       >
         CRTGO
       </h1>

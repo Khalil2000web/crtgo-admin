@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
 import { getPublicMenuUrl } from "../lib/urls";
+import { useAdminI18n } from "../lib/adminI18n";
 import BranchTabs from "../components/BranchTabs";
 import ImageUploadField from "../components/ImageUploadField";
 import {
@@ -71,31 +72,30 @@ async function loadBranch(branchId) {
 const TEMPLATES = [
   {
     id: "classic",
-    name: "Classic",
-    badge: "Default",
-    description: "A full scrolling menu with a strong restaurant landing area.",
+    nameKey: "template.classic.name",
+    badgeKey: "template.classic.badge",
+    descriptionKey: "template.classic.description",
     preview: "classic",
   },
   {
     id: "clean_cards",
-    name: "Clean Cards",
-    badge: "Section Pages",
-    description:
-      "Section cards first, then each section opens as its own page. Requires section pages in the plan.",
+    nameKey: "template.cleanCards.name",
+    badgeKey: "template.cleanCards.badge",
+    descriptionKey: "template.cleanCards.description",
     preview: "cards",
   },
   {
     id: "modern",
-    name: "Modern",
-    badge: "Wide",
-    description: "A modern split layout with the brand panel beside the menu.",
+    nameKey: "template.modern.name",
+    badgeKey: "template.modern.badge",
+    descriptionKey: "template.modern.description",
     preview: "modern",
   },
   {
     id: "luxury",
-    name: "Luxury",
-    badge: "Premium",
-    description: "Large hero, premium spacing, and stronger visual branding.",
+    nameKey: "template.luxury.name",
+    badgeKey: "template.luxury.badge",
+    descriptionKey: "template.luxury.description",
     preview: "luxury",
   },
 ];
@@ -124,6 +124,7 @@ function requiresSectionPages(templateId) {
 export default function BranchAppearancePage() {
   const { branchId } = useParams();
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
 
   const [saving, setSaving] = useState(false);
   const [localForm, setLocalForm] = useState(null);
@@ -314,7 +315,7 @@ export default function BranchAppearancePage() {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          {error?.message || "Menu not found"}
+          {error?.message || t("appearance.menuNotFound")}
         </p>
       </main>
     );
@@ -323,9 +324,9 @@ export default function BranchAppearancePage() {
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
-        eyebrow="Branch Settings"
-        title="Appearance"
-        subtitle={`Customize logo, cover, colors, and template for ${branch.name}.`}
+        eyebrow={t("appearance.eyebrow")}
+        title={t("appearance.title")}
+        subtitle={t("appearance.subtitle")}
         action={
           <div className="flex gap-2">
             {publicUrl && (
@@ -336,19 +337,19 @@ export default function BranchAppearancePage() {
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
               >
                 <ExternalLink size={17} />
-                Preview
+                {t("appearance.preview")}
               </a>
             )}
 
             <Button
               type="button"
               loading={saving}
-              loadingText="Saving..."
+              loadingText={t("appearance.saving")}
               disabled={!dirty || appearanceLocked || selectedTemplateLocked}
               onClick={save}
             >
               <Save size={17} />
-              Save
+              {t("appearance.save")}
             </Button>
           </div>
         }
@@ -359,14 +360,18 @@ export default function BranchAppearancePage() {
       <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 pt-5 sm:px-6">
         {appearanceLocked && (
           <PlanLimitNotice
-            title={archived ? "Branch archived" : "Appearance locked"}
+            title={
+              archived
+                ? t("appearance.branchArchived")
+                : t("appearance.appearanceLocked")
+            }
             text={lockMessage}
           />
         )}
 
         {customCoverLocked && !appearanceLocked && (
           <PlanLimitNotice
-            title="Custom cover locked"
+            title={t("appearance.customCoverLocked")}
             text={getLimitMessage("cover", billing)}
           />
         )}
@@ -375,8 +380,8 @@ export default function BranchAppearancePage() {
           <PlanLimitNotice
             title={
               requiresSectionPages(form.template_id) && sectionPagesLocked
-                ? "Section pages locked"
-                : "Template locked"
+                ? t("appearance.sectionPagesLocked")
+                : t("appearance.templateLocked")
             }
             text={selectedTemplateLockMessage}
           />
@@ -389,19 +394,18 @@ export default function BranchAppearancePage() {
           className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
-          Back to business
+          {t("appearance.backToBusiness")}
         </Link>
 
         <div className="mt-5 grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_400px]">
           <div className="grid min-w-0 gap-5">
             <Card className="min-w-0 p-5">
-              <h2 className="text-2xl font-black tracking-[-0.04em]">
-                Template
+              <h2 className="text-2xl font-black">
+                {t("appearance.template")}
               </h2>
 
               <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-                Choose how the public menu looks. Owner Plans controls which
-                templates and section-page layouts are available.
+                {t("appearance.templateText")}
               </p>
 
               <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -437,11 +441,11 @@ export default function BranchAppearancePage() {
                       <div className="mt-4 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <h3 className="truncate text-lg font-black">
-                            {template.name}
+                            {t(template.nameKey)}
                           </h3>
 
                           <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-                            {template.description}
+                            {t(template.descriptionKey)}
                           </p>
 
                           {templateLocked && (
@@ -469,14 +473,14 @@ export default function BranchAppearancePage() {
                           }
                         >
                           {active
-                            ? "Selected"
+                            ? t("appearance.selected")
                             : templateLocked
-                              ? "Locked"
-                              : "Available"}
+                              ? t("appearance.locked")
+                              : t("appearance.available")}
                         </Badge>
 
-                        <span className="text-xs font-black uppercase tracking-[0.14em] text-white/25">
-                          {template.badge}
+                        <span className="text-xs font-black uppercase text-white/25">
+                          {t(template.badgeKey)}
                         </span>
                       </div>
                     </button>
@@ -486,17 +490,17 @@ export default function BranchAppearancePage() {
             </Card>
 
             <Card className="min-w-0 p-5">
-              <h2 className="text-2xl font-black tracking-[-0.04em]">
-                Images
+              <h2 className="text-2xl font-black">
+                {t("appearance.images")}
               </h2>
 
               <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-                Upload the logo and cover image used on the public menu.
+                {t("appearance.imagesText")}
               </p>
 
               <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-2">
                 <ImageUploadField
-                  label="Logo"
+                  label={t("appearance.logo")}
                   value={form.logo_url}
                   onChange={(url) => updateField("logo_url", url)}
                   folder="menu-logo"
@@ -504,13 +508,13 @@ export default function BranchAppearancePage() {
                   disabledReason={lockMessage}
                   hint={
                     form.logo_url
-                      ? "Logo is added. Change or delete it."
-                      : "Add a logo for the public menu header."
+                      ? t("appearance.logoAdded")
+                      : t("appearance.logoEmpty")
                   }
                 />
 
                 <ImageUploadField
-                  label="Cover image"
+                  label={t("appearance.coverImage")}
                   value={form.cover_url}
                   onChange={(url) => updateField("cover_url", url)}
                   folder="menu-cover"
@@ -520,40 +524,39 @@ export default function BranchAppearancePage() {
                     customCoverLocked
                       ? getLimitMessage("cover", billing)
                       : form.cover_url
-                        ? "Cover image is added. Change or delete it."
-                        : "Add a cover image for the public menu hero."
+                        ? t("appearance.coverAdded")
+                        : t("appearance.coverEmpty")
                   }
                 />
               </div>
             </Card>
 
             <Card className="min-w-0 p-5">
-              <h2 className="text-2xl font-black tracking-[-0.04em]">
-                Colors
+              <h2 className="text-2xl font-black">
+                {t("appearance.colors")}
               </h2>
 
               <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-                Choose the brand accent and base colors used by the scrolling
-                templates.
+                {t("appearance.colorsText")}
               </p>
 
               <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-3">
                 <ColorField
-                  label="Primary color"
+                  label={t("appearance.primaryColor")}
                   value={form.primary_color}
                   disabled={appearanceLocked}
                   onChange={(value) => updateField("primary_color", value)}
                 />
 
                 <ColorField
-                  label="Background"
+                  label={t("appearance.background")}
                   value={form.background_color}
                   disabled={appearanceLocked}
                   onChange={(value) => updateField("background_color", value)}
                 />
 
                 <ColorField
-                  label="Text"
+                  label={t("appearance.text")}
                   value={form.text_color}
                   disabled={appearanceLocked}
                   onChange={(value) => updateField("text_color", value)}
@@ -564,8 +567,8 @@ export default function BranchAppearancePage() {
 
           <aside className="min-w-0 2xl:sticky 2xl:top-6 2xl:self-start">
             <Card className="min-w-0 overflow-hidden p-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-white/30">
-                Live preview
+              <p className="text-xs font-black uppercase text-white/30">
+                {t("appearance.livePreview")}
               </p>
 
               <div
@@ -588,8 +591,8 @@ export default function BranchAppearancePage() {
                       style={{ color: form.text_color, opacity: 0.45 }}
                     >
                       {customCoverLocked
-                        ? "Cover locked by plan"
-                        : "No cover image"}
+                        ? t("appearance.coverLockedByPlan")
+                        : t("appearance.noCoverImage")}
                     </div>
                   )}
 
@@ -607,7 +610,7 @@ export default function BranchAppearancePage() {
                         />
                       ) : (
                         <span className="text-xs font-black opacity-40">
-                          Logo
+                          {t("appearance.logoPlaceholder")}
                         </span>
                       )}
                     </div>
@@ -618,7 +621,7 @@ export default function BranchAppearancePage() {
                       </h3>
 
                       <p className="truncate text-xs font-bold opacity-50">
-                        {form.template_id} template
+                        {form.template_id} {t("appearance.templatePreviewLabel")}
                       </p>
                     </div>
                   </div>
@@ -631,7 +634,7 @@ export default function BranchAppearancePage() {
                       color: "#000",
                     }}
                   >
-                    Example action
+                    {t("appearance.exampleAction")}
                   </button>
 
                   <div className="mt-5 grid gap-2">
@@ -653,7 +656,7 @@ export default function BranchAppearancePage() {
         <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl lg:left-[19rem]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-black text-[#ffbd7c]">
-              You have unsaved appearance changes
+              {t("appearance.unsavedMessage")}
             </p>
 
             <div className="flex gap-2">
@@ -663,17 +666,17 @@ export default function BranchAppearancePage() {
                 onClick={discard}
                 disabled={saving}
               >
-                Discard
+                {t("appearance.discard")}
               </Button>
 
               <Button
                 type="button"
                 onClick={save}
                 loading={saving}
-                loadingText="Saving..."
+                loadingText={t("appearance.saving")}
                 disabled={appearanceLocked || selectedTemplateLocked}
               >
-                Save changes
+                {t("appearance.saveChanges")}
               </Button>
             </div>
           </div>

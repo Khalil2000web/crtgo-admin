@@ -5,6 +5,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
+import { useAdminI18n } from "../lib/adminI18n";
 import BranchTabs from "../components/BranchTabs";
 import PlanLimitNotice from "../components/PlanLimitNotice";
 import WorkingHoursEditor, {
@@ -39,6 +40,7 @@ async function loadBranch(branchId) {
 export default function BranchWorkingHoursPage() {
   const { branchId } = useParams();
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
 
   const [saving, setSaving] = useState(false);
   const [localHours, setLocalHours] = useState(null);
@@ -197,28 +199,30 @@ export default function BranchWorkingHoursPage() {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          Branch not found.
+          {t("hours.notFound")}
         </p>
       </main>
     );
   }
 
+  const subtitle = t("hours.subtitle").replace("{name}", branch.name);
+
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
-        eyebrow="Branch Settings"
-        title="Working Hours"
-        subtitle={`Set opening times for ${branch.name}.`}
+        eyebrow={t("hours.eyebrow")}
+        title={t("hours.title")}
+        subtitle={subtitle}
         action={
           <div className="flex gap-2">
             <Button
               loading={saving}
-              loadingText="Saving..."
+              loadingText={t("hours.saving")}
               disabled={!dirty || locked}
               onClick={save}
             >
               <Save size={17} />
-              Save
+              {t("hours.save")}
             </Button>
           </div>
         }
@@ -228,7 +232,7 @@ export default function BranchWorkingHoursPage() {
 
       {locked && (
         <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
-          <PlanLimitNotice title="Working hours locked" text={lockMessage} />
+          <PlanLimitNotice title={t("hours.lockedTitle")} text={lockMessage} />
         </section>
       )}
 
@@ -238,26 +242,26 @@ export default function BranchWorkingHoursPage() {
           className="mb-5 inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
-          Back to business
+          {t("hours.backToBusiness")}
         </Link>
 
         <div className="mb-4 flex flex-col gap-2 sm:flex-row">
           <Button variant="secondary" onClick={openAll} disabled={locked}>
-            Open all
+            {t("hours.openAll")}
           </Button>
 
           <Button variant="secondary" onClick={closeAll} disabled={locked}>
-            Close all
+            {t("hours.closeAll")}
           </Button>
         </div>
 
         <Card className={`p-5 ${locked ? "opacity-60" : ""}`}>
           <WorkingHoursEditor
-  value={hours}
-  onChange={setHoursSafely}
-  disabled={locked}
-  disabledReason={lockMessage}
-/>
+            value={hours}
+            onChange={setHoursSafely}
+            disabled={locked}
+            disabledReason={lockMessage}
+          />
         </Card>
       </section>
 
@@ -265,21 +269,21 @@ export default function BranchWorkingHoursPage() {
         <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl rounded-[24px] border border-[#ff7a00]/20 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl lg:left-[19rem]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-black text-[#ffbd7c]">
-              You have unsaved working hours changes
+              {t("hours.unsavedMessage")}
             </p>
 
             <div className="flex gap-2">
               <Button variant="secondary" onClick={discard} disabled={saving}>
-                Discard
+                {t("hours.discard")}
               </Button>
 
               <Button
                 onClick={save}
                 loading={saving}
-                loadingText="Saving..."
+                loadingText={t("hours.saving")}
                 disabled={locked}
               >
-                Save changes
+                {t("hours.saveChanges")}
               </Button>
             </div>
           </div>

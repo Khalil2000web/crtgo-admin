@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 
 import { supabase } from "../lib/supabase";
 import { getPublicMenuUrl } from "../lib/urls";
+import { useAdminI18n } from "../lib/adminI18n";
 import BranchTabs from "../components/BranchTabs";
 import { useConfirm } from "../components/ConfirmProvider";
 import PlanLimitNotice from "../components/PlanLimitNotice";
@@ -109,6 +110,7 @@ export default function BranchQrPage() {
   const { branchId } = useParams();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const { t } = useAdminI18n();
 
   const qrRef = useRef(null);
 
@@ -166,7 +168,7 @@ export default function BranchQrPage() {
   const permanentUrl = qr?.code ? getPermanentQrUrl(qr.code) : "";
   const title =
     customLabel.trim() ||
-    (business && branch ? `${business.name} - ${branch.name}` : "CRTGO Menu");
+    (business && branch ? `${business.name} - ${branch.name}` : t("qr.fallbackTitle"));
 
   const filename = cleanFileName(
     business && branch
@@ -388,7 +390,7 @@ export default function BranchQrPage() {
 
     ctx.fillStyle = "#000000";
     ctx.font = "900 24px Arial";
-    ctx.fillText("SCAN MENU", 450, 245);
+    ctx.fillText(t("qr.scanMenu"), 450, 245);
 
     ctx.drawImage(sourceCanvas, 225, 320, 450, 450);
 
@@ -402,7 +404,7 @@ export default function BranchQrPage() {
 
     ctx.fillStyle = "#999999";
     ctx.font = "900 20px Arial";
-    ctx.fillText("POWERED BY CRTGO", 450, 1120);
+    ctx.fillText(t("qr.poweredBy"), 450, 1120);
 
     downloadCanvas(canvas, `${filename}-print-card.png`);
   }
@@ -420,18 +422,20 @@ export default function BranchQrPage() {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          {error?.message || "Branch not found"}
+          {error?.message || t("qr.branchNotFound")}
         </p>
       </main>
     );
   }
 
+  const subtitle = t("qr.subtitle").replace("{name}", branch.name);
+
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
-        eyebrow="Branch Settings"
-        title="QR Code"
-        subtitle={`Generate and control the permanent QR code for ${branch.name}.`}
+        eyebrow={t("qr.eyebrow")}
+        title={t("qr.title")}
+        subtitle={subtitle}
         action={
           qr ? (
             <a
@@ -441,7 +445,7 @@ export default function BranchQrPage() {
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
             >
               <ExternalLink size={17} />
-              Open QR
+              {t("qr.openQr")}
             </a>
           ) : null
         }
@@ -452,7 +456,7 @@ export default function BranchQrPage() {
       {qrLocked && (
         <section className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6">
           <PlanLimitNotice
-            title={archived ? "Branch archived" : "QR codes locked"}
+            title={archived ? t("qr.branchArchived") : t("qr.qrCodesLocked")}
             text={qrLockMessage}
           />
         </section>
@@ -464,7 +468,7 @@ export default function BranchQrPage() {
           className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
-          Back to business
+          {t("qr.backToBusiness")}
         </Link>
 
         {!qr ? (
@@ -480,25 +484,24 @@ export default function BranchQrPage() {
                 {qrLocked ? <Lock size={30} /> : <QrCode size={30} />}
               </div>
 
-              <h2 className="mt-5 text-3xl font-black tracking-[-0.06em]">
-                Create permanent QR
+              <h2 className="mt-5 text-3xl font-black">
+                {t("qr.createPermanent")}
               </h2>
 
               <p className="mx-auto mt-3 max-w-md text-sm font-bold leading-7 text-white/40">
-                This creates a permanent short link. The QR will keep working
-                even if the business slug or branch slug changes later.
+                {t("qr.createPermanentText")}
               </p>
 
               <Button
                 type="button"
                 className="mt-6"
                 loading={creating}
-                loadingText="Creating QR..."
+                loadingText={t("qr.creatingQr")}
                 disabled={qrLocked}
                 onClick={createPermanentQr}
               >
                 <QrCode size={17} />
-                Create QR Code
+                {t("qr.createQrCode")}
               </Button>
             </div>
           </Card>
@@ -519,26 +522,27 @@ export default function BranchQrPage() {
 
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-2xl font-black tracking-[-0.05em]">
-                        Permanent QR
+                      <h2 className="text-2xl font-black">
+                        {t("qr.permanentQr")}
                       </h2>
 
                       <Badge tone={qr.enabled ? "success" : "danger"}>
-                        {qr.enabled ? "Active" : "Disabled"}
+                        {qr.enabled ? t("qr.active") : t("qr.disabled")}
                       </Badge>
 
-                      {qrLocked && <Badge tone="danger">Plan locked</Badge>}
+                      {qrLocked && (
+                        <Badge tone="danger">{t("qr.planLocked")}</Badge>
+                      )}
                     </div>
 
                     <p className="mt-2 text-sm font-bold leading-6 text-white/40">
-                      This QR points to a stable CRTGO short link, then redirects
-                      to the current public menu URL.
+                      {t("qr.permanentQrText")}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-5 grid gap-4">
-                  <Field label="Permanent QR link">
+                  <Field label={t("qr.permanentQrLink")}>
                     <div className="flex gap-2">
                       <Input value={permanentUrl} readOnly dir="ltr" />
 
@@ -548,12 +552,12 @@ export default function BranchQrPage() {
                         onClick={copyPermanentLink}
                       >
                         <Copy size={16} />
-                        Copy
+                        {t("qr.copy")}
                       </Button>
                     </div>
                   </Field>
 
-                  <Field label="Current public menu target">
+                  <Field label={t("qr.currentPublicMenuTarget")}>
                     <div className="flex gap-2">
                       <Input value={directMenuUrl} readOnly dir="ltr" />
 
@@ -563,15 +567,12 @@ export default function BranchQrPage() {
                         onClick={copyDirectMenuLink}
                       >
                         <Copy size={16} />
-                        Copy
+                        {t("qr.copy")}
                       </Button>
                     </div>
                   </Field>
 
-                  <Field
-                    label="Print label"
-                    hint="Optional. This text appears on the print card."
-                  >
+                  <Field label={t("qr.printLabel")} hint={t("qr.printLabelHint")}>
                     <Input
                       value={customLabel}
                       disabled={qrLocked}
@@ -587,7 +588,7 @@ export default function BranchQrPage() {
                       disabled={qrLocked}
                     >
                       <Download size={16} />
-                      Download QR PNG
+                      {t("qr.downloadQrPng")}
                     </Button>
 
                     <Button
@@ -597,47 +598,49 @@ export default function BranchQrPage() {
                       disabled={qrLocked}
                     >
                       <Download size={16} />
-                      Download Print Card
+                      {t("qr.downloadPrintCard")}
                     </Button>
 
                     <Button
                       type="button"
                       variant={qr.enabled ? "danger" : "secondary"}
                       loading={updating}
-                      loadingText={qr.enabled ? "Disabling..." : "Enabling..."}
+                      loadingText={
+                        qr.enabled ? t("qr.disabling") : t("qr.enabling")
+                      }
                       disabled={qrLocked}
                       onClick={toggleQrEnabled}
                     >
                       <Power size={16} />
-                      {qr.enabled ? "Disable QR" : "Enable QR"}
+                      {qr.enabled ? t("qr.disableQr") : t("qr.enableQr")}
                     </Button>
 
                     <Button
                       type="button"
                       variant="danger"
                       loading={regenerating}
-                      loadingText="Regenerating..."
+                      loadingText={t("qr.regenerating")}
                       disabled={qrLocked}
                       onClick={regenerateQrCode}
                     >
                       <RefreshCw size={16} />
-                      Regenerate
+                      {t("qr.regenerate")}
                     </Button>
                   </div>
                 </div>
               </Card>
 
               <Card className="p-5">
-                <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-white/30">
+                <p className="flex items-center gap-2 text-xs font-black uppercase text-white/30">
                   <LinkIcon size={14} />
-                  Analytics
+                  {t("qr.analytics")}
                 </p>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <Stat label="Short code" value={qr.code} />
-                  <Stat label="Scans" value={qr.scan_count || 0} />
+                  <Stat label={t("qr.shortCode")} value={qr.code} />
+                  <Stat label={t("qr.scans")} value={qr.scan_count || 0} />
                   <Stat
-                    label="Last scan"
+                    label={t("qr.lastScan")}
                     value={
                       qr.last_scanned_at
                         ? new Date(qr.last_scanned_at).toLocaleString()
@@ -650,16 +653,16 @@ export default function BranchQrPage() {
 
             <aside className="grid gap-5 xl:sticky xl:top-6 xl:self-start">
               <Card className="p-5">
-                <h2 className="text-2xl font-black tracking-[-0.05em]">
-                  Preview
+                <h2 className="text-2xl font-black">
+                  {t("qr.preview")}
                 </h2>
 
                 <div className="mt-5 overflow-hidden rounded-[30px] bg-white p-5 text-center text-black">
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-black/35">
-                    CRTGO MENU
+                  <p className="text-xs font-black uppercase text-black/35">
+                    {t("qr.crtgoMenu")}
                   </p>
 
-                  <h3 className="mt-2 text-3xl font-black tracking-[-0.06em]">
+                  <h3 className="mt-2 text-3xl font-black">
                     {title}
                   </h3>
 
@@ -686,8 +689,8 @@ export default function BranchQrPage() {
                     {permanentUrl}
                   </p>
 
-                  <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-black/30">
-                    Powered by CRTGO
+                  <p className="mt-6 text-xs font-black uppercas text-black/30">
+                    {t("qr.poweredBy")}
                   </p>
                 </div>
               </Card>
@@ -702,7 +705,7 @@ export default function BranchQrPage() {
 function Stat({ label, value }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/30">
+      <p className="text-xs font-black uppercase text-white/30">
         {label}
       </p>
 

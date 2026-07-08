@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { getPublicMenuUrl } from "../lib/urls";
 import { slugify } from "../lib/slug";
+import { useAdminI18n } from "../lib/adminI18n";
 import { useConfirm } from "../components/ConfirmProvider";
 import BranchTabs from "../components/BranchTabs";
 import ImageUploadField from "../components/ImageUploadField";
@@ -40,7 +41,6 @@ import {
   isSubscriptionLocked,
 } from "../lib/billing";
 import PlanLimitNotice from "../components/PlanLimitNotice";
-
 
 async function loadBranch(branchId) {
   const { data, error } = await supabase
@@ -152,6 +152,7 @@ export default function MenuEditorPage() {
   const { branchId } = useParams();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const { t } = useAdminI18n();
 
   const [sectionName, setSectionName] = useState("");
   const [sectionNameI18n, setSectionNameI18n] = useState({});
@@ -185,7 +186,6 @@ export default function MenuEditorPage() {
 
   const enabledLanguages = useMemo(() => normalizeEnabledLanguages(menu), [menu]);
   const extraLanguages = useMemo(() => getExtraLanguages(menu), [menu]);
-
 
   const sections = useMemo(() => {
     return [...(menu?.sections || [])]
@@ -239,67 +239,66 @@ export default function MenuEditorPage() {
     }
   }
 
-
   async function addSection(e) {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!sectionName.trim()) return;
+    if (!sectionName.trim()) return;
 
-  if (locked) {
-    toast.error(getLimitMessage("locked", billing));
-    return;
-  }
-
-  if (archived) {
-    toast.error("Restore this branch before editing.");
-    return;
-  }
-
-  setAddingSection(true);
-
-  try {
-    if (!menu?.id) throw new Error("Menu not found.");
-
-    const sectionSlug = slugify(sectionName);
-
-    if (!sectionSlug) {
-      throw new Error("Section slug is required.");
+    if (locked) {
+      toast.error(getLimitMessage("locked", billing));
+      return;
     }
 
-    const { data: duplicateSection, error: duplicateError } = await supabase
-      .from("sections")
-      .select("id")
-      .eq("menu_version_id", menu.id)
-      .eq("slug", sectionSlug)
-      .maybeSingle();
-
-    if (duplicateError) throw duplicateError;
-
-    if (duplicateSection) {
-      throw new Error("A section with this slug already exists.");
+    if (archived) {
+      toast.error("Restore this branch before editing.");
+      return;
     }
 
-    const { error } = await supabase.from("sections").insert({
-      menu_version_id: menu.id,
-      name_ar: sectionName.trim(),
-      name_i18n: cleanI18n(sectionNameI18n),
-      slug: sectionSlug,
-      cover_url: null,
-      sort_order: sections.length + 1,
-    });
+    setAddingSection(true);
 
-    if (error) throw error;
+    try {
+      if (!menu?.id) throw new Error("Menu not found.");
 
-    setSectionName("");
-    setSectionNameI18n({});
-    toast.success("Section added");
-    refresh();
-  } catch (err) {
-    toast.error(err.message || "Failed to add section");
-  } finally {
-    setAddingSection(false);
+      const sectionSlug = slugify(sectionName);
+
+      if (!sectionSlug) {
+        throw new Error("Section slug is required.");
+      }
+
+      const { data: duplicateSection, error: duplicateError } = await supabase
+        .from("sections")
+        .select("id")
+        .eq("menu_version_id", menu.id)
+        .eq("slug", sectionSlug)
+        .maybeSingle();
+
+      if (duplicateError) throw duplicateError;
+
+      if (duplicateSection) {
+        throw new Error("A section with this slug already exists.");
+      }
+
+      const { error } = await supabase.from("sections").insert({
+        menu_version_id: menu.id,
+        name_ar: sectionName.trim(),
+        name_i18n: cleanI18n(sectionNameI18n),
+        slug: sectionSlug,
+        cover_url: null,
+        sort_order: sections.length + 1,
+      });
+
+      if (error) throw error;
+
+      setSectionName("");
+      setSectionNameI18n({});
+      toast.success("Section added");
+      refresh();
+    } catch (err) {
+      toast.error(err.message || "Failed to add section");
+    } finally {
+      setAddingSection(false);
+    }
   }
-}
 
   async function deleteSection(section) {
     if (locked) {
@@ -445,7 +444,7 @@ export default function MenuEditorPage() {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          Menu not found.
+          {t("menuEditor.menuNotFound")}
         </p>
       </main>
     );
@@ -456,7 +455,7 @@ export default function MenuEditorPage() {
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
       <PageHeader
-        eyebrow="Menu Editor"
+        eyebrow={t("menuEditor.eyebrow")}
         title={branch.name}
         subtitle={publicUrl}
       />
@@ -466,18 +465,21 @@ export default function MenuEditorPage() {
       <section className="mx-auto grid w-full max-w-7xl gap-4 px-4 pt-5 sm:px-6">
         {locked && (
           <PlanLimitNotice
-            title="Subscription locked"
+            title={t("menuEditor.subscriptionLocked")}
             text={getLimitMessage("locked", billing)}
           />
         )}
 
         {billingError && (
-          <PlanLimitNotice title="Billing error" text={billingError.message} />
+          <PlanLimitNotice
+            title={t("menuEditor.billingError")}
+            text={billingError.message}
+          />
         )}
 
         {itemLimitReached && !locked && (
           <PlanLimitNotice
-            title="Item limit reached"
+            title={t("menuEditor.itemLimitReached")}
             text={getLimitMessage("items", billing)}
           />
         )}
@@ -489,7 +491,7 @@ export default function MenuEditorPage() {
           className="inline-flex items-center gap-2 text-sm font-black text-white/45 transition hover:text-white"
         >
           <ArrowLeft size={16} />
-          Back to business
+          {t("menuEditor.backToBusiness")}
         </Link>
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -500,7 +502,7 @@ export default function MenuEditorPage() {
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
           >
             <ExternalLink size={17} />
-            Open Public Menu
+            {t("menuEditor.openPublicMenu")}
           </a>
 
           <Link
@@ -508,28 +510,30 @@ export default function MenuEditorPage() {
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-[#ff7a00] px-4 text-sm font-black text-black transition hover:bg-white"
           >
             <Settings size={17} />
-            Branch Settings
+            {t("menuEditor.branchSettings")}
           </Link>
         </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-3xl font-black tracking-[-0.05em]">
-              {menu.name || "Main Menu"}
+            <h2 className="text-3xl font-black">
+              {menu.name || t("menuEditor.mainMenu")}
             </h2>
 
             <p className="mt-1 text-sm font-bold text-white/35">
-              Add sections and items for this branch menu.
+              {t("menuEditor.subtitle")}
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {archived && <Badge tone="warning">Archived branch</Badge>}
+            {archived && (
+              <Badge tone="warning">{t("menuEditor.archivedBranch")}</Badge>
+            )}
 
             {isFetching && (
               <Badge tone="neutral">
                 <Loader2 size={13} className="animate-spin" />
-                Syncing
+                {t("menuEditor.syncing")}
               </Badge>
             )}
           </div>
@@ -537,32 +541,32 @@ export default function MenuEditorPage() {
 
         <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-5">
           <Card className="min-w-0 p-4">
-            <Stat label="Sections" value={sections.length} />
+            <Stat label={t("menuEditor.sections")} value={sections.length} />
           </Card>
 
           <Card className="min-w-0 p-4">
-            <Stat label="Items" value={allItems.length} />
+            <Stat label={t("menuEditor.items")} value={allItems.length} />
           </Card>
 
           <Card className="min-w-0 p-4">
-            <Stat label="Available" value={availableItems.length} />
+            <Stat label={t("menuEditor.available")} value={availableItems.length} />
           </Card>
 
           <Card className="min-w-0 p-4">
-            <Stat label="Hidden" value={hiddenItems.length} />
+            <Stat label={t("menuEditor.hidden")} value={hiddenItems.length} />
           </Card>
 
           <Card className="min-w-0 p-4">
-            <Stat label="No images" value={itemsWithoutImages.length} />
+            <Stat label={t("menuEditor.noImages")} value={itemsWithoutImages.length} />
           </Card>
         </div>
 
         <div className="mt-6 grid min-w-0 gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="h-fit min-w-0 rounded-[28px] border border-white/10 bg-[#111111] p-5">
-            <h2 className="text-xl font-black">Add Section</h2>
+            <h2 className="text-xl font-black">{t("menuEditor.addSection")}</h2>
 
             <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-              Sections are groups like pizza, drinks, burgers, desserts.
+              {t("menuEditor.addSectionText")}
             </p>
 
             <form onSubmit={addSection} className="mt-4 grid gap-3">
@@ -574,17 +578,17 @@ export default function MenuEditorPage() {
               />
 
               <TranslationInputGroup
-  title="Section translations"
-  languages={extraLanguages}
-  value={sectionNameI18n}
-  onChange={setSectionNameI18n}
-  fieldLabel="Section name"
-/>
+                title={t("menuEditor.sectionTranslations")}
+                languages={extraLanguages}
+                value={sectionNameI18n}
+                onChange={setSectionNameI18n}
+                fieldLabel={t("menuEditor.sectionName")}
+              />
 
               <Button
                 type="submit"
                 loading={addingSection}
-                loadingText="Adding section..."
+                loadingText={t("menuEditor.addingSection")}
                 disabled={
                   !sectionName.trim() ||
                   archived ||
@@ -593,28 +597,28 @@ export default function MenuEditorPage() {
                 }
               >
                 <Plus size={16} />
-                Add Section
+                {t("menuEditor.addSection")}
               </Button>
             </form>
 
             <div className="mt-6 rounded-2xl border border-[#ff7a00]/15 bg-[#ff7a00]/10 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#ffbd7c]">
-                Menu health
+              <p className="text-xs font-black uppercase text-[#ffbd7c]">
+                {t("menuEditor.menuHealth")}
               </p>
 
               <p className="mt-3 text-sm font-bold leading-6 text-white/55">
-                Add images and descriptions to items for a better public menu.
+                {t("menuEditor.menuHealthText")}
               </p>
             </div>
 
             {archived && (
               <div className="mt-4 rounded-2xl border border-yellow-400/15 bg-yellow-500/10 p-4">
                 <p className="text-sm font-black text-yellow-100">
-                  This branch is archived.
+                  {t("menuEditor.archivedBranchText")}
                 </p>
 
                 <p className="mt-2 text-sm font-bold leading-6 text-yellow-100/55">
-                  Restore it from Branch Settings before editing.
+                  {t("menuEditor.restoreBeforeEditing")}
                 </p>
               </div>
             )}
@@ -630,14 +634,14 @@ export default function MenuEditorPage() {
                   <div className="flex flex-col gap-3 border-b border-white/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <h2
-                        className="truncate text-2xl font-black tracking-[-0.04em]"
+                        className="truncate text-2xl font-black"
                         dir="rtl"
                       >
                         {section.name_ar}
                       </h2>
 
                       <p className="mt-1 text-sm font-bold text-white/35">
-                        {section.items?.length || 0} items
+                        {section.items?.length || 0} {t("menuEditor.items")}
                       </p>
                     </div>
 
@@ -650,7 +654,7 @@ export default function MenuEditorPage() {
                         onClick={() => setSectionModal(section)}
                       >
                         <Pencil size={15} />
-                        Settings
+                        {t("menuEditor.settings")}
                       </Button>
 
                       <Button
@@ -658,12 +662,12 @@ export default function MenuEditorPage() {
                         variant="danger"
                         size="sm"
                         loading={deletingSectionId === section.id}
-                        loadingText="Deleting..."
+                        loadingText={t("menuEditor.deleting")}
                         disabled={archived || locked}
                         onClick={() => deleteSection(section)}
                       >
                         <Trash2 size={15} />
-                        Delete
+                        {t("menuEditor.delete")}
                       </Button>
 
                       <Button
@@ -673,7 +677,7 @@ export default function MenuEditorPage() {
                         onClick={() => setItemModal({ section, item: null })}
                       >
                         <Plus size={15} />
-                        Item
+                        {t("menuEditor.item")}
                       </Button>
                     </div>
                   </div>
@@ -690,7 +694,7 @@ export default function MenuEditorPage() {
                               {item.image_url ? (
                                 <img
                                   src={item.image_url}
-                                  alt="Image"
+                                  alt=""
                                   className="h-full w-full object-cover"
                                 />
                               ) : (
@@ -707,7 +711,7 @@ export default function MenuEditorPage() {
                                 className="mt-1 line-clamp-2 text-sm font-bold text-white/40"
                                 dir="rtl"
                               >
-                                {item.description_ar || "No description"}
+                                {item.description_ar || t("menuEditor.noDescription")}
                               </p>
 
                               <p className="shrink-0 text-right text-lg font-black text-[#ff7a00]">
@@ -733,7 +737,9 @@ export default function MenuEditorPage() {
                                 <Loader2 size={13} className="animate-spin" />
                               )}
 
-                              {item.is_available ? "Available" : "Hidden"}
+                              {item.is_available
+                                ? t("menuEditor.available")
+                                : t("menuEditor.hidden")}
                             </button>
 
                             <Button
@@ -743,7 +749,7 @@ export default function MenuEditorPage() {
                               disabled={archived || locked}
                               onClick={() => setItemModal({ section, item })}
                             >
-                              Edit
+                              {t("menuEditor.edit")}
                             </Button>
 
                             <Button
@@ -751,11 +757,11 @@ export default function MenuEditorPage() {
                               variant="danger"
                               size="sm"
                               loading={deletingItemId === item.id}
-                              loadingText="Deleting..."
+                              loadingText={t("menuEditor.deleting")}
                               disabled={archived || locked}
                               onClick={() => deleteItem(item)}
                             >
-                              Delete
+                              {t("menuEditor.delete")}
                             </Button>
                           </div>
                         </article>
@@ -764,7 +770,7 @@ export default function MenuEditorPage() {
                   ) : (
                     <div className="mt-4 rounded-2xl border border-dashed border-white/10 bg-black/25 p-6 text-center">
                       <p className="text-sm font-bold text-white/40">
-                        No items yet.
+                        {t("menuEditor.noItemsYet")}
                       </p>
 
                       <Button
@@ -774,7 +780,7 @@ export default function MenuEditorPage() {
                         onClick={() => setItemModal({ section, item: null })}
                       >
                         <Plus size={16} />
-                        Add first item
+                        {t("menuEditor.addFirstItem")}
                       </Button>
                     </div>
                   )}
@@ -783,59 +789,62 @@ export default function MenuEditorPage() {
             ) : (
               <EmptyState
                 icon={<Plus size={38} />}
-                title="No sections yet"
-                text="Add your first section from the left panel. Sections hold items like burgers, drinks, desserts, and more."
+                title={t("menuEditor.noSectionsTitle")}
+                text={t("menuEditor.noSectionsText")}
               />
             )}
           </div>
         </div>
       </section>
 
-<SectionRenameModal
-  section={sectionModal}
-  menuId={menu.id}
-  enabledLanguages={enabledLanguages}
-  locked={locked}
-  lockedMessage={getLimitMessage("locked", billing)}
-  onClose={() => setSectionModal(null)}
-  onDone={() => {
-    setSectionModal(null);
-    refresh();
-  }}
-/>
+      <SectionRenameModal
+        section={sectionModal}
+        menuId={menu.id}
+        enabledLanguages={enabledLanguages}
+        locked={locked}
+        lockedMessage={getLimitMessage("locked", billing)}
+        onClose={() => setSectionModal(null)}
+        onDone={() => {
+          setSectionModal(null);
+          refresh();
+        }}
+      />
 
-<ItemModal
-  key={
-    itemModal
-      ? `${itemModal.section.id}-${itemModal.item?.id || "new"}`
-      : "empty"
-  }
-  data={itemModal}
-  enabledLanguages={enabledLanguages}
-  locked={locked}
-  itemLimitReached={itemLimitReached}
-  disabledMessage={itemDisabledMessage}
-  onClose={() => setItemModal(null)}
-  onDone={() => {
-    setItemModal(null);
-    refresh();
-  }}
-/>
+      <ItemModal
+        key={
+          itemModal
+            ? `${itemModal.section.id}-${itemModal.item?.id || "new"}`
+            : "empty"
+        }
+        data={itemModal}
+        enabledLanguages={enabledLanguages}
+        locked={locked}
+        itemLimitReached={itemLimitReached}
+        disabledMessage={itemDisabledMessage}
+        onClose={() => setItemModal(null)}
+        onDone={() => {
+          setItemModal(null);
+          refresh();
+        }}
+      />
     </main>
   );
 }
 
-
 function SectionRenameModal({
   section,
   menuId,
-  enabledLanguages,
+  enabledLanguages = ["ar"],
   locked,
   lockedMessage,
   onClose,
   onDone,
 }) {
-  const extraLanguages = enabledLanguages.filter((code) => code !== "ar");
+  const { t } = useAdminI18n();
+
+  const extraLanguages = (enabledLanguages || ["ar"]).filter(
+    (code) => code !== "ar"
+  );
 
   const [form, setForm] = useState({
     name_ar: section?.name_ar || "",
@@ -924,13 +933,20 @@ function SectionRenameModal({
   }
 
   return (
-    <Modal open={Boolean(section)} title="Section Settings" onClose={onClose}>
+    <Modal
+      open={Boolean(section)}
+      title={t("menuEditor.sectionSettings")}
+      onClose={onClose}
+    >
       <form onSubmit={submit} className="grid gap-4">
         {locked && (
-          <PlanLimitNotice title="Editing locked" text={lockedMessage} />
+          <PlanLimitNotice
+            title={t("menuEditor.editingLocked")}
+            text={lockedMessage}
+          />
         )}
 
-        <Field label="Arabic section name">
+        <Field label={t("menuEditor.arabicSectionName")}>
           <Input
             value={form.name_ar}
             onChange={(e) => updateField("name_ar", e.target.value)}
@@ -940,14 +956,14 @@ function SectionRenameModal({
         </Field>
 
         <TranslationInputGroup
-          title="Section translations"
+          title={t("menuEditor.sectionTranslations")}
           languages={extraLanguages}
           value={form.name_i18n}
           onChange={(next) => updateField("name_i18n", next)}
-          fieldLabel="Section name"
+          fieldLabel={t("menuEditor.sectionName")}
         />
 
-        <Field label="Section slug">
+        <Field label={t("menuEditor.sectionSlug")}>
           <Input
             value={form.slug}
             onChange={(e) => updateField("slug", e.target.value)}
@@ -958,8 +974,8 @@ function SectionRenameModal({
         </Field>
 
         <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-white/35">
-            Public section URL
+          <p className="text-xs font-black uppercase text-white/35">
+            {t("menuEditor.publicSectionUrl")}
           </p>
 
           <p
@@ -971,37 +987,40 @@ function SectionRenameModal({
         </div>
 
         <ImageUploadField
-          label="Section cover image"
+          label={t("menuEditor.sectionCoverImage")}
           value={form.cover_url}
           onChange={(url) => updateField("cover_url", url)}
           folder="sections"
-          hint="This image appears on the public section card. If empty, the first item image will be used."
+          hint={t("menuEditor.sectionCoverHint")}
         />
 
         <Button
           type="submit"
           loading={saving}
-          loadingText="Saving..."
+          loadingText={t("menuEditor.saving")}
           disabled={!form.name_ar.trim() || locked}
         >
-          Save section
+          {t("menuEditor.saveSection")}
         </Button>
       </form>
     </Modal>
   );
 }
 
-
 function ItemModal({
   data,
-  enabledLanguages,
+  enabledLanguages = ["ar"],
   locked,
   itemLimitReached,
   disabledMessage,
   onClose,
   onDone,
 }) {
-  const extraLanguages = enabledLanguages.filter((code) => code !== "ar");
+  const { t } = useAdminI18n();
+
+  const extraLanguages = (enabledLanguages || ["ar"]).filter(
+    (code) => code !== "ar"
+  );
 
   const [loading, setLoading] = useState(false);
 
@@ -1081,16 +1100,24 @@ function ItemModal({
   }
 
   return (
-    <Modal open={true} title={item ? "Edit Item" : "New Item"} onClose={onClose}>
+    <Modal
+      open={true}
+      title={item ? t("menuEditor.editItem") : t("menuEditor.newItem")}
+      onClose={onClose}
+    >
       <form onSubmit={submit} className="grid gap-4">
         {blocked && (
           <PlanLimitNotice
-            title={locked ? "Editing locked" : "Item limit reached"}
+            title={
+              locked
+                ? t("menuEditor.editingLocked")
+                : t("menuEditor.itemLimitReached")
+            }
             text={disabledMessage}
           />
         )}
 
-        <Field label="Arabic item name">
+        <Field label={t("menuEditor.arabicItemName")}>
           <Input
             required
             value={form.name_ar}
@@ -1101,14 +1128,14 @@ function ItemModal({
         </Field>
 
         <TranslationInputGroup
-          title="Item name translations"
+          title={t("menuEditor.itemNameTranslations")}
           languages={extraLanguages}
           value={form.name_i18n}
           onChange={(next) => updateField("name_i18n", next)}
-          fieldLabel="Item name"
+          fieldLabel={t("menuEditor.itemName")}
         />
 
-        <Field label="Arabic description">
+        <Field label={t("menuEditor.arabicDescription")}>
           <Textarea
             value={form.description_ar}
             onChange={(e) => updateField("description_ar", e.target.value)}
@@ -1118,39 +1145,41 @@ function ItemModal({
         </Field>
 
         <TranslationTextareaGroup
-          title="Description translations"
+          title={t("menuEditor.descriptionTranslations")}
           languages={extraLanguages}
           value={form.description_i18n}
           onChange={(next) => updateField("description_i18n", next)}
-          fieldLabel="Item description"
+          fieldLabel={t("menuEditor.itemDescription")}
         />
 
-        <Field label="Price">
+        <Field label={t("menuEditor.price")}>
           <Input
             type="number"
             step="0.01"
             value={form.price}
             onChange={(e) => updateField("price", e.target.value)}
             placeholder="25"
-            dir="rtl"
+            dir="ltr"
           />
         </Field>
 
         <ImageUploadField
-          label="Item image"
+          label={t("menuEditor.itemImage")}
           value={form.image_url}
           onChange={(url) => updateField("image_url", url)}
           folder="items"
           hint={
             hasImage
-              ? "This image will appear on the public menu."
-              : "Add a photo to make this item look better."
+              ? t("menuEditor.itemImageHintReady")
+              : t("menuEditor.itemImageHintEmpty")
           }
         />
 
         <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-black">
           <span>
-            {form.is_available ? "Item is available" : "Item is hidden"}
+            {form.is_available
+              ? t("menuEditor.itemIsAvailable")
+              : t("menuEditor.itemIsHidden")}
           </span>
 
           <input
@@ -1163,16 +1192,17 @@ function ItemModal({
         <Button
           type="submit"
           loading={loading}
-          loadingText={item ? "Saving item..." : "Creating item..."}
+          loadingText={
+            item ? t("menuEditor.savingItem") : t("menuEditor.creatingItem")
+          }
           disabled={!form.name_ar.trim() || blocked}
         >
-          {item ? "Save Item" : "Create Item"}
+          {item ? t("menuEditor.saveItem") : t("menuEditor.createItem")}
         </Button>
       </form>
     </Modal>
   );
 }
-
 
 function TranslationInputGroup({
   title,
@@ -1185,12 +1215,14 @@ function TranslationInputGroup({
 
   return (
     <div className="grid gap-3 rounded-[22px] border border-white/10 bg-black/25 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/35">
+      <p className="text-xs font-black uppercase text-white/35">
         {title}
       </p>
 
       {languages.map((language) => {
         const meta = LANGUAGE_META[language];
+
+        if (!meta) return null;
 
         return (
           <Field key={language} label={`${fieldLabel} · ${meta.label}`}>
@@ -1220,12 +1252,14 @@ function TranslationTextareaGroup({
 
   return (
     <div className="grid gap-3 rounded-[22px] border border-white/10 bg-black/25 p-4">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-white/35">
+      <p className="text-xs font-black uppercase text-white/35">
         {title}
       </p>
 
       {languages.map((language) => {
         const meta = LANGUAGE_META[language];
+
+        if (!meta) return null;
 
         return (
           <Field key={language} label={`${fieldLabel} · ${meta.label}`}>
@@ -1243,3 +1277,4 @@ function TranslationTextareaGroup({
     </div>
   );
 }
+
