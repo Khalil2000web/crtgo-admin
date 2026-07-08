@@ -18,6 +18,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 import { slugify } from "../lib/slug";
 import { getPublicMenuUrl } from "../lib/urls";
+import { useAdminI18n } from "../lib/adminI18n";
 import {
   Badge,
   Button,
@@ -104,8 +105,14 @@ async function loadBusinesses() {
   return data || [];
 }
 
+function statusLabel(status, t) {
+  const clean = status || "active";
+  return t(`status.${clean}`, clean);
+}
+
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const { t, dir } = useAdminI18n();
 
   const [search, setSearch] = useState("");
   const [newBusinessOpen, setNewBusinessOpen] = useState(false);
@@ -150,6 +157,9 @@ export default function Dashboard() {
     0
   );
 
+  const searchIconPosition = dir === "rtl" ? "right-4" : "left-4";
+  const searchPadding = dir === "rtl" ? "pr-11 pl-4" : "pl-11 pr-4";
+
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["businesses"] });
     queryClient.invalidateQueries({ queryKey: ["owner-status"] });
@@ -159,9 +169,9 @@ export default function Dashboard() {
   return (
     <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-20 text-white">
       <PageHeader
-        eyebrow="Workspace"
-        title="Businesses"
-        subtitle="Manage every client, branch, and menu from one clean workspace."
+        eyebrow={t("dashboard.eyebrow")}
+        title={t("dashboard.title")}
+        subtitle={t("dashboard.subtitle")}
         action={
           <div className="flex gap-2">
             <Button variant="secondary" onClick={refresh}>
@@ -169,9 +179,8 @@ export default function Dashboard() {
                 size={17}
                 className={isFetching ? "animate-spin" : ""}
               />
-              Refresh
+              {t("dashboard.refresh")}
             </Button>
-
           </div>
         }
       />
@@ -189,37 +198,42 @@ export default function Dashboard() {
 
               <div>
                 <p className="text-sm font-black text-[#ffbd7c]">
-                  Owner Console
+                  {t("dashboard.ownerConsole")}
                 </p>
 
                 <p className="mt-1 text-xs font-bold text-white/40">
-                  Manage billing, clients, notes, prices, and limits.
+                  {t("dashboard.ownerConsoleText")}
                 </p>
               </div>
             </div>
 
-            <p className="text-sm font-black text-[#ffbd7c]">Open</p>
+            <p className="text-sm font-black text-[#ffbd7c]">
+              {t("dashboard.open")}
+            </p>
           </Link>
         )}
 
         <div className="mb-4 flex flex-col gap-2 sm:flex-row">
           <Button onClick={() => setNewBusinessOpen(true)}>
             <Plus size={17} />
-            New Business
+            {t("dashboard.newBusiness")}
           </Button>
         </div>
 
         <div className="hidden gap-4 md:grid-cols-3">
           <Card className="p-5">
-            <Stat label="Businesses" value={businesses.length} />
+            <Stat label={t("dashboard.businesses")} value={businesses.length} />
           </Card>
 
           <Card className="p-5">
-            <Stat label="Branches" value={totalBranches} />
+            <Stat label={t("dashboard.branches")} value={totalBranches} />
           </Card>
 
           <Card className="p-5">
-            <Stat label="Status" value="Active workspace" />
+            <Stat
+              label={t("dashboard.status")}
+              value={t("dashboard.activeWorkspace")}
+            />
           </Card>
         </div>
 
@@ -227,14 +241,15 @@ export default function Dashboard() {
           <div className="relative">
             <Search
               size={17}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
+              className={`absolute ${searchIconPosition} top-1/2 -translate-y-1/2 text-white/35`}
             />
 
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search businesses, branches, URLs..."
-              className="min-h-12 w-full rounded-2xl border border-white/10 bg-black/25 px-11 text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00]"
+              placeholder={t("dashboard.searchPlaceholder")}
+              dir="auto"
+              className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/25 ${searchPadding} text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00]`}
             />
           </div>
         </Card>
@@ -268,17 +283,21 @@ export default function Dashboard() {
           <div className="mt-6">
             <EmptyState
               icon={<Building2 size={38} />}
-              title={search ? "No results found" : "Create your first business"}
+              title={
+                search
+                  ? t("dashboard.noResults")
+                  : t("dashboard.createFirstBusiness")
+              }
               text={
                 search
-                  ? "Try searching with another business name, branch, or slug."
-                  : "CRTGO will create a business, a main branch, and a starter menu automatically."
+                  ? t("dashboard.noResultsText")
+                  : t("dashboard.createFirstBusinessText")
               }
               action={
                 !search && (
                   <Button onClick={() => setNewBusinessOpen(true)}>
                     <Plus size={17} />
-                    New Business
+                    {t("dashboard.newBusiness")}
                   </Button>
                 )
               }
@@ -300,6 +319,8 @@ export default function Dashboard() {
 }
 
 function BusinessCard({ business, index }) {
+  const { t } = useAdminI18n();
+
   const mainBranch =
     business.branches?.find((branch) => branch.is_main) ||
     business.branches?.[0];
@@ -308,10 +329,9 @@ function BusinessCard({ business, index }) {
     mainBranch?.menu_versions?.find((menu) => menu.status === "active") ||
     mainBranch?.menu_versions?.[0];
 
-  const subscription =
-    Array.isArray(business.business_subscriptions)
-      ? business.business_subscriptions[0]
-      : business.business_subscriptions || null;
+  const subscription = Array.isArray(business.business_subscriptions)
+    ? business.business_subscriptions[0]
+    : business.business_subscriptions || null;
 
   return (
     <motion.div
@@ -338,7 +358,7 @@ function BusinessCard({ business, index }) {
 
           <div className="flex flex-col items-end gap-2">
             <Badge tone={business.status === "active" ? "success" : "neutral"}>
-              {business.status || "active"}
+              {statusLabel(business.status, t)}
             </Badge>
 
             {subscription && (
@@ -368,13 +388,19 @@ function BusinessCard({ business, index }) {
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <Stat label="Branches" value={business.branches?.length || 0} />
-          <Stat label="Menu" value={activeMenu?.name || "Main Menu"} />
+          <Stat
+            label={t("dashboard.branches")}
+            value={business.branches?.length || 0}
+          />
+          <Stat
+            label={t("dashboard.menu")}
+            value={activeMenu?.name || t("dashboard.mainMenu")}
+          />
         </div>
 
         <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
           <span className="text-xs font-black uppercase tracking-[0.18em] text-white/30">
-            Open business
+            {t("dashboard.openBusiness")}
           </span>
 
           <ArrowUpRight
@@ -388,6 +414,8 @@ function BusinessCard({ business, index }) {
 }
 
 function NewBusinessModal({ open, onClose, onDone }) {
+  const { t } = useAdminI18n();
+
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -509,16 +537,16 @@ function NewBusinessModal({ open, onClose, onDone }) {
   }
 
   return (
-    <Modal open={open} title="New Business" onClose={onClose}>
+    <Modal open={open} title={t("dashboard.newBusiness")} onClose={onClose}>
       <form onSubmit={submit} className="grid gap-4">
         <div className="rounded-2xl border border-[#ff7a00]/20 bg-[#ff7a00]/10 p-4">
           <p className="flex items-center gap-2 text-sm font-black text-[#ffbd7c]">
             <Sparkles size={16} />
-            CRTGO will also create the first branch and menu.
+            {t("dashboard.newBusinessInfo")}
           </p>
         </div>
 
-        <Field label="Business name">
+        <Field label={t("dashboard.businessName")}>
           <Input
             required
             value={form.name}
@@ -527,7 +555,10 @@ function NewBusinessModal({ open, onClose, onDone }) {
           />
         </Field>
 
-        <Field label="Business slug" hint="This becomes the public URL.">
+        <Field
+          label={t("dashboard.businessSlug")}
+          hint={t("dashboard.businessSlugHint")}
+        >
           <Input
             required
             value={form.slug}
@@ -538,7 +569,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
           />
         </Field>
 
-        <Field label="Description">
+        <Field label={t("dashboard.description")}>
           <Textarea
             value={form.description}
             onChange={(e) => updateField("description", e.target.value)}
@@ -547,7 +578,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Branch name">
+          <Field label={t("dashboard.branchName")}>
             <Input
               value={form.branchName}
               onChange={(e) => updateField("branchName", e.target.value)}
@@ -555,7 +586,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
             />
           </Field>
 
-          <Field label="Branch slug">
+          <Field label={t("dashboard.branchSlug")}>
             <Input
               value={form.branchSlug}
               onChange={(e) => updateField("branchSlug", e.target.value)}
@@ -569,7 +600,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Phone">
+          <Field label={t("dashboard.phone")}>
             <Input
               value={form.phone}
               onChange={(e) => updateField("phone", e.target.value)}
@@ -578,7 +609,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
             />
           </Field>
 
-          <Field label="WhatsApp">
+          <Field label={t("dashboard.whatsapp")}>
             <Input
               value={form.whatsapp}
               onChange={(e) => updateField("whatsapp", e.target.value)}
@@ -588,7 +619,7 @@ function NewBusinessModal({ open, onClose, onDone }) {
           </Field>
         </div>
 
-        <Field label="Instagram">
+        <Field label={t("dashboard.instagram")}>
           <Input
             value={form.instagram}
             onChange={(e) => updateField("instagram", e.target.value)}
@@ -600,13 +631,13 @@ function NewBusinessModal({ open, onClose, onDone }) {
         <Button
           type="submit"
           loading={loading}
-          loadingText="Creating..."
+          loadingText={t("dashboard.creating")}
           disabled={!form.name.trim()}
           size="lg"
           className="mt-2"
         >
           {loading && <Loader2 size={17} className="animate-spin" />}
-          Create Business
+          {t("dashboard.createBusiness")}
         </Button>
       </form>
     </Modal>
