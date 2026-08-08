@@ -36,6 +36,12 @@ import {
 } from "../lib/billing";
 import PlanLimitNotice from "../components/PlanLimitNotice";
 
+import {
+  loadMenuTemplates,
+  normalizeTemplateId,
+} from "../lib/menuTemplates";
+
+
 async function loadBranch(branchId) {
   const { data, error } = await supabase
     .from("branches")
@@ -69,56 +75,17 @@ async function loadBranch(branchId) {
   return data;
 }
 
-const TEMPLATES = [
-  {
-    id: "classic",
-    nameKey: "template.classic.name",
-    badgeKey: "template.classic.badge",
-    descriptionKey: "template.classic.description",
-    preview: "classic",
-  },
-  {
-    id: "clean_cards",
-    nameKey: "template.cleanCards.name",
-    badgeKey: "template.cleanCards.badge",
-    descriptionKey: "template.cleanCards.description",
-    preview: "cards",
-  },
-  {
-    id: "modern",
-    nameKey: "template.modern.name",
-    badgeKey: "template.modern.badge",
-    descriptionKey: "template.modern.description",
-    preview: "modern",
-  },
-  {
-    id: "luxury",
-    nameKey: "template.luxury.name",
-    badgeKey: "template.luxury.badge",
-    descriptionKey: "template.luxury.description",
-    preview: "luxury",
-  },
-];
 
-function normalizeTemplateId(value) {
-  const template = String(value || "classic").toLowerCase();
 
-  if (template === "modern") return "modern";
-  if (template === "luxury") return "luxury";
+function hasTemplateRequirement(
+  templateId,
+  requirement,
+  templates = []
+) {
+  const cleanId = normalizeTemplateId(templateId, templates);
+  const template = templates.find((item) => item.id === cleanId);
 
-  if (
-    ["clean", "clean_cards", "clean-cards", "template_clean_cards"].includes(
-      template
-    )
-  ) {
-    return "clean_cards";
-  }
-
-  return "classic";
-}
-
-function requiresSectionPages(templateId) {
-  return normalizeTemplateId(templateId) === "clean_cards";
+  return Boolean(template?.requirements?.includes(requirement));
 }
 
 export default function BranchAppearancePage() {
@@ -140,6 +107,16 @@ export default function BranchAppearancePage() {
   });
 
   const {
+    data: templates = [],
+    isLoading: templatesLoading,
+    error: templatesError,
+  } = useQuery({
+    queryKey: ["menu-template-catalog"],
+    queryFn: loadMenuTemplates,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const {
     data: billing,
     isLoading: billingLoading,
     error: billingError,
@@ -155,16 +132,23 @@ export default function BranchAppearancePage() {
 
   const initialForm = useMemo(() => {
     return {
-      template_id: normalizeTemplateId(menu?.template_id || "classic"),
+      template_id: normalizeTemplateId(
+        menu?.template_id || "classic",
+        templates
+      ),
       logo_url: menu?.logo_url || "",
       cover_url: menu?.cover_url || "",
       primary_color: menu?.primary_color || "#ff7a00",
       background_color: menu?.background_color || "#090909",
       text_color: menu?.text_color || "#ffffff",
     };
-  }, [menu]);
+  }, [menu, templates]);
 
   const form = localForm || initialForm;
+  const selectedTemplateId = normalizeTemplateId(
+    form.template_id,
+    templates
+  );
   const dirty = JSON.stringify(form) !== JSON.stringify(initialForm);
 
   const archived = branch?.status === "archived";
@@ -173,7 +157,7 @@ export default function BranchAppearancePage() {
   const sectionPagesLocked = Boolean(billing && !canUseSectionPages(billing));
 
   const selectedTemplateLocked = Boolean(
-    billing && !canUseTemplate(billing, form.template_id)
+    billing && !canUseTemplate(billing, selectedTemplateId)
   );
 
   const appearanceLocked =
@@ -199,7 +183,11 @@ export default function BranchAppearancePage() {
     : lockMessage;
 
   const selectedTemplateLockMessage = selectedTemplateLocked
-    ? requiresSectionPages(form.template_id) && sectionPagesLocked
+    ? hasTemplateRequirement(
+        selectedTemplateId,
+        "section_pages",
+        templates
+      ) && sectionPagesLocked
       ? getLimitMessage("section_pages", billing)
       : getLimitMessage("templates", billing)
     : "";
@@ -208,6 +196,7 @@ export default function BranchAppearancePage() {
     branch?.businesses?.slug && branch?.slug
       ? getPublicMenuUrl(branch.businesses.slug, branch.slug)
       : null;
+
 
   function updateField(key, value) {
     setLocalForm((current) => ({
@@ -224,7 +213,10 @@ export default function BranchAppearancePage() {
   function getTemplateLockMessage(templateId) {
     if (!billing) return "";
 
-    if (requiresSectionPages(templateId) && !canUseSectionPages(billing)) {
+    if (
+      hasTemplateRequirement(templateId, "section_pages", templates) &&
+      !canUseSectionPages(billing)
+    ) {
       return getLimitMessage("section_pages", billing);
     }
 
@@ -242,7 +234,10 @@ export default function BranchAppearancePage() {
       return;
     }
 
-    updateField("template_id", normalizeTemplateId(templateId));
+    updateField(
+      "template_id",
+      normalizeTemplateId(templateId, templates)
+    );
   }
 
   async function save() {
@@ -269,7 +264,10 @@ export default function BranchAppearancePage() {
       const { error } = await supabase
         .from("menu_versions")
         .update({
-          template_id: normalizeTemplateId(form.template_id),
+          template_id: normalizeTemplateId(
+            form.template_id,
+            templates
+          ),
           logo_url: form.logo_url.trim() || null,
           cover_url: form.cover_url.trim() || null,
           primary_color: form.primary_color || "#ff7a00",
@@ -302,7 +300,7 @@ export default function BranchAppearancePage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || templatesLoading) {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <SkeletonCard className="h-40" />
@@ -311,11 +309,13 @@ export default function BranchAppearancePage() {
     );
   }
 
-  if (error || !branch || !menu) {
+  if (error || templatesError || !branch || !menu) {
     return (
       <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] p-5 text-white">
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-          {error?.message || t("appearance.menuNotFound")}
+          {error?.message ||
+            templatesError?.message ||
+            t("appearance.menuNotFound")}
         </p>
       </main>
     );
@@ -379,7 +379,11 @@ export default function BranchAppearancePage() {
         {selectedTemplateLocked && !appearanceLocked && (
           <PlanLimitNotice
             title={
-              requiresSectionPages(form.template_id) && sectionPagesLocked
+              hasTemplateRequirement(
+                selectedTemplateId,
+                "section_pages",
+                templates
+              ) && sectionPagesLocked
                 ? t("appearance.sectionPagesLocked")
                 : t("appearance.templateLocked")
             }
@@ -408,9 +412,9 @@ export default function BranchAppearancePage() {
                 {t("appearance.templateText")}
               </p>
 
-              <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {TEMPLATES.map((template) => {
-                  const active = form.template_id === template.id;
+              <div className="mt-5 grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+                {templates.map((template) => {
+                  const active = selectedTemplateId === template.id;
                   const templateLocked = Boolean(
                     billing && !canUseTemplate(billing, template.id)
                   );
@@ -441,11 +445,15 @@ export default function BranchAppearancePage() {
                       <div className="mt-4 flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <h3 className="truncate text-lg font-black">
-                            {t(template.nameKey)}
+                            {template.nameKey
+                              ? t(template.nameKey)
+                              : template.name}
                           </h3>
 
                           <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-                            {t(template.descriptionKey)}
+                            {template.descriptionKey
+                              ? t(template.descriptionKey)
+                              : template.description}
                           </p>
 
                           {templateLocked && (
@@ -480,7 +488,9 @@ export default function BranchAppearancePage() {
                         </Badge>
 
                         <span className="text-xs font-black uppercase text-white/25">
-                          {t(template.badgeKey)}
+                          {template.badgeKey
+                            ? t(template.badgeKey)
+                            : template.badge}
                         </span>
                       </div>
                     </button>
@@ -711,6 +721,55 @@ function TemplatePreview({ type, primary, background, text, locked }) {
     return (
       <div className="grid h-32 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
         <Lock size={26} className="text-white/25" />
+      </div>
+    );
+  }
+
+  if (type === "cafe") {
+    return (
+      <div className="h-32 overflow-hidden rounded-2xl border border-white/10 bg-[#f7f0df] p-3 text-[#30261d]">
+        <div className="flex items-center gap-2 border-b border-[#30261d]/10 pb-2">
+          <div
+            className="h-7 w-7 rounded-full"
+            style={{ backgroundColor: primary }}
+          />
+
+          <div className="min-w-0 flex-1">
+            <div className="h-2.5 w-16 rounded-full bg-[#30261d]/70" />
+            <div className="mt-1 h-1.5 w-10 rounded-full bg-[#30261d]/20" />
+          </div>
+        </div>
+
+        <div className="mt-2 flex gap-2">
+          <div
+            className="rounded-full px-2 py-1 text-[7px] font-black text-white"
+            style={{ backgroundColor: primary }}
+          >
+            Coffee
+          </div>
+          <div className="rounded-full bg-[#30261d]/5 px-2 py-1 text-[7px] font-black">
+            Bakery
+          </div>
+          <div className="rounded-full bg-[#30261d]/5 px-2 py-1 text-[7px] font-black">
+            Desserts
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2">
+          {["Latte", "Croissant"].map((label) => (
+            <div key={label} className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-xl bg-white shadow-sm" />
+              <div className="min-w-0 flex-1">
+                <div className="h-2 w-16 rounded-full bg-[#30261d]/55" />
+                <div className="mt-1 h-1.5 w-10 rounded-full bg-[#30261d]/15" />
+              </div>
+              <div
+                className="h-2 w-7 rounded-full"
+                style={{ backgroundColor: primary }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

@@ -173,21 +173,11 @@ function SidebarContent({ user, isOwner, logout, hideBrand = false }) {
         <AdminLanguageSwitcher />
       </div>
 
-      {isOwner && (
-        <Link
-          to="/owner"
-          className="mt-4 flex items-center gap-3 rounded-[22px] border border-[#ff7a00]/20 bg-[#ff7a00]/10 px-4 py-3 text-sm font-black text-[#ffbd7c] transition hover:bg-[#ff7a00]/15"
-        >
-          <ShieldCheck size={18} />
-          {t("nav.ownerConsole")}
-        </Link>
-      )}
-
       <nav className="mt-6 grid gap-2">
         <SideLink
           to="/"
           icon={<Building2 size={18} />}
-          label={t("nav.businesses")}
+          label="Websites"
         />
 
         <SideLink
