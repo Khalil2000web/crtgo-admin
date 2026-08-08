@@ -1,20 +1,15 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import OwnerRoute from "./components/OwnerRoute";
 import AppShell from "./components/AppShell";
 
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
-import BusinessPage from "./pages/BusinessPage";
+import ProjectGeneralPage from "./pages/ProjectGeneralPage";
+import ProjectAppearancePage from "./pages/ProjectAppearancePage";
+import ProjectWorkingHoursPage from "./pages/ProjectWorkingHoursPage";
 import MenuEditorPage from "./pages/MenuEditorPage";
-import BranchGeneralPage from "./pages/BranchGeneralPage";
-import BranchAppearancePage from "./pages/BranchAppearancePage";
-import BranchWorkingHoursPage from "./pages/BranchWorkingHoursPage";
-import BranchLanguagesPage from "./pages/BranchLanguagesPage";
 import AccountPage from "./pages/AccountPage";
-import BranchQrPage from "./pages/BranchQrPage";
-import OwnerBillingPage from "./pages/OwnerBillingPage";
 
 export default function App() {
   return (
@@ -24,30 +19,28 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/business/:businessId" element={<BusinessPage />} />
 
-          <Route path="/branch/:branchId/general" element={<BranchGeneralPage />} />
-          <Route path="/branch/:branchId/menu" element={<MenuEditorPage />} />
           <Route
-            path="/branch/:branchId/appearance"
-            element={<BranchAppearancePage />}
-          />
-          <Route
-            path="/branch/:branchId/hours"
-            element={<BranchWorkingHoursPage />}
-          />
-          <Route
-            path="/branch/:branchId/languages"
-            element={<BranchLanguagesPage />}
+            path="/project/:projectId/general"
+            element={<ProjectGeneralPage />}
           />
 
-          <Route path="/branch/:branchId/qr" element={<BranchQrPage />} />
+          <Route
+            path="/project/:projectId/menu"
+            element={<MenuEditorPage />}
+          />
+
+          <Route
+            path="/project/:projectId/appearance"
+            element={<ProjectAppearancePage />}
+          />
+
+          <Route
+            path="/project/:projectId/hours"
+            element={<ProjectWorkingHoursPage />}
+          />
 
           <Route path="/account" element={<AccountPage />} />
-
-          <Route element={<OwnerRoute />}>
-            <Route path="/owner" element={<OwnerBillingPage />} />
-          </Route>
         </Route>
       </Route>
 
