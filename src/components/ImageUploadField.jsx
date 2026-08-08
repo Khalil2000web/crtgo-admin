@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { uploadMenuImage } from "../lib/uploads";
+import { uploadProjectImage } from "../lib/uploads";
 import { Button, Input } from "./ui";
 
 export default function ImageUploadField({
@@ -40,7 +40,7 @@ export default function ImageUploadField({
     setUploading(true);
 
     try {
-      const url = await uploadMenuImage(file, folder);
+      const url = await uploadProjectImage(file, folder);
       onChange(url);
       toast.success(hasImage ? "Image changed" : "Image added");
     } catch (err) {
