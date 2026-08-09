@@ -297,32 +297,31 @@ function SidebarContent({
 
       {/* ACCOUNT */}
 
-<Link
-  to="/account"
-  className="mt-6 block rounded-[24px] border border-white/10 bg-white/[0.035] p-3 transition hover:border-white/20 hover:bg-white/[0.06]"
->
-  <div className="flex items-center gap-3">
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#ff7a00] text-sm font-black text-black">
-      {getUserInitial(user)}
-    </div>
+      <div className="mt-6 rounded-[24px] border border-white/10 bg-white/[0.035] p-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#ff7a00] text-sm font-black text-black">
+            {getUserInitial(
+              user
+            )}
+          </div>
 
-    <div className="min-w-0">
-      <p className="truncate text-sm font-black">
-        {displayName}
-      </p>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-black">
+              {displayName}
+            </p>
 
-      <p
-        className="truncate text-xs font-bold text-white/35"
-        dir="ltr"
-      >
-        {user?.email ||
-          t(
-            "common.loading"
-          )}
-      </p>
-    </div>
-  </div>
-</Link>
+            <p
+              className="truncate text-xs font-bold text-white/35"
+              dir="ltr"
+            >
+              {user?.email ||
+                t(
+                  "common.loading"
+                )}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* LANGUAGE */}
 
