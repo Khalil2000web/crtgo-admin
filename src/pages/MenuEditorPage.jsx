@@ -37,6 +37,11 @@ import {
   Textarea,
 } from "../components/ui";
 
+import {
+  SECTION_EMOJIS,
+  SECTION_ICONS,
+} from "../lib/sectionIcons";
+
 async function loadProjectMenu(
   projectId
 ) {
@@ -51,15 +56,17 @@ async function loadProjectMenu(
         enabled_languages,
         default_language,
 
-        sections (
-          id,
-          project_id,
-          name,
-          description,
-          cover_url,
-          sort_order,
-          name_i18n,
-          description_i18n,
+sections (
+  id,
+  project_id,
+  name,
+  description,
+  cover_url,
+  icon_type,
+  icon_value,
+  sort_order,
+  name_i18n,
+  description_i18n,
 
           items (
             id,
@@ -105,10 +112,14 @@ export default function MenuEditorPage() {
   const confirm =
     useConfirm();
 
-  const [
-    sectionName,
-    setSectionName,
-  ] = useState("");
+const [
+  newSection,
+  setNewSection,
+] = useState({
+  name: "",
+  icon_type: "none",
+  icon_value: "",
+});
 
   const [
     addingSection,
@@ -202,50 +213,64 @@ export default function MenuEditorPage() {
     });
   }
 
-  async function addSection(e) {
-    e.preventDefault();
+async function addSection(e) {
+  e.preventDefault();
 
-    const name =
-      sectionName.trim();
+  const name =
+    newSection.name.trim();
 
-    if (!name) {
-      return;
-    }
-
-    setAddingSection(true);
-
-    try {
-      const { error } =
-        await supabase
-          .from("sections")
-          .insert({
-            project_id:
-              projectId,
-            name,
-            sort_order:
-              sections.length + 1,
-          });
-
-      if (error) {
-        throw error;
-      }
-
-      setSectionName("");
-
-      toast.success(
-        "Section added"
-      );
-
-      await refresh();
-    } catch (err) {
-      toast.error(
-        err.message ||
-          "Failed to add section"
-      );
-    } finally {
-      setAddingSection(false);
-    }
+  if (!name) {
+    return;
   }
+
+  setAddingSection(true);
+
+  try {
+    const { error } =
+      await supabase
+        .from("sections")
+        .insert({
+          project_id:
+            projectId,
+
+          name,
+
+          icon_type:
+            newSection.icon_type,
+
+          icon_value:
+            newSection.icon_type === "none"
+              ? null
+              : newSection.icon_value || null,
+
+          sort_order:
+            sections.length + 1,
+        });
+
+    if (error) {
+      throw error;
+    }
+
+    setNewSection({
+      name: "",
+      icon_type: "none",
+      icon_value: "",
+    });
+
+    toast.success(
+      "Section added"
+    );
+
+    await refresh();
+  } catch (err) {
+    toast.error(
+      err.message ||
+        "Failed to add section"
+    );
+  } finally {
+    setAddingSection(false);
+  }
+}
 
   async function deleteSection(
     section
@@ -499,38 +524,86 @@ export default function MenuEditorPage() {
               Examples: burgers, drinks, desserts.
             </p>
 
-            <form
-              onSubmit={
-                addSection
-              }
-              className="mt-4 grid gap-3"
-            >
-              <Input
-                value={
-                  sectionName
-                }
-                onChange={(e) =>
-                  setSectionName(
-                    e.target.value
-                  )
-                }
-                placeholder="Burgers"
-              />
+<form
+  onSubmit={addSection}
+  className="mt-4 grid gap-4"
+>
+  <div>
+    <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-white/30">
+      SECTION NAME
+    </p>
 
-              <Button
-                type="submit"
-                loading={
-                  addingSection
-                }
-                loadingText="Adding..."
-                disabled={
-                  !sectionName.trim()
-                }
-              >
-                <Plus size={16} />
-                Add Section
-              </Button>
-            </form>
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-3">
+      {newSection.icon_type !==
+        "none" &&
+        newSection.icon_value && (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-white">
+            <SelectedSectionIcon
+              type={
+                newSection.icon_type
+              }
+              value={
+                newSection.icon_value
+              }
+            />
+          </div>
+        )}
+
+      <input
+        value={
+          newSection.name
+        }
+        onChange={(e) =>
+          setNewSection(
+            (current) => ({
+              ...current,
+              name:
+                e.target.value,
+            })
+          )
+        }
+        placeholder="Burgers"
+        className="min-h-12 w-full bg-transparent text-sm font-bold text-white outline-none placeholder:text-white/25"
+      />
+    </div>
+  </div>
+
+  <SectionIconPicker
+    type={
+      newSection.icon_type
+    }
+    value={
+      newSection.icon_value
+    }
+    onChange={(
+      type,
+      value
+    ) =>
+      setNewSection(
+        (current) => ({
+          ...current,
+          icon_type: type,
+          icon_value: value,
+        })
+      )
+    }
+  />
+
+  <Button
+    type="submit"
+    loading={
+      addingSection
+    }
+    loadingText="Adding..."
+    disabled={
+      !newSection.name.trim()
+    }
+  >
+    <Plus size={16} />
+
+    Add Section
+  </Button>
+</form>
           </aside>
 
           <div className="grid gap-5">
@@ -544,21 +617,29 @@ export default function MenuEditorPage() {
                     className="rounded-[28px] border border-white/10 bg-[#111111] p-5"
                   >
                     <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
-                      <div>
-                        <h2 className="text-2xl font-black">
-                          {
-                            section.name
-                          }
-                        </h2>
+<div className="flex items-center gap-3">
+  {section.icon_type !==
+    "none" &&
+    section.icon_value && (
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-white">
+        <AdminSectionIcon
+          section={section}
+        />
+      </div>
+    )}
 
-                        {section.description && (
-                          <p className="mt-1 text-sm font-bold text-white/35">
-                            {
-                              section.description
-                            }
-                          </p>
-                        )}
-                      </div>
+  <div className="min-w-0">
+    <h2 className="truncate text-2xl font-black">
+      {section.name}
+    </h2>
+
+    {section.description && (
+      <p className="mt-1 text-sm font-bold text-white/35">
+        {section.description}
+      </p>
+    )}
+  </div>
+</div>
 
                       <div className="flex gap-2">
                         <Button
@@ -808,25 +889,35 @@ function SectionModal({
   const [saving, setSaving] =
     useState(false);
 
-  const [form, setForm] =
-    useState({
-      name: "",
-      description: "",
-      cover_url: "",
-    });
+const [form, setForm] =
+  useState({
+    name: "",
+    description: "",
+    cover_url: "",
+    icon_type: "none",
+    icon_value: "",
+  });
 
-  useEffect(() => {
-    setForm({
-      name:
-        section?.name || "",
-      description:
-        section?.description ||
-        "",
-      cover_url:
-        section?.cover_url ||
-        "",
-    });
-  }, [section]);
+useEffect(() => {
+  setForm({
+    name:
+      section?.name || "",
+
+    description:
+      section?.description || "",
+
+    cover_url:
+      section?.cover_url || "",
+
+    icon_type:
+      section?.icon_type ||
+      "none",
+
+    icon_value:
+      section?.icon_value ||
+      "",
+  });
+}, [section]);
 
   if (!section) {
     return null;
@@ -849,18 +940,28 @@ function SectionModal({
     setSaving(true);
 
     try {
-      const { error } =
-        await supabase
-          .from("sections")
-          .update({
-            name,
-            description:
-              form.description.trim() ||
-              null,
-            cover_url:
-              form.cover_url.trim() ||
-              null,
-          })
+const { error } =
+  await supabase
+    .from("sections")
+    .update({
+      name,
+
+      description:
+        form.description.trim() ||
+        null,
+
+      cover_url:
+        form.cover_url.trim() ||
+        null,
+
+      icon_type:
+        form.icon_type,
+
+      icon_value:
+        form.icon_type === "none"
+          ? null
+          : form.icon_value || null,
+    })
           .eq(
             "id",
             section.id
@@ -926,6 +1027,18 @@ function SectionModal({
             }
           />
         </Field>
+
+                <SectionIconPicker
+  type={form.icon_type}
+  value={form.icon_value}
+  onChange={(type, value) =>
+    setForm((current) => ({
+      ...current,
+      icon_type: type,
+      icon_value: value,
+    }))
+  }
+/>
 
         <ImageUploadField
           label="Section cover"
@@ -1193,3 +1306,286 @@ function ItemModal({
     </Modal>
   );
 }
+
+
+function SectionIconPicker({
+  type,
+  value,
+  onChange,
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-black text-white">
+            أيقونة القسم
+          </p>
+
+          <p className="mt-1 text-xs font-bold text-white/35">
+            ستظهر بجانب اسم القسم في الموقع.
+          </p>
+        </div>
+      </div>
+
+      {/* TYPE */}
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <IconTypeButton
+          active={type === "none"}
+          onClick={() =>
+            onChange(
+              "none",
+              ""
+            )
+          }
+        >
+          بدون
+        </IconTypeButton>
+
+        <IconTypeButton
+          active={
+            type === "lucide"
+          }
+          onClick={() =>
+            onChange(
+              "lucide",
+              type === "lucide"
+                ? value
+                : "utensils"
+            )
+          }
+        >
+          أيقونات CRTGO
+        </IconTypeButton>
+
+        <IconTypeButton
+          active={
+            type === "emoji"
+          }
+          onClick={() =>
+            onChange(
+              "emoji",
+              type === "emoji"
+                ? value
+                : "🍔"
+            )
+          }
+        >
+          رموز
+        </IconTypeButton>
+      </div>
+
+      {/* CRTGO ICONS */}
+      {type === "lucide" && (
+        <div className="mt-4">
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-white/30">
+            CRTGO ICONS
+          </p>
+
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+            {Object.entries(
+              SECTION_ICONS
+            ).map(
+              ([
+                key,
+                config,
+              ]) => {
+                const Icon =
+                  config.icon;
+
+                const selected =
+                  value === key;
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      onChange(
+                        "lucide",
+                        key
+                      )
+                    }
+                    className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-2xl border p-2 text-center transition ${
+                      selected
+                        ? "border-[#ff7a00] bg-[#ff7a00]/10 text-[#ff7a00]"
+                        : "border-white/10 bg-black/20 text-white/55 hover:border-white/20 hover:bg-white/[0.04] hover:text-white"
+                    }`}
+                  >
+                    <Icon
+                      size={22}
+                      strokeWidth={2}
+                    />
+
+                    <span className="max-w-full truncate text-[10px] font-black">
+                      {
+                        config.label
+                      }
+                    </span>
+                  </button>
+                );
+              }
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* EMOJIS */}
+      {type === "emoji" && (
+        <div className="mt-4">
+          <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-white/30">
+            SYMBOLS
+          </p>
+
+          <div className="grid grid-cols-6 gap-2 sm:grid-cols-9">
+            {SECTION_EMOJIS.map(
+              (emoji) => {
+                const selected =
+                  value === emoji;
+
+                return (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() =>
+                      onChange(
+                        "emoji",
+                        emoji
+                      )
+                    }
+                    className={`flex aspect-square items-center justify-center rounded-2xl border text-xl transition ${
+                      selected
+                        ? "border-[#ff7a00] bg-[#ff7a00]/10"
+                        : "border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                );
+              }
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PREVIEW */}
+      {type !== "none" &&
+        value && (
+          <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 p-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-white/30">
+                PREVIEW
+              </p>
+
+              <p className="mt-1 text-sm font-bold text-white/60">
+                هكذا ستظهر الأيقونة
+              </p>
+            </div>
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+              <SelectedSectionIcon
+                type={type}
+                value={value}
+              />
+            </div>
+          </div>
+        )}
+    </div>
+  );
+}
+
+function IconTypeButton({
+  active,
+  onClick,
+  children,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-11 rounded-2xl border px-3 text-xs font-black transition ${
+        active
+          ? "border-[#ff7a00] bg-[#ff7a00]/10 text-[#ff7a00]"
+          : "border-white/10 bg-black/20 text-white/50 hover:bg-white/[0.04] hover:text-white"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+
+function SelectedSectionIcon({
+  type,
+  value,
+}) {
+  if (type === "emoji") {
+    return (
+      <span className="text-2xl">
+        {value}
+      </span>
+    );
+  }
+
+  if (type === "lucide") {
+    const config =
+      SECTION_ICONS[value];
+
+    if (!config) {
+      return null;
+    }
+
+    const Icon =
+      config.icon;
+
+    return (
+      <Icon
+        size={23}
+        strokeWidth={2}
+      />
+    );
+  }
+
+  return null;
+}
+
+function AdminSectionIcon({
+  section,
+}) {
+  if (
+    section.icon_type ===
+    "emoji"
+  ) {
+    return (
+      <span className="text-xl leading-none">
+        {section.icon_value}
+      </span>
+    );
+  }
+
+  if (
+    section.icon_type ===
+    "lucide"
+  ) {
+    const config =
+      SECTION_ICONS[
+        section.icon_value
+      ];
+
+    if (!config) {
+      return null;
+    }
+
+    const Icon =
+      config.icon;
+
+    return (
+      <Icon
+        size={21}
+        strokeWidth={2}
+      />
+    );
+  }
+
+  return null;
+}
+
