@@ -6,1005 +6,2076 @@ import {
   useState,
 } from "react";
 
-const ADMIN_LANGUAGES = {
+const AdminI18nContext =
+  createContext(null);
+
+const STORAGE_KEY =
+  "crtgo-admin-language";
+
+const LANGUAGES = {
   en: {
     code: "en",
-    label: "English",
-    short: "EN",
+    name: "English",
     dir: "ltr",
   },
+
   ar: {
     code: "ar",
-    label: "العربية",
-    short: "AR",
+    name: "العربية",
     dir: "rtl",
   },
 };
 
-const DICTIONARY = {
+const translations = {
   en: {
-    "brand.admin": "Admin",
+    brand: {
+      admin: "Admin",
+    },
 
-    "nav.businesses": "Businesses",
-    "nav.account": "Account",
-    "nav.settings": "Settings",
-    "nav.help": "Help Center",
-    "nav.ownerConsole": "Owner Console",
-    "nav.logout": "Log out",
+    header: {
+      language: "Language",
+    },
 
-    "common.loading": "Loading...",
-    "common.save": "Save",
-    "common.delete": "Delete",
-    "common.cancel": "Cancel",
-    "common.edit": "Edit",
-    "common.open": "Open",
+    nav: {
+      websites: "Websites",
+      account: "Account",
+      owner: "Owner Console",
+      settings: "Settings",
+      help: "Help",
+      logout: "Log out",
+    },
 
-    "header.language": "Language",
-    
-    
-    "dashboard.eyebrow": "Workspace",
-"dashboard.title": "Businesses",
-"dashboard.subtitle": "Manage every client, branch, and menu from one clean workspace.",
-"dashboard.refresh": "Refresh",
+    auth: {
+      loggedOut:
+        "Logged out",
 
-"dashboard.ownerConsole": "Owner Console",
-"dashboard.ownerConsoleText": "Manage billing, clients, notes, prices, and limits.",
-"dashboard.open": "Open",
+      logoutFailed:
+        "Failed to log out",
+    },
 
-"dashboard.newBusiness": "New Business",
-"dashboard.businesses": "Businesses",
-"dashboard.branches": "Branches",
-"dashboard.status": "Status",
-"dashboard.activeWorkspace": "Active workspace",
+    common: {
+      save:
+        "Save",
 
-"dashboard.searchPlaceholder": "Search businesses, branches, URLs...",
-"dashboard.noResults": "No results found",
-"dashboard.noResultsText": "Try searching with another business name, branch, or slug.",
-"dashboard.createFirstBusiness": "Create your first business",
-"dashboard.createFirstBusinessText": "CRTGO will create a business, a main branch, and a starter menu automatically.",
+      saving:
+        "Saving...",
 
-"dashboard.menu": "Main Menu",
-"dashboard.mainMenu": "Main Menu",
-"dashboard.openBusiness": "Open",
+      cancel:
+        "Cancel",
 
-"dashboard.newBusinessInfo": "CRTGO will also create the first branch and menu.",
-"dashboard.businessName": "Business name",
-"dashboard.businessSlug": "Business slug",
-"dashboard.businessSlugHint": "This becomes the public URL.",
-"dashboard.description": "Description",
-"dashboard.branchName": "Branch name",
-"dashboard.branchSlug": "Branch slug",
-"dashboard.phone": "Phone",
-"dashboard.whatsapp": "WhatsApp",
-"dashboard.instagram": "Instagram",
-"dashboard.creating": "Creating...",
-"dashboard.createBusiness": "Create Business",
+      discard:
+        "Discard",
 
-"status.active": "Active",
-"status.archived": "Archived",
-"status.paused": "Paused",
-"status.trial": "Trial",
-"status.past_due": "Past due",
-"status.canceled": "Canceled",
+      delete:
+        "Delete",
 
+      edit:
+        "Edit",
 
+      create:
+        "Create",
 
-"business.backToBusinesses": "Back to businesses",
-"business.eyebrow": "Business",
-"business.fallbackDescription": "Manage branches and menus.",
-"business.public": "Public",
-"business.settings": "Business Settings",
-"business.editBusiness": "Edit Business",
-"business.newBranch": "New Branch",
-"business.branches": "Branches",
-"business.active": "Active",
-"business.status": "Status",
-"business.menu": "Menu",
-"business.template": "Template",
-"business.languages": "Languages",
-"business.qrScans": "QR scans",
-"business.main": "Main",
-"business.locked": "Locked",
-"business.qrOn": "QR on",
-"business.qrOff": "QR off",
-"business.editMenu": "Edit Menu",
-"business.appearance": "Appearance",
-"business.qrCode": "QR Code",
-"business.publicMenuLocked": "Public Menu Locked",
-"business.openPublicMenu": "Open Public Menu",
-"business.noBranches": "No branches yet",
+      close:
+        "Close",
 
-"business.subscriptionLocked": "Subscription locked",
-"business.billingError": "Billing error",
-"business.branchLimitReached": "Branch limit reached",
-"business.businessArchived": "Business archived",
-"business.businessArchivedText": "This business is archived. Restore it from Business Settings before using it publicly.",
+      active:
+        "Active",
 
-"business.settingsTitle": "Business Settings",
-"business.editingLocked": "Business editing locked",
-"business.businessName": "Business name",
-"business.businessSlug": "Business slug",
-"business.description": "Description",
-"business.landingMode": "Landing mode",
-"business.showBranchSelector": "Show branch selector page",
-"business.redirectMainBranch": "Redirect to main branch",
-"business.logo": "Business logo",
-"business.logoHint": "This logo appears on the public business landing page.",
-"business.cover": "Landing cover image",
-"business.coverHint": "This cover appears on the branch selector page.",
-"business.savingBusiness": "Saving business...",
-"business.saveBusiness": "Save Business",
-"business.restoring": "Restoring...",
-"business.archiving": "Archiving...",
-"business.restoreBusiness": "Restore Business",
-"business.archiveBusiness": "Archive Business",
-"business.dangerZone": "Danger zone",
-"business.dangerText": "Deleting a business removes all branches, menus, sections, items, billing notes, and subscription history connected to it.",
-"business.deleting": "Deleting...",
-"business.deleteForever": "Delete Business Forever",
+      archived:
+        "Archived",
 
-"branch.cannotCreate": "Cannot create branch",
-"branch.name": "Branch name",
-"branch.slug": "Branch slug",
-"branch.address": "Address",
-"branch.phone": "Phone",
-"branch.whatsapp": "WhatsApp",
-"branch.instagram": "Instagram",
-"branch.creating": "Creating...",
-"branch.create": "Create Branch",
+      draft:
+        "Draft",
 
-"business.mainMenu": "Main Menu",
-"business.notFound": "Business not found.",
-"business.restoreBeforeBranch": "Restore this business before creating branches.",
-"common.back": "Back",
+      syncing:
+        "Syncing",
 
+      refresh:
+        "Refresh",
 
-"branchGeneral.eyebrow": "Branch Settings",
-"branchGeneral.subtitle": "Control this branch details, slug, links, and public status.",
-"branchGeneral.openPublicPage": "Open Public Page",
-"branchGeneral.editingLocked": "Branch editing locked",
-"branchGeneral.notFound": "Branch not found.",
-"branchGeneral.backToBusiness": "Back to business",
-"branchGeneral.general": "General",
-"branchGeneral.generalSubtitle": "This is the branch information shown on public menu pages.",
-"branchGeneral.archived": "Archived",
-"branchGeneral.active": "Active",
-"branchGeneral.syncing": "Syncing",
-"branchGeneral.unsavedChanges": "Unsaved changes",
+      search:
+        "Search",
 
-"branchGeneral.identity": "Branch identity",
-"branchGeneral.identityText": "Slug controls the public URL. Example:",
-"branchGeneral.branchName": "Branch name",
-"branchGeneral.branchSlug": "Branch slug",
-"branchGeneral.publicUrl": "Public URL",
+      back:
+        "Back",
 
-"branchGeneral.menuText": "Menu text",
-"branchGeneral.menuTextSubtitle": "These appear on the public menu pages.",
-"branchGeneral.menuName": "Menu name",
-"branchGeneral.menuDescription": "Menu description",
+      loading:
+        "Loading...",
 
-"branchGeneral.location": "Location",
-"branchGeneral.locationSubtitle": "Address is shown inside the contact area and branch selector.",
-"branchGeneral.address": "Address",
+      changesDiscarded:
+        "Changes discarded",
+    },
 
-"branchGeneral.contactLinks": "Contact links",
-"branchGeneral.contactLinksSubtitle": "These are used by the public bottom nav contact sheet.",
-"branchGeneral.phone": "Phone",
-"branchGeneral.whatsapp": "WhatsApp",
-"branchGeneral.instagram": "Instagram",
-"branchGeneral.facebook": "Facebook",
-"branchGeneral.tiktok": "TikTok",
+    project: {
+      general:
+        "General",
 
-"branchGeneral.branchStatus": "Branch status",
-"branchGeneral.branchStatusSubtitle": "Archive hides this branch from the public menu. Delete removes it forever.",
-"branchGeneral.restoring": "Restoring...",
-"branchGeneral.archiving": "Archiving...",
-"branchGeneral.restoreBranch": "Restore branch",
-"branchGeneral.archiveBranch": "Archive branch",
-"branchGeneral.deleting": "Deleting...",
-"branchGeneral.deleteBranch": "Delete branch",
+      menu:
+        "Menu",
 
-"branchGeneral.saveTitle": "Save changes",
-"branchGeneral.saveSubtitle": "Changes affect the public menu after saving.",
-"branchGeneral.saving": "Saving...",
-"branchGeneral.saveChanges": "Save changes",
-"branchGeneral.unsavedMessage": "You have unsaved branch changes.",
-"branchGeneral.discard": "Discard",
+      appearance:
+        "Appearance",
 
+      hours:
+        "Working Hours",
 
-"branchTabs.general": "General",
-"branchTabs.menu": "Menu",
-"branchTabs.appearance": "Appearance",
-"branchTabs.hours": "Working Hours",
-"branchTabs.languages": "Languages",
-"branchTabs.qr": "QR Code",
-"menuEditor.eyebrow": "Menu Editor",
-"menuEditor.menuNotFound": "Menu not found.",
-"menuEditor.subscriptionLocked": "Subscription locked",
-"menuEditor.billingError": "Billing error",
-"menuEditor.itemLimitReached": "Item limit reached",
-"menuEditor.backToBusiness": "Back to business",
-"menuEditor.openPublicMenu": "Open Public Menu",
-"menuEditor.branchSettings": "Branch Settings",
-"menuEditor.mainMenu": "Main Menu",
-"menuEditor.subtitle": "Add sections and items for this branch menu.",
-"menuEditor.archivedBranch": "Archived branch",
-"menuEditor.syncing": "Syncing",
+      languages:
+        "Languages",
 
-"menuEditor.sections": "Sections",
-"menuEditor.items": "Items",
-"menuEditor.available": "Available",
-"menuEditor.hidden": "Hidden",
-"menuEditor.noImages": "No images",
+      websiteSettings:
+        "Website Settings",
 
-"menuEditor.addSection": "Add Section",
-"menuEditor.addSectionText": "Sections are groups like pizza, drinks, burgers, desserts.",
-"menuEditor.sectionTranslations": "Section translations",
-"menuEditor.sectionName": "Section name",
-"menuEditor.addingSection": "Adding section...",
-"menuEditor.menuHealth": "Menu health",
-"menuEditor.menuHealthText": "Add images and descriptions to items for a better public menu.",
-"menuEditor.archivedBranchText": "This branch is archived.",
-"menuEditor.restoreBeforeEditing": "Restore it from Branch Settings before editing.",
+      websites:
+        "Websites",
 
-"menuEditor.settings": "Settings",
-"menuEditor.delete": "Delete",
-"menuEditor.item": "Item",
-"menuEditor.deleting": "Deleting...",
-"menuEditor.noDescription": "No description",
-"menuEditor.edit": "Edit",
-"menuEditor.noItemsYet": "No items yet.",
-"menuEditor.addFirstItem": "Add first item",
-"menuEditor.noSectionsTitle": "No sections yet",
-"menuEditor.noSectionsText": "Add your first section from the left panel. Sections hold items like burgers, drinks, desserts, and more.",
+      newWebsite:
+        "New Website",
 
-"menuEditor.sectionSettings": "Section Settings",
-"menuEditor.editingLocked": "Editing locked",
-"menuEditor.arabicSectionName": "Arabic section name",
-"menuEditor.sectionSlug": "Section slug",
-"menuEditor.publicSectionUrl": "Public section URL",
-"menuEditor.sectionCoverImage": "Section cover image",
-"menuEditor.sectionCoverHint": "This image appears on the public section card. If empty, the first item image will be used.",
-"menuEditor.saving": "Saving...",
-"menuEditor.saveSection": "Save section",
+      websiteName:
+        "Website name",
 
-"menuEditor.editItem": "Edit Item",
-"menuEditor.newItem": "New Item",
-"menuEditor.arabicItemName": "Arabic item name",
-"menuEditor.itemName": "Item name",
-"menuEditor.itemNameTranslations": "Item name translations",
-"menuEditor.arabicDescription": "Arabic description",
-"menuEditor.itemDescription": "Item description",
-"menuEditor.descriptionTranslations": "Description translations",
-"menuEditor.price": "Price",
-"menuEditor.itemImage": "Item image",
-"menuEditor.itemImageHintReady": "This image will appear on the public menu.",
-"menuEditor.itemImageHintEmpty": "Add a photo to make this item look better.",
-"menuEditor.itemIsAvailable": "Item is available",
-"menuEditor.itemIsHidden": "Item is hidden",
-"menuEditor.savingItem": "Saving item...",
-"menuEditor.creatingItem": "Creating item...",
-"menuEditor.saveItem": "Save Item",
-"menuEditor.createItem": "Create Item",
+      hostname:
+        "Hostname",
 
+      description:
+        "Description",
 
-"appearance.eyebrow": "Branch Settings",
-"appearance.title": "Appearance",
-"appearance.subtitle": "Customize logo, cover, colors, and template for this branch.",
-"appearance.preview": "Preview",
-"appearance.saving": "Saving...",
-"appearance.save": "Save",
-"appearance.menuNotFound": "Menu not found",
-"appearance.branchArchived": "Branch archived",
-"appearance.appearanceLocked": "Appearance locked",
-"appearance.customCoverLocked": "Custom cover locked",
-"appearance.sectionPagesLocked": "Section pages locked",
-"appearance.templateLocked": "Template locked",
-"appearance.backToBusiness": "Back to business",
+      location:
+        "Location",
 
-"appearance.template": "Template",
-"appearance.templateText": "Choose how the public menu looks. Owner Plans controls which templates and section-page layouts are available.",
-"appearance.selected": "Selected",
-"appearance.locked": "Locked",
-"appearance.available": "Available",
+      contactSocial:
+        "Contact & Social",
 
-"appearance.images": "Images",
-"appearance.imagesText": "Upload the logo and cover image used on the public menu.",
-"appearance.logo": "Logo",
-"appearance.logoAdded": "Logo is added. Change or delete it.",
-"appearance.logoEmpty": "Add a logo for the public menu header.",
-"appearance.coverImage": "Cover image",
-"appearance.coverAdded": "Cover image is added. Change or delete it.",
-"appearance.coverEmpty": "Add a cover image for the public menu hero.",
+      websiteStatus:
+        "Website Status",
 
-"appearance.colors": "Colors",
-"appearance.colorsText": "Choose the brand accent and base colors used by the scrolling templates.",
-"appearance.primaryColor": "Primary color",
-"appearance.background": "Background",
-"appearance.text": "Text",
+      saveChanges:
+        "Save Changes",
 
-"appearance.livePreview": "Live preview",
-"appearance.coverLockedByPlan": "Cover locked by plan",
-"appearance.noCoverImage": "No cover image",
-"appearance.logoPlaceholder": "Logo",
-"appearance.templatePreviewLabel": "template",
-"appearance.exampleAction": "Example action",
+      unsaved:
+        "You have unsaved changes.",
 
-"appearance.unsavedMessage": "You have unsaved appearance changes",
-"appearance.discard": "Discard",
-"appearance.saveChanges": "Save changes",
+      addSection:
+        "Add Section",
 
-"template.classic.name": "Classic",
-"template.classic.badge": "Default",
-"template.classic.description": "A full scrolling menu with a strong restaurant landing area.",
-"template.cleanCards.name": "Clean Cards",
-"template.cleanCards.badge": "Section Pages",
-"template.cleanCards.description": "Section cards first, then each section opens as its own page. Requires section pages in the plan.",
-"template.modern.name": "Modern",
-"template.modern.badge": "Wide",
-"template.modern.description": "A modern split layout with the brand panel beside the menu.",
-"template.luxury.name": "Luxury",
-"template.luxury.badge": "Premium",
-"template.luxury.description": "Large hero, premium spacing, and stronger visual branding.",
+      sectionName:
+        "Section name",
 
+      sections:
+        "Sections",
 
-"hours.eyebrow": "Branch Settings",
-"hours.title": "Working Hours",
-"hours.subtitle": "Set opening times for {name}.",
-"hours.saving": "Saving...",
-"hours.save": "Save",
-"hours.notFound": "Branch not found.",
-"hours.lockedTitle": "Working hours locked",
-"hours.backToBusiness": "Back to business",
-"hours.openAll": "Open all",
-"hours.closeAll": "Close all",
-"hours.unsavedMessage": "You have unsaved working hours changes",
-"hours.discard": "Discard",
-"hours.saveChanges": "Save changes",
+      items:
+        "Items",
 
-"hoursEditor.lockedTitle": "Working hours locked",
-"hoursEditor.lockedFallback": "This setting is locked right now.",
-"hoursEditor.title": "Working hours",
-"hoursEditor.subtitle": "Set opening and closing times for this branch.",
-"hoursEditor.everyday": "Everyday",
-"hoursEditor.weekendClosed": "Weekend closed",
-"hoursEditor.open": "Open",
-"hoursEditor.closed": "Closed",
+      available:
+        "Available",
 
-"days.sun": "Sunday",
-"days.mon": "Monday",
-"days.tue": "Tuesday",
-"days.wed": "Wednesday",
-"days.thu": "Thursday",
-"days.fri": "Friday",
-"days.sat": "Saturday",
+      hidden:
+        "Hidden",
 
+      noImages:
+        "No Images",
 
-"languagesPage.eyebrow": "Branch Settings",
-"languagesPage.title": "Languages",
-"languagesPage.subtitle": "Enable languages and translate menu content for {name}.",
-"languagesPage.saving": "Saving...",
-"languagesPage.save": "Save",
-"languagesPage.menuNotFound": "Menu not found",
-"languagesPage.languagesLocked": "Languages locked",
-"languagesPage.noLanguagesAvailable": "No languages available",
-"languagesPage.noLanguagesAvailableText": "This plan does not include any languages. Add at least Arabic to the plan from Owner Plans.",
-"languagesPage.backToBusiness": "Back to business",
+      notFound:
+        "Website not found",
+    },
 
-"languagesPage.activeLanguages": "Active languages",
-"languagesPage.activeLanguagesText": "Owner Plans controls which languages are available. Arabic uses the main fields from the menu editor. Hebrew and English use the translation fields below.",
-"languagesPage.progress": "progress",
-"languagesPage.main": "Main",
-"languagesPage.default": "Default",
-"languagesPage.planLocked": "Plan locked",
-"languagesPage.visibleText": "This language is visible on the public menu.",
-"languagesPage.disabledText": "This language is currently disabled.",
-"languagesPage.enable": "Enable",
-"languagesPage.disable": "Disable",
-"languagesPage.setDefault": "Set default",
+    projectTabs: {
+      general:
+        "General",
 
-"languagesPage.translations": "Translations",
-"languagesPage.translationsText": "Choose a language and add the public text for business, branch, sections, and items.",
-"languagesPage.searchPlaceholder": "Search sections or items...",
-"languagesPage.businessBranchMenuText": "Business, branch, and menu text",
-"languagesPage.businessName": "Business name",
-"languagesPage.businessDescription": "Business description",
-"languagesPage.branchName": "Branch name",
-"languagesPage.branchAddress": "Branch address",
-"languagesPage.menuName": "Menu name",
-"languagesPage.menuDescription": "Menu description",
+      menu:
+        "Menu",
 
-"languagesPage.sectionsAndItems": "Sections and items",
-"languagesPage.sectionName": "Section name",
-"languagesPage.item": "Item",
-"languagesPage.itemName": "Item name",
-"languagesPage.itemDescription": "Item description",
+      appearance:
+        "Appearance",
 
-"languagesPage.noTranslationLanguageTitle": "No translation language enabled",
-"languagesPage.noTranslationLanguageText": "Enable Hebrew or English above. If they are locked, allow them from Owner Plans first.",
-"languagesPage.unsavedMessage": "You have unsaved language and translation changes",
-"languagesPage.discard": "Discard",
-"languagesPage.saveChanges": "Save changes",
+      hours:
+        "Working Hours",
 
-"languagesPage.mainText": "Main text",
-"languagesPage.noMainText": "No main text",
-"languagesPage.addTranslation": "Add {language} translation...",
+      languages:
+        "Languages",
+    },
 
-"language.ar": "Arabic",
-"language.he": "Hebrew",
-"language.en": "English",
+    languages: {
+      subtitle:
+        "Manage the languages and translations shown on this website.",
 
+      websiteLanguages:
+        "Website languages",
 
+      websiteLanguagesHint:
+        "Choose which languages visitors can use and select the default language.",
 
-"qr.eyebrow": "Branch Settings",
-"qr.title": "QR Code",
-"qr.subtitle": "Generate and control the permanent QR code for {name}.",
-"qr.openQr": "Open QR",
-"qr.branchNotFound": "Branch not found",
-"qr.branchArchived": "Branch archived",
-"qr.qrCodesLocked": "QR codes locked",
-"qr.backToBusiness": "Back to business",
+      enabled:
+        "enabled",
 
-"qr.createPermanent": "Create permanent QR",
-"qr.createPermanentText": "This creates a permanent short link. The QR will keep working even if the business slug or branch slug changes later.",
-"qr.creatingQr": "Creating QR...",
-"qr.createQrCode": "Create QR Code",
+      enable:
+        "Enable",
 
-"qr.permanentQr": "Permanent QR",
-"qr.active": "Active",
-"qr.disabled": "Disabled",
-"qr.planLocked": "Plan locked",
-"qr.permanentQrText": "This QR points to a stable CRTGO short link, then redirects to the current public menu URL.",
-"qr.permanentQrLink": "Permanent QR link",
-"qr.currentPublicMenuTarget": "Current public menu target",
-"qr.copy": "Copy",
-"qr.printLabel": "Print label",
-"qr.printLabelHint": "Optional. This text appears on the print card.",
-"qr.downloadQrPng": "Download QR PNG",
-"qr.downloadPrintCard": "Download Print Card",
-"qr.disabling": "Disabling...",
-"qr.enabling": "Enabling...",
-"qr.disableQr": "Disable QR",
-"qr.enableQr": "Enable QR",
-"qr.regenerating": "Regenerating...",
-"qr.regenerate": "Regenerate",
+      disable:
+        "Disable",
 
-"qr.analytics": "Analytics",
-"qr.shortCode": "Short code",
-"qr.scans": "Scans",
-"qr.lastScan": "Last scan",
-"qr.preview": "Preview",
-"qr.fallbackTitle": "CRTGO Menu",
-"qr.crtgoMenu": "CRTGO MENU",
-"qr.scanMenu": "SCAN MENU",
-"qr.poweredBy": "POWERED BY CRTGO",
+      default:
+        "Default language",
+
+      makeDefault:
+        "Make default",
+
+      translations:
+        "Translations",
+
+      chooseLanguage:
+        "Choose a language to edit its website, section, and item translations.",
+
+      website:
+        "Website",
+
+      section:
+        "Section",
+
+      sectionName:
+        "Section name",
+
+      items:
+        "Items",
+
+      itemName:
+        "Item name",
+
+      keepOne:
+        "At least one website language must remain enabled.",
+
+      saved:
+        "Languages saved",
+
+      saveFailed:
+        "Failed to save languages",
+
+      loadFailed:
+        "Failed to load languages",
+    },
+
+    workingHours: {
+      title:
+        "Working Hours",
+
+      subtitle:
+        "Set the opening and closing times for {name}.",
+
+      schedule:
+        "Weekly Schedule",
+
+      scheduleHint:
+        "Choose which days the website is open and set the opening and closing time for each day.",
+
+      unsaved:
+        "You have unsaved working-hours changes.",
+
+      saved:
+        "Working hours saved",
+
+      saveFailed:
+        "Failed to save working hours",
+    },
+
+    hoursEditor: {
+      title:
+        "Opening Hours",
+
+      subtitle:
+        "Set when your business opens and closes during the week.",
+
+      open:
+        "Open",
+
+      closed:
+        "Closed",
+
+      opensAt:
+        "Opens at",
+
+      closesAt:
+        "Closes at",
+
+      everyday:
+        "Every day",
+
+      weekendClosed:
+        "Weekend closed",
+
+      applyPreset:
+        "Apply preset",
+    },
+
+    days: {
+      sun:
+        "Sunday",
+
+      mon:
+        "Monday",
+
+      tue:
+        "Tuesday",
+
+      wed:
+        "Wednesday",
+
+      thu:
+        "Thursday",
+
+      fri:
+        "Friday",
+
+      sat:
+        "Saturday",
+    },
+
+    general: {
+      subtitle:
+        "Manage your website identity, hostname, contact information, and status.",
+
+      openWebsite:
+        "Open Website",
+
+      backToWebsites:
+        "Back to websites",
+
+      generalHint:
+        "Everything here belongs directly to this website.",
+
+      identity:
+        "Website identity",
+
+      information:
+        "Website information",
+
+      publicUrl:
+        "Public URL",
+
+      locationPlaceholder:
+        "Haifa, Israel",
+
+      phone:
+        "Phone",
+
+      nameRequired:
+        "Website name is required",
+
+      hostnameRequired:
+        "Hostname is required",
+
+      hostnameTaken:
+        "Another website already uses this hostname.",
+
+      saved:
+        "Website saved",
+
+      saveFailed:
+        "Failed to save website",
+
+      archiveTitle:
+        "Archive website?",
+
+      archiveMessage:
+        "This website will stop being publicly available.",
+
+      archiveWebsite:
+        "Archive Website",
+
+      archivedSuccess:
+        "Website archived",
+
+      restoreTitle:
+        "Restore website?",
+
+      restoreMessage:
+        "This website will become public again.",
+
+      restoreWebsite:
+        "Restore Website",
+
+      restoredSuccess:
+        "Website restored",
+
+      statusFailed:
+        "Failed to update website",
+
+      dangerZone:
+        "Danger Zone",
+
+      dangerHint:
+        "Deleting this website also deletes all sections and items.",
+
+      deleteWebsite:
+        "Delete Website",
+
+      deleteTitle:
+        "Delete website forever?",
+
+      deleteMessage:
+        "This deletes the website, every section, and every item inside it. This cannot be undone.",
+
+      deleteForever:
+        "Delete forever",
+
+      deletedSuccess:
+        "Website deleted",
+
+      deleteFailed:
+        "Failed to delete website",
+    },
+
+    appearance: {
+      title:
+        "Appearance",
+
+      subtitle:
+        "Customize the look and branding of the standard CRTGO website.",
+
+      preview:
+        "Preview",
+
+      images:
+        "Images",
+
+      imagesHint:
+        "These images are used throughout the standard CRTGO website.",
+
+      logo:
+        "Logo",
+
+      logoHint:
+        "Your business logo.",
+
+      coverImage:
+        "Cover image",
+
+      coverHint:
+        "The main cover image shown on the website.",
+
+      favicon:
+        "Favicon",
+
+      faviconHint:
+        "The small icon shown in the browser tab.",
+
+      colors:
+        "Colors",
+
+      colorsHint:
+        "Customize the main colors used throughout your website.",
+
+      primaryColor:
+        "Primary color",
+
+      backgroundColor:
+        "Background",
+
+      textColor:
+        "Text",
+
+      unsaved:
+        "You have unsaved appearance changes.",
+
+      saved:
+        "Appearance saved",
+
+      saveFailed:
+        "Failed to save appearance",
+    },
+
+    menuEditor: {
+      eyebrow:
+        "Menu Editor",
+
+      subtitle:
+        "Create and manage sections and items for this website.",
+
+      addSectionHint:
+        "Examples: burgers, drinks, desserts.",
+
+      sectionPlaceholder:
+        "Burgers",
+
+      adding:
+        "Adding...",
+
+      item:
+        "Item",
+
+      noItems:
+        "No items yet.",
+
+      addFirstItem:
+        "Add First Item",
+
+      noSections:
+        "No sections yet",
+
+      noSectionsHint:
+        "Add the first section to start building the menu.",
+
+      sectionNameRequired:
+        "Section name is required",
+
+      sectionAdded:
+        "Section added",
+
+      sectionAddFailed:
+        "Failed to add section",
+
+      deleteSectionTitle:
+        "Delete section?",
+
+      deleteSectionMessage:
+        'This deletes "{name}" and every item inside it.',
+
+      deleteSection:
+        "Delete section",
+
+      sectionDeleted:
+        "Section deleted",
+
+      sectionDeleteFailed:
+        "Failed to delete section",
+
+      sectionSettings:
+        "Section Settings",
+
+      sectionSaved:
+        "Section saved",
+
+      sectionSaveFailed:
+        "Failed to save section",
+
+      sectionCover:
+        "Section cover",
+
+      saveSection:
+        "Save Section",
+
+      itemAvailable:
+        "Item available",
+
+      itemHidden:
+        "Item hidden",
+
+      itemUpdateFailed:
+        "Failed to update item",
+
+      deleteItemTitle:
+        "Delete item?",
+
+      deleteItemMessage:
+        'This deletes "{name}".',
+
+      deleteItem:
+        "Delete item",
+
+      itemDeleted:
+        "Item deleted",
+
+      itemDeleteFailed:
+        "Failed to delete item",
+
+      itemNameRequired:
+        "Item name is required",
+
+      itemUpdated:
+        "Item updated",
+
+      itemCreated:
+        "Item created",
+
+      itemSaveFailed:
+        "Failed to save item",
+
+      editItem:
+        "Edit Item",
+
+      newItem:
+        "New Item",
+
+      itemName:
+        "Item name",
+
+      price:
+        "Price",
+
+      itemImage:
+        "Item image",
+
+      itemIsAvailable:
+        "Item is available",
+
+      itemIsHidden:
+        "Item is hidden",
+
+      saveItem:
+        "Save Item",
+
+      createItem:
+        "Create Item",
+
+      sectionIcon:
+        "Section icon",
+
+      sectionIconHint:
+        "This icon will appear next to the section name on the website.",
+
+      noIcon:
+        "None",
+
+      crtgoIcons:
+        "CRTGO Icons",
+
+      symbols:
+        "Symbols",
+
+      preview:
+        "Preview",
+
+      iconPreviewHint:
+        "This is how the icon will appear.",
+
+      iconLabels: {
+        utensils:
+          "Food",
+
+        pizza:
+          "Pizza",
+
+        sandwich:
+          "Sandwich",
+
+        drinks:
+          "Drinks",
+
+        coffee:
+          "Coffee",
+
+        dessert:
+          "Dessert",
+
+        icecream:
+          "Ice Cream",
+
+        salad:
+          "Salad",
+
+        soup:
+          "Soup",
+
+        meat:
+          "Meat",
+
+        fish:
+          "Fish",
+      },
+    },
+
+    dashboard: {
+      workspace:
+        "Workspace",
+
+      subtitle:
+        "Manage your CRTGO websites from one workspace.",
+
+      refreshed:
+        "Workspace refreshed",
+
+      searchPlaceholder:
+        "Search websites...",
+
+      loadFailed:
+        "Failed to load websites",
+
+      noResults:
+        "No results found",
+
+      noResultsHint:
+        "Try searching with another name or hostname.",
+
+      firstWebsite:
+        "Create your first website",
+
+      firstWebsiteHint:
+        "Create your first CRTGO website. You can add your menu, branding, contact information, and working hours after creation.",
+
+      openWebsite:
+        "Open Website",
+
+      websiteNamePlaceholder:
+        "Burger House",
+
+      hostnameHint:
+        "This becomes the public website address.",
+
+      descriptionPlaceholder:
+        "Short description...",
+
+      notLoggedIn:
+        "You are not logged in.",
+
+      hostnameUsed:
+        "This hostname is already being used.",
+
+      created:
+        "Website created",
+
+      createFailed:
+        "Failed to create website",
+
+      creating:
+        "Creating...",
+
+      createWebsite:
+        "Create Website",
+    },
+
+    authPage: {
+      checkingSession:
+        "Checking your session...",
+
+      secureAdmin:
+        "Secure CRTGO Admin",
+
+      heroTitle:
+        "Build and manage your websites.",
+
+      heroText:
+        "Create fast CRTGO websites, manage menus, branding, contact information, working hours, and languages from one place.",
+
+      featureWebsites:
+        "Manage all your websites",
+
+      featureMenus:
+        "Edit menus and content",
+
+      featureBranding:
+        "Control branding and appearance",
+
+      welcome:
+        "Welcome back",
+
+      getStarted:
+        "Get started",
+
+      loginTitle:
+        "Log in",
+
+      signupTitle:
+        "Create account",
+
+      loginSubtitle:
+        "Sign in to continue to your CRTGO workspace.",
+
+      signupSubtitle:
+        "Create your CRTGO account and start building your first website.",
+
+      login:
+        "Log in",
+
+      signup:
+        "Sign up",
+
+      createAccount:
+        "Create account",
+
+      username:
+        "Username",
+
+      displayName:
+        "Display name",
+
+      displayNamePlaceholder:
+        "Your name",
+
+      email:
+        "Email",
+
+      password:
+        "Password",
+
+      showPassword:
+        "Show password",
+
+      hidePassword:
+        "Hide password",
+
+      pleaseWait:
+        "Please wait...",
+
+      footer:
+        "CRTGO Admin · Manage your websites from one workspace.",
+
+      emailRequired:
+        "Email is required.",
+
+      passwordRequired:
+        "Password is required.",
+
+      passwordTooShort:
+        "Password must be at least 6 characters.",
+
+      usernameRequired:
+        "Username is required.",
+
+      displayNameRequired:
+        "Display name is required.",
+
+      usernameInvalid:
+        "Username can only contain letters, numbers, periods, and underscores.",
+
+      usernameTaken:
+        "This username is already taken.",
+
+      welcomeBack:
+        "Welcome back",
+
+      accountCreated:
+        "Account created",
+
+      invalidCredentials:
+        "Incorrect email or password.",
+
+      emailNotConfirmed:
+        "Please confirm your email before logging in.",
+
+      emailUsed:
+        "An account already exists with this email.",
+
+      somethingWentWrong:
+        "Something went wrong.",
+    },
+
+    account: {
+      eyebrow:
+        "Profile",
+
+      title:
+        "Account",
+
+      subtitle:
+        "Manage your CRTGO profile and account information.",
+
+      backToWebsites:
+        "Back to websites",
+
+      ownerConsole:
+        "Owner Console",
+
+      ownerConsoleHint:
+        "Manage platform administration and CRTGO clients.",
+
+      open:
+        "Open",
+
+      defaultName:
+        "CRTGO User",
+
+      noEmail:
+        "No email",
+
+      userId:
+        "User ID",
+
+      username:
+        "Username",
+
+      notSet:
+        "Not set",
+
+      profileDetails:
+        "Profile details",
+
+      profileDetailsHint:
+        "Update the information used for your CRTGO account.",
+
+      displayName:
+        "Display name",
+
+      displayNamePlaceholder:
+        "Your name",
+
+      email:
+        "Email",
+
+      emailHint:
+        "Your login email cannot be changed here.",
+
+      status:
+        "Account status",
+
+      statusHint:
+        "Information about your CRTGO account and access.",
+
+      authProvider:
+        "Auth provider",
+
+      emailProvider:
+        "Email",
+
+      accountType:
+        "Account type",
+
+      platformAdmin:
+        "Platform Admin",
+
+      clientAccount:
+        "Client",
+
+      role:
+        "Role",
+
+      superAdmin:
+        "Super Admin",
+
+      websiteOwner:
+        "Website Owner",
+
+      unsaved:
+        "You have unsaved account changes.",
+
+      userNotFound:
+        "User not found.",
+
+      loadFailed:
+        "Failed to load account",
+
+      usernameRequired:
+        "Username is required.",
+
+      displayNameRequired:
+        "Display name is required.",
+
+      usernameInvalid:
+        "Username can only contain letters, numbers, periods, and underscores.",
+
+      usernameTaken:
+        "This username is already taken.",
+
+      updated:
+        "Account updated",
+
+      saveFailed:
+        "Failed to save account",
+    },
   },
 
-
-
-
-
-
-
   ar: {
-    "brand.admin": "لوحة التحكم",
+    brand: {
+      admin:
+        "الإدارة",
+    },
 
-    "nav.businesses": "المطاعم",
-    "nav.account": "الحساب",
-    "nav.settings": "الإعدادات",
-    "nav.help": "مركز المساعدة",
-    "nav.ownerConsole": "لوحة المالك",
-    "nav.logout": "تسجيل الخروج",
+    header: {
+      language:
+        "اللغة",
+    },
 
-    "common.loading": "جارٍ التحميل...",
-    "common.save": "حفظ",
-    "common.delete": "حذف",
-    "common.cancel": "إلغاء",
-    "common.edit": "تعديل",
-    "common.open": "فتح",
+    nav: {
+      websites:
+        "المواقع",
 
-    "header.language": "اللغة",
-    
-    
-    "dashboard.eyebrow": "مساحة العمل",
-"dashboard.title": "المطاعم",
-"dashboard.subtitle": "إدارة كل عميل، فرع، وقائمة من لوحة واحدة مرتبة.",
-"dashboard.refresh": "تحديث",
+      account:
+        "الحساب",
 
-"dashboard.ownerConsole": "لوحة المالك",
-"dashboard.ownerConsoleText": "إدارة الاشتراكات، العملاء، الملاحظات، الأسعار، والحدود.",
-"dashboard.open": "فتح",
+      owner:
+        "لوحة المالك",
 
-"dashboard.newBusiness": "مطعم جديد",
-"dashboard.businesses": "المطاعم",
-"dashboard.branches": "الفروع",
-"dashboard.status": "الحالة",
-"dashboard.activeWorkspace": "مساحة عمل نشطة",
+      settings:
+        "الإعدادات",
 
-"dashboard.searchPlaceholder": "ابحث عن مطعم، فرع، أو رابط...",
-"dashboard.noResults": "لا توجد نتائج",
-"dashboard.noResultsText": "جرّب البحث باسم مطعم، فرع، أو رابط آخر.",
-"dashboard.createFirstBusiness": "أنشئ أول مطعم",
-"dashboard.createFirstBusinessText": "سيقوم CRTGO بإنشاء المطعم، الفرع الرئيسي، وقائمة مبدئية تلقائيًا.",
+      help:
+        "المساعدة",
 
-"dashboard.menu": "القائمة الرئيسية",
-"dashboard.mainMenu": "القائمة الرئيسية",
-"dashboard.openBusiness": "فتح",
+      logout:
+        "تسجيل الخروج",
+    },
 
-"dashboard.newBusinessInfo": "سيقوم CRTGO أيضًا بإنشاء أول فرع وقائمة.",
-"dashboard.businessName": "اسم المطعم",
-"dashboard.businessSlug": "رابط المطعم",
-"dashboard.businessSlugHint": "هذا سيكون جزءًا من الرابط العام.",
-"dashboard.description": "الوصف",
-"dashboard.branchName": "اسم الفرع",
-"dashboard.branchSlug": "رابط الفرع",
-"dashboard.phone": "الهاتف",
-"dashboard.whatsapp": "واتساب",
-"dashboard.instagram": "إنستغرام",
-"dashboard.creating": "جارٍ الإنشاء...",
-"dashboard.createBusiness": "إنشاء المطعم",
+    auth: {
+      loggedOut:
+        "تم تسجيل الخروج",
 
-"status.active": "نشط",
-"status.archived": "مؤرشف",
-"status.paused": "متوقف",
-"status.trial": "تجريبي",
-"status.past_due": "متأخر",
-"status.canceled": "ملغي",
+      logoutFailed:
+        "تعذر تسجيل الخروج",
+    },
 
+    common: {
+      save:
+        "حفظ",
 
+      saving:
+        "جارٍ الحفظ...",
 
-"business.backToBusinesses": "الرجوع للمطاعم",
-"business.eyebrow": "مطعم",
-"business.fallbackDescription": "إدارة الفروع والقوائم.",
-"business.public": "عام",
-"business.settings": "إعدادات المطعم",
-"business.editBusiness": "تعديل المطعم",
-"business.newBranch": "فرع جديد",
-"business.branches": "الفروع",
-"business.active": "نشط",
-"business.status": "الحالة",
-"business.menu": "القائمة",
-"business.template": "القالب",
-"business.languages": "اللغات",
-"business.qrScans": "مسحات QR",
-"business.main": "رئيسي",
-"business.locked": "مقفل",
-"business.qrOn": "QR مفعل",
-"business.qrOff": "QR متوقف",
-"business.editMenu": "تعديل القائمة",
-"business.appearance": "المظهر",
-"business.qrCode": "رمز QR",
-"business.publicMenuLocked": "القائمة العامة مقفلة",
-"business.openPublicMenu": "فتح القائمة العامة",
-"business.noBranches": "لا توجد فروع بعد",
+      cancel:
+        "إلغاء",
 
-"business.subscriptionLocked": "الاشتراك مقفل",
-"business.billingError": "خطأ في الاشتراك",
-"business.branchLimitReached": "تم الوصول لحد الفروع",
-"business.businessArchived": "المطعم مؤرشف",
-"business.businessArchivedText": "هذا المطعم مؤرشف. قم باستعادته من إعدادات المطعم قبل ظهوره للعامة.",
+      discard:
+        "تراجع",
 
-"business.settingsTitle": "إعدادات المطعم",
-"business.editingLocked": "تعديل المطعم مقفل",
-"business.businessName": "اسم المطعم",
-"business.businessSlug": "رابط المطعم",
-"business.description": "الوصف",
-"business.landingMode": "طريقة عرض صفحة المطعم",
-"business.showBranchSelector": "عرض صفحة اختيار الفروع",
-"business.redirectMainBranch": "التحويل للفرع الرئيسي",
-"business.logo": "شعار المطعم",
-"business.logoHint": "يظهر هذا الشعار في صفحة المطعم العامة.",
-"business.cover": "صورة الغلاف",
-"business.coverHint": "تظهر هذه الصورة في صفحة اختيار الفروع.",
-"business.savingBusiness": "جارٍ حفظ المطعم...",
-"business.saveBusiness": "حفظ المطعم",
-"business.restoring": "جارٍ الاستعادة...",
-"business.archiving": "جارٍ الأرشفة...",
-"business.restoreBusiness": "استعادة المطعم",
-"business.archiveBusiness": "أرشفة المطعم",
-"business.dangerZone": "منطقة خطرة",
-"business.dangerText": "حذف المطعم سيزيل كل الفروع، القوائم، الأقسام، الأصناف، ملاحظات الاشتراك، وسجل الاشتراك المرتبط به.",
-"business.deleting": "جارٍ الحذف...",
-"business.deleteForever": "حذف المطعم نهائيًا",
+      delete:
+        "حذف",
 
-"branch.cannotCreate": "لا يمكن إنشاء فرع",
-"branch.name": "اسم الفرع",
-"branch.slug": "رابط الفرع",
-"branch.address": "العنوان",
-"branch.phone": "الهاتف",
-"branch.whatsapp": "واتساب",
-"branch.instagram": "إنستغرام",
-"branch.creating": "جارٍ الإنشاء...",
-"branch.create": "إنشاء الفرع",
+      edit:
+        "تعديل",
 
+      create:
+        "إنشاء",
 
-"business.mainMenu": "القائمة الرئيسية",
-"business.notFound": "المطعم غير موجود.",
-"business.restoreBeforeBranch": "قم باستعادة المطعم قبل إنشاء فروع جديدة.",
-"common.back": "رجوع",
+      close:
+        "إغلاق",
 
+      active:
+        "نشط",
 
-"branchGeneral.eyebrow": "إعدادات الفرع",
-"branchGeneral.subtitle": "تحكّم بتفاصيل هذا الفرع، الرابط، معلومات التواصل، وحالته العامة.",
-"branchGeneral.openPublicPage": "فتح الصفحة العامة",
-"branchGeneral.editingLocked": "تعديل الفرع مقفل",
-"branchGeneral.notFound": "الفرع غير موجود.",
-"branchGeneral.backToBusiness": "الرجوع للمطعم",
-"branchGeneral.general": "عام",
-"branchGeneral.generalSubtitle": "هذه معلومات الفرع التي تظهر في صفحات القائمة العامة.",
-"branchGeneral.archived": "مؤرشف",
-"branchGeneral.active": "نشط",
-"branchGeneral.syncing": "مزامنة",
-"branchGeneral.unsavedChanges": "تغييرات غير محفوظة",
+      archived:
+        "مؤرشف",
 
-"branchGeneral.identity": "هوية الفرع",
-"branchGeneral.identityText": "الرابط يتحكم بعنوان الصفحة العامة. مثال:",
-"branchGeneral.branchName": "اسم الفرع",
-"branchGeneral.branchSlug": "رابط الفرع",
-"branchGeneral.publicUrl": "الرابط العام",
+      draft:
+        "مسودة",
 
-"branchGeneral.menuText": "نص القائمة",
-"branchGeneral.menuTextSubtitle": "هذه النصوص تظهر في صفحات القائمة العامة.",
-"branchGeneral.menuName": "اسم القائمة",
-"branchGeneral.menuDescription": "وصف القائمة",
+      syncing:
+        "جارٍ المزامنة",
 
-"branchGeneral.location": "الموقع",
-"branchGeneral.locationSubtitle": "العنوان يظهر في منطقة التواصل وصفحة اختيار الفروع.",
-"branchGeneral.address": "العنوان",
+      refresh:
+        "تحديث",
 
-"branchGeneral.contactLinks": "روابط التواصل",
-"branchGeneral.contactLinksSubtitle": "هذه الروابط تُستخدم في نافذة التواصل داخل القائمة العامة.",
-"branchGeneral.phone": "الهاتف",
-"branchGeneral.whatsapp": "واتساب",
-"branchGeneral.instagram": "إنستغرام",
-"branchGeneral.facebook": "فيسبوك",
-"branchGeneral.tiktok": "تيك توك",
+      search:
+        "بحث",
 
-"branchGeneral.branchStatus": "حالة الفرع",
-"branchGeneral.branchStatusSubtitle": "الأرشفة تخفي هذا الفرع من القائمة العامة. الحذف يزيله نهائيًا.",
-"branchGeneral.restoring": "جارٍ الاستعادة...",
-"branchGeneral.archiving": "جارٍ الأرشفة...",
-"branchGeneral.restoreBranch": "استعادة الفرع",
-"branchGeneral.archiveBranch": "أرشفة الفرع",
-"branchGeneral.deleting": "جارٍ الحذف...",
-"branchGeneral.deleteBranch": "حذف الفرع",
+      back:
+        "رجوع",
 
-"branchGeneral.saveTitle": "حفظ التغييرات",
-"branchGeneral.saveSubtitle": "التغييرات تؤثر على القائمة العامة بعد الحفظ.",
-"branchGeneral.saving": "جارٍ الحفظ...",
-"branchGeneral.saveChanges": "حفظ التغييرات",
-"branchGeneral.unsavedMessage": "لديك تغييرات غير محفوظة على الفرع.",
-"branchGeneral.discard": "تراجع",
+      loading:
+        "جارٍ التحميل...",
 
+      changesDiscarded:
+        "تم التراجع عن التغييرات",
+    },
 
-"branchTabs.general": "عام",
-"branchTabs.menu": "القائمة",
-"branchTabs.appearance": "المظهر",
-"branchTabs.hours": "ساعات العمل",
-"branchTabs.languages": "اللغات",
-"branchTabs.qr": "رمز QR",
+    project: {
+      general:
+        "عام",
 
+      menu:
+        "القائمة",
 
-"menuEditor.eyebrow": "محرّر القائمة",
-"menuEditor.menuNotFound": "القائمة غير موجودة.",
-"menuEditor.subscriptionLocked": "الاشتراك مقفل",
-"menuEditor.billingError": "خطأ في الاشتراك",
-"menuEditor.itemLimitReached": "تم الوصول لحد الأصناف",
-"menuEditor.backToBusiness": "الرجوع للمطعم",
-"menuEditor.openPublicMenu": "فتح القائمة العامة",
-"menuEditor.branchSettings": "إعدادات الفرع",
-"menuEditor.mainMenu": "القائمة الرئيسية",
-"menuEditor.subtitle": "أضف الأقسام والأصناف لقائمة هذا الفرع.",
-"menuEditor.archivedBranch": "فرع مؤرشف",
-"menuEditor.syncing": "مزامنة",
+      appearance:
+        "المظهر",
 
-"menuEditor.sections": "الأقسام",
-"menuEditor.items": "الأصناف",
-"menuEditor.available": "متاح",
-"menuEditor.hidden": "مخفي",
-"menuEditor.noImages": "بدون صور",
+      hours:
+        "ساعات العمل",
 
-"menuEditor.addSection": "إضافة قسم",
-"menuEditor.addSectionText": "الأقسام هي مجموعات مثل بيتزا، مشروبات، برغر، حلويات.",
-"menuEditor.sectionTranslations": "ترجمات القسم",
-"menuEditor.sectionName": "اسم القسم",
-"menuEditor.addingSection": "جارٍ إضافة القسم...",
-"menuEditor.menuHealth": "جودة القائمة",
-"menuEditor.menuHealthText": "أضف صورًا وأوصافًا للأصناف لجعل القائمة العامة أفضل.",
-"menuEditor.archivedBranchText": "هذا الفرع مؤرشف.",
-"menuEditor.restoreBeforeEditing": "قم باستعادته من إعدادات الفرع قبل التعديل.",
+      languages:
+        "اللغات",
 
-"menuEditor.settings": "الإعدادات",
-"menuEditor.delete": "حذف",
-"menuEditor.item": "صنف",
-"menuEditor.deleting": "جارٍ الحذف...",
-"menuEditor.noDescription": "لا يوجد وصف",
-"menuEditor.edit": "تعديل",
-"menuEditor.noItemsYet": "لا توجد أصناف بعد.",
-"menuEditor.addFirstItem": "إضافة أول صنف",
-"menuEditor.noSectionsTitle": "لا توجد أقسام بعد",
-"menuEditor.noSectionsText": "أضف أول قسم من اللوحة الجانبية. الأقسام تحتوي على أصناف مثل البرغر، المشروبات، الحلويات، والمزيد.",
+      websiteSettings:
+        "إعدادات الموقع",
 
-"menuEditor.sectionSettings": "إعدادات القسم",
-"menuEditor.editingLocked": "التعديل مقفل",
-"menuEditor.arabicSectionName": "اسم القسم بالعربية",
-"menuEditor.sectionSlug": "رابط القسم",
-"menuEditor.publicSectionUrl": "رابط القسم العام",
-"menuEditor.sectionCoverImage": "صورة غلاف القسم",
-"menuEditor.sectionCoverHint": "هذه الصورة تظهر في بطاقة القسم العامة. إذا تُركت فارغة سيتم استخدام صورة أول صنف.",
-"menuEditor.saving": "جارٍ الحفظ...",
-"menuEditor.saveSection": "حفظ القسم",
+      websites:
+        "المواقع",
 
-"menuEditor.editItem": "تعديل الصنف",
-"menuEditor.newItem": "صنف جديد",
-"menuEditor.arabicItemName": "اسم الصنف بالعربية",
-"menuEditor.itemName": "اسم الصنف",
-"menuEditor.itemNameTranslations": "ترجمات اسم الصنف",
-"menuEditor.arabicDescription": "الوصف بالعربية",
-"menuEditor.itemDescription": "وصف الصنف",
-"menuEditor.descriptionTranslations": "ترجمات الوصف",
-"menuEditor.price": "السعر",
-"menuEditor.itemImage": "صورة الصنف",
-"menuEditor.itemImageHintReady": "ستظهر هذه الصورة في القائمة العامة.",
-"menuEditor.itemImageHintEmpty": "أضف صورة لجعل الصنف يظهر بشكل أفضل.",
-"menuEditor.itemIsAvailable": "الصنف متاح",
-"menuEditor.itemIsHidden": "الصنف مخفي",
-"menuEditor.savingItem": "جارٍ حفظ الصنف...",
-"menuEditor.creatingItem": "جارٍ إنشاء الصنف...",
-"menuEditor.saveItem": "حفظ الصنف",
-"menuEditor.createItem": "إنشاء الصنف",
+      newWebsite:
+        "موقع جديد",
 
+      websiteName:
+        "اسم الموقع",
 
-"appearance.eyebrow": "إعدادات الفرع",
-"appearance.title": "المظهر",
-"appearance.subtitle": "خصّص الشعار، الغلاف، الألوان، والقالب لهذا الفرع.",
-"appearance.preview": "معاينة",
-"appearance.saving": "جارٍ الحفظ...",
-"appearance.save": "حفظ",
-"appearance.menuNotFound": "القائمة غير موجودة",
-"appearance.branchArchived": "الفرع مؤرشف",
-"appearance.appearanceLocked": "المظهر مقفل",
-"appearance.customCoverLocked": "الغلاف المخصص مقفل",
-"appearance.sectionPagesLocked": "صفحات الأقسام مقفلة",
-"appearance.templateLocked": "القالب مقفل",
-"appearance.backToBusiness": "الرجوع للمطعم",
+      hostname:
+        "اسم النطاق",
 
-"appearance.template": "القالب",
-"appearance.templateText": "اختر شكل القائمة العامة. لوحة المالك تتحكم بالقوالب وميزات صفحات الأقسام المتاحة.",
-"appearance.selected": "محدد",
-"appearance.locked": "مقفل",
-"appearance.available": "متاح",
+      description:
+        "الوصف",
 
-"appearance.images": "الصور",
-"appearance.imagesText": "ارفع الشعار وصورة الغلاف المستخدمة في القائمة العامة.",
-"appearance.logo": "الشعار",
-"appearance.logoAdded": "تمت إضافة الشعار. يمكنك تغييره أو حذفه.",
-"appearance.logoEmpty": "أضف شعارًا لرأس القائمة العامة.",
-"appearance.coverImage": "صورة الغلاف",
-"appearance.coverAdded": "تمت إضافة صورة الغلاف. يمكنك تغييرها أو حذفها.",
-"appearance.coverEmpty": "أضف صورة غلاف لواجهة القائمة العامة.",
+      location:
+        "الموقع",
 
-"appearance.colors": "الألوان",
-"appearance.colorsText": "اختر لون الهوية والألوان الأساسية المستخدمة في القوالب.",
-"appearance.primaryColor": "اللون الرئيسي",
-"appearance.background": "الخلفية",
-"appearance.text": "النص",
+      contactSocial:
+        "التواصل والحسابات",
 
-"appearance.livePreview": "معاينة مباشرة",
-"appearance.coverLockedByPlan": "الغلاف مقفل حسب الخطة",
-"appearance.noCoverImage": "لا توجد صورة غلاف",
-"appearance.logoPlaceholder": "شعار",
-"appearance.templatePreviewLabel": "قالب",
-"appearance.exampleAction": "زر تجريبي",
+      websiteStatus:
+        "حالة الموقع",
 
-"appearance.unsavedMessage": "لديك تغييرات غير محفوظة في المظهر",
-"appearance.discard": "تراجع",
-"appearance.saveChanges": "حفظ التغييرات",
+      saveChanges:
+        "حفظ التغييرات",
 
-"template.classic.name": "كلاسيكي",
-"template.classic.badge": "افتراضي",
-"template.classic.description": "قائمة كاملة بالتمرير مع واجهة قوية للمطعم.",
-"template.cleanCards.name": "بطاقات نظيفة",
-"template.cleanCards.badge": "صفحات الأقسام",
-"template.cleanCards.description": "تظهر الأقسام كبطاقات أولًا، ثم يفتح كل قسم في صفحة منفصلة. يتطلب ميزة صفحات الأقسام في الخطة.",
-"template.modern.name": "حديث",
-"template.modern.badge": "واسع",
-"template.modern.description": "تصميم حديث مقسوم مع لوحة للهوية بجانب القائمة.",
-"template.luxury.name": "فاخر",
-"template.luxury.badge": "مميز",
-"template.luxury.description": "واجهة كبيرة، مسافات فاخرة، وهوية بصرية أقوى.",
+      unsaved:
+        "لديك تغييرات غير محفوظة",
 
+      addSection:
+        "إضافة قسم",
 
-"hours.eyebrow": "إعدادات الفرع",
-"hours.title": "ساعات العمل",
-"hours.subtitle": "اضبط أوقات العمل لـ {name}.",
-"hours.saving": "جارٍ الحفظ...",
-"hours.save": "حفظ",
-"hours.notFound": "الفرع غير موجود.",
-"hours.lockedTitle": "ساعات العمل مقفلة",
-"hours.backToBusiness": "الرجوع للمطعم",
-"hours.openAll": "فتح كل الأيام",
-"hours.closeAll": "إغلاق كل الأيام",
-"hours.unsavedMessage": "لديك تغييرات غير محفوظة في ساعات العمل",
-"hours.discard": "تراجع",
-"hours.saveChanges": "حفظ التغييرات",
+      sectionName:
+        "اسم القسم",
 
-"hoursEditor.lockedTitle": "ساعات العمل مقفلة",
-"hoursEditor.lockedFallback": "هذا الإعداد مقفل حاليًا.",
-"hoursEditor.title": "ساعات العمل",
-"hoursEditor.subtitle": "اضبط أوقات الفتح والإغلاق لهذا الفرع.",
-"hoursEditor.everyday": "كل الأيام",
-"hoursEditor.weekendClosed": "إغلاق نهاية الأسبوع",
-"hoursEditor.open": "مفتوح",
-"hoursEditor.closed": "مغلق",
+      sections:
+        "الأقسام",
 
-"days.sun": "الأحد",
-"days.mon": "الإثنين",
-"days.tue": "الثلاثاء",
-"days.wed": "الأربعاء",
-"days.thu": "الخميس",
-"days.fri": "الجمعة",
-"days.sat": "السبت",
+      items:
+        "المنتجات",
 
+      available:
+        "متوفر",
 
-"languagesPage.eyebrow": "إعدادات الفرع",
-"languagesPage.title": "اللغات",
-"languagesPage.subtitle": "فعّل اللغات وترجم محتوى القائمة لـ {name}.",
-"languagesPage.saving": "جارٍ الحفظ...",
-"languagesPage.save": "حفظ",
-"languagesPage.menuNotFound": "القائمة غير موجودة",
-"languagesPage.languagesLocked": "اللغات مقفلة",
-"languagesPage.noLanguagesAvailable": "لا توجد لغات متاحة",
-"languagesPage.noLanguagesAvailableText": "هذه الخطة لا تحتوي على أي لغات. أضف العربية على الأقل من خطط المالك.",
-"languagesPage.backToBusiness": "الرجوع للمطعم",
+      hidden:
+        "مخفي",
 
-"languagesPage.activeLanguages": "اللغات النشطة",
-"languagesPage.activeLanguagesText": "خطط المالك تتحكم باللغات المتاحة. العربية تستخدم الحقول الأساسية من محرّر القائمة، والعبرية والإنجليزية تستخدم حقول الترجمة أدناه.",
-"languagesPage.progress": "التقدم",
-"languagesPage.main": "رئيسي",
-"languagesPage.default": "افتراضي",
-"languagesPage.planLocked": "مقفلة بالخطة",
-"languagesPage.visibleText": "هذه اللغة ظاهرة في القائمة العامة.",
-"languagesPage.disabledText": "هذه اللغة غير مفعّلة حاليًا.",
-"languagesPage.enable": "تفعيل",
-"languagesPage.disable": "تعطيل",
-"languagesPage.setDefault": "تعيين كافتراضي",
+      noImages:
+        "بدون صور",
 
-"languagesPage.translations": "الترجمات",
-"languagesPage.translationsText": "اختر لغة وأضف النصوص العامة للمطعم، الفرع، الأقسام، والأصناف.",
-"languagesPage.searchPlaceholder": "ابحث في الأقسام أو الأصناف...",
-"languagesPage.businessBranchMenuText": "نص المطعم، الفرع، والقائمة",
-"languagesPage.businessName": "اسم المطعم",
-"languagesPage.businessDescription": "وصف المطعم",
-"languagesPage.branchName": "اسم الفرع",
-"languagesPage.branchAddress": "عنوان الفرع",
-"languagesPage.menuName": "اسم القائمة",
-"languagesPage.menuDescription": "وصف القائمة",
+      notFound:
+        "الموقع غير موجود",
+    },
 
-"languagesPage.sectionsAndItems": "الأقسام والأصناف",
-"languagesPage.sectionName": "اسم القسم",
-"languagesPage.item": "صنف",
-"languagesPage.itemName": "اسم الصنف",
-"languagesPage.itemDescription": "وصف الصنف",
+    projectTabs: {
+      general:
+        "عام",
 
-"languagesPage.noTranslationLanguageTitle": "لا توجد لغة ترجمة مفعّلة",
-"languagesPage.noTranslationLanguageText": "فعّل العبرية أو الإنجليزية بالأعلى. إذا كانت مقفلة، اسمح بها من خطط المالك أولًا.",
-"languagesPage.unsavedMessage": "لديك تغييرات غير محفوظة في اللغات والترجمات",
-"languagesPage.discard": "تراجع",
-"languagesPage.saveChanges": "حفظ التغييرات",
+      menu:
+        "القائمة",
 
-"languagesPage.mainText": "النص الأساسي",
-"languagesPage.noMainText": "لا يوجد نص أساسي",
-"languagesPage.addTranslation": "أضف ترجمة {language}...",
+      appearance:
+        "المظهر",
 
-"language.ar": "العربية",
-"language.he": "العبرية",
-"language.en": "الإنجليزية",
+      hours:
+        "ساعات العمل",
 
+      languages:
+        "اللغات",
+    },
 
-"qr.eyebrow": "إعدادات الفرع",
-"qr.title": "رمز QR",
-"qr.subtitle": "أنشئ وتحكّم برمز QR الدائم لـ {name}.",
-"qr.openQr": "فتح QR",
-"qr.branchNotFound": "الفرع غير موجود",
-"qr.branchArchived": "الفرع مؤرشف",
-"qr.qrCodesLocked": "رموز QR مقفلة",
-"qr.backToBusiness": "الرجوع للمطعم",
+    languages: {
+      subtitle:
+        "إدارة اللغات والترجمات التي تظهر في هذا الموقع.",
 
-"qr.createPermanent": "إنشاء QR دائم",
-"qr.createPermanentText": "هذا ينشئ رابطًا قصيرًا دائمًا. سيبقى رمز QR يعمل حتى لو تغيّر رابط المطعم أو الفرع لاحقًا.",
-"qr.creatingQr": "جارٍ إنشاء QR...",
-"qr.createQrCode": "إنشاء رمز QR",
+      websiteLanguages:
+        "لغات الموقع",
 
-"qr.permanentQr": "QR دائم",
-"qr.active": "نشط",
-"qr.disabled": "معطّل",
-"qr.planLocked": "مقفل بالخطة",
-"qr.permanentQrText": "هذا الرمز يشير إلى رابط CRTGO ثابت، ثم يحوّل إلى رابط القائمة العامة الحالي.",
-"qr.permanentQrLink": "رابط QR الدائم",
-"qr.currentPublicMenuTarget": "رابط القائمة العامة الحالي",
-"qr.copy": "نسخ",
-"qr.printLabel": "عنوان الطباعة",
-"qr.printLabelHint": "اختياري. هذا النص يظهر على بطاقة الطباعة.",
-"qr.downloadQrPng": "تحميل QR كصورة PNG",
-"qr.downloadPrintCard": "تحميل بطاقة الطباعة",
-"qr.disabling": "جارٍ التعطيل...",
-"qr.enabling": "جارٍ التفعيل...",
-"qr.disableQr": "تعطيل QR",
-"qr.enableQr": "تفعيل QR",
-"qr.regenerating": "جارٍ إعادة الإنشاء...",
-"qr.regenerate": "إعادة إنشاء",
+      websiteLanguagesHint:
+        "اختر اللغات التي يمكن للزوار استخدامها وحدد اللغة الافتراضية.",
 
-"qr.analytics": "التحليلات",
-"qr.shortCode": "الكود القصير",
-"qr.scans": "المسحات",
-"qr.lastScan": "آخر مسحة",
-"qr.preview": "معاينة",
-"qr.fallbackTitle": "قائمة CRTGO",
-"qr.crtgoMenu": "قائمة CRTGO",
-"qr.scanMenu": "امسح القائمة",
-"qr.poweredBy": "مدعوم من CRTGO",
+      enabled:
+        "مفعّلة",
+
+      enable:
+        "تفعيل",
+
+      disable:
+        "إلغاء التفعيل",
+
+      default:
+        "اللغة الافتراضية",
+
+      makeDefault:
+        "تعيين كافتراضية",
+
+      translations:
+        "الترجمات",
+
+      chooseLanguage:
+        "اختر لغة لتعديل ترجمة الموقع والأقسام والمنتجات.",
+
+      website:
+        "الموقع",
+
+      section:
+        "القسم",
+
+      sectionName:
+        "اسم القسم",
+
+      items:
+        "المنتجات",
+
+      itemName:
+        "اسم المنتج",
+
+      keepOne:
+        "يجب إبقاء لغة واحدة على الأقل مفعّلة.",
+
+      saved:
+        "تم حفظ اللغات",
+
+      saveFailed:
+        "تعذر حفظ اللغات",
+
+      loadFailed:
+        "تعذر تحميل اللغات",
+    },
+
+    workingHours: {
+      title:
+        "ساعات العمل",
+
+      subtitle:
+        "حدد أوقات فتح وإغلاق {name}.",
+
+      schedule:
+        "جدول ساعات العمل",
+
+      scheduleHint:
+        "حدد الأيام التي يكون فيها الموقع مفتوحاً وأوقات الفتح والإغلاق لكل يوم.",
+
+      unsaved:
+        "لديك تغييرات غير محفوظة في ساعات العمل.",
+
+      saved:
+        "تم حفظ ساعات العمل",
+
+      saveFailed:
+        "تعذر حفظ ساعات العمل",
+    },
+
+    hoursEditor: {
+      title:
+        "أوقات الدوام",
+
+      subtitle:
+        "حدد أوقات فتح وإغلاق نشاطك التجاري خلال أيام الأسبوع.",
+
+      open:
+        "مفتوح",
+
+      closed:
+        "مغلق",
+
+      opensAt:
+        "يفتح الساعة",
+
+      closesAt:
+        "يغلق الساعة",
+
+      everyday:
+        "كل الأيام",
+
+      weekendClosed:
+        "عطلة نهاية الأسبوع مغلقة",
+
+      applyPreset:
+        "تطبيق",
+    },
+
+    days: {
+      sun:
+        "الأحد",
+
+      mon:
+        "الاثنين",
+
+      tue:
+        "الثلاثاء",
+
+      wed:
+        "الأربعاء",
+
+      thu:
+        "الخميس",
+
+      fri:
+        "الجمعة",
+
+      sat:
+        "السبت",
+    },
+
+    general: {
+      subtitle:
+        "إدارة هوية الموقع واسم النطاق ومعلومات التواصل وحالة الموقع.",
+
+      openWebsite:
+        "فتح الموقع",
+
+      backToWebsites:
+        "العودة إلى المواقع",
+
+      generalHint:
+        "جميع الإعدادات هنا تخص هذا الموقع مباشرة.",
+
+      identity:
+        "هوية الموقع",
+
+      information:
+        "معلومات الموقع",
+
+      publicUrl:
+        "رابط الموقع",
+
+      locationPlaceholder:
+        "حيفا، إسرائيل",
+
+      phone:
+        "رقم الهاتف",
+
+      nameRequired:
+        "اسم الموقع مطلوب",
+
+      hostnameRequired:
+        "اسم النطاق مطلوب",
+
+      hostnameTaken:
+        "يوجد موقع آخر يستخدم اسم النطاق هذا.",
+
+      saved:
+        "تم حفظ الموقع",
+
+      saveFailed:
+        "تعذر حفظ الموقع",
+
+      archiveTitle:
+        "أرشفة الموقع؟",
+
+      archiveMessage:
+        "سيتوقف الموقع عن الظهور للعامة.",
+
+      archiveWebsite:
+        "أرشفة الموقع",
+
+      archivedSuccess:
+        "تمت أرشفة الموقع",
+
+      restoreTitle:
+        "استعادة الموقع؟",
+
+      restoreMessage:
+        "سيصبح الموقع متاحاً للعامة مرة أخرى.",
+
+      restoreWebsite:
+        "استعادة الموقع",
+
+      restoredSuccess:
+        "تمت استعادة الموقع",
+
+      statusFailed:
+        "تعذر تحديث حالة الموقع",
+
+      dangerZone:
+        "منطقة الخطر",
+
+      dangerHint:
+        "حذف هذا الموقع سيؤدي أيضاً إلى حذف جميع الأقسام والمنتجات داخله.",
+
+      deleteWebsite:
+        "حذف الموقع",
+
+      deleteTitle:
+        "حذف الموقع نهائياً؟",
+
+      deleteMessage:
+        "سيتم حذف الموقع وجميع الأقسام والمنتجات الموجودة داخله نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+
+      deleteForever:
+        "حذف نهائي",
+
+      deletedSuccess:
+        "تم حذف الموقع",
+
+      deleteFailed:
+        "تعذر حذف الموقع",
+    },
+
+    appearance: {
+      title:
+        "المظهر",
+
+      subtitle:
+        "خصص مظهر وهوية موقع CRTGO الخاص بك.",
+
+      preview:
+        "معاينة",
+
+      images:
+        "الصور",
+
+      imagesHint:
+        "تُستخدم هذه الصور في أنحاء موقع CRTGO الخاص بك.",
+
+      logo:
+        "الشعار",
+
+      logoHint:
+        "شعار نشاطك التجاري.",
+
+      coverImage:
+        "صورة الغلاف",
+
+      coverHint:
+        "صورة الغلاف الرئيسية التي تظهر في الموقع.",
+
+      favicon:
+        "أيقونة الموقع",
+
+      faviconHint:
+        "الأيقونة الصغيرة التي تظهر في تبويب المتصفح.",
+
+      colors:
+        "الألوان",
+
+      colorsHint:
+        "خصص الألوان الرئيسية المستخدمة في موقعك.",
+
+      primaryColor:
+        "اللون الرئيسي",
+
+      backgroundColor:
+        "لون الخلفية",
+
+      textColor:
+        "لون النص",
+
+      unsaved:
+        "لديك تغييرات غير محفوظة في المظهر.",
+
+      saved:
+        "تم حفظ إعدادات المظهر",
+
+      saveFailed:
+        "تعذر حفظ إعدادات المظهر",
+    },
+
+    menuEditor: {
+      eyebrow:
+        "محرر القائمة",
+
+      subtitle:
+        "أنشئ وأدر أقسام ومنتجات هذا الموقع.",
+
+      addSectionHint:
+        "مثال: برغر، مشروبات، حلويات.",
+
+      sectionPlaceholder:
+        "برغر",
+
+      adding:
+        "جارٍ الإضافة...",
+
+      item:
+        "منتج",
+
+      noItems:
+        "لا توجد منتجات بعد.",
+
+      addFirstItem:
+        "إضافة أول منتج",
+
+      noSections:
+        "لا توجد أقسام بعد",
+
+      noSectionsHint:
+        "أضف أول قسم لبدء إنشاء القائمة.",
+
+      sectionNameRequired:
+        "اسم القسم مطلوب",
+
+      sectionAdded:
+        "تمت إضافة القسم",
+
+      sectionAddFailed:
+        "تعذر إضافة القسم",
+
+      deleteSectionTitle:
+        "حذف القسم؟",
+
+      deleteSectionMessage:
+        'سيتم حذف "{name}" وجميع المنتجات الموجودة داخله.',
+
+      deleteSection:
+        "حذف القسم",
+
+      sectionDeleted:
+        "تم حذف القسم",
+
+      sectionDeleteFailed:
+        "تعذر حذف القسم",
+
+      sectionSettings:
+        "إعدادات القسم",
+
+      sectionSaved:
+        "تم حفظ القسم",
+
+      sectionSaveFailed:
+        "تعذر حفظ القسم",
+
+      sectionCover:
+        "غلاف القسم",
+
+      saveSection:
+        "حفظ القسم",
+
+      itemAvailable:
+        "المنتج متوفر",
+
+      itemHidden:
+        "تم إخفاء المنتج",
+
+      itemUpdateFailed:
+        "تعذر تحديث المنتج",
+
+      deleteItemTitle:
+        "حذف المنتج؟",
+
+      deleteItemMessage:
+        'سيتم حذف "{name}".',
+
+      deleteItem:
+        "حذف المنتج",
+
+      itemDeleted:
+        "تم حذف المنتج",
+
+      itemDeleteFailed:
+        "تعذر حذف المنتج",
+
+      itemNameRequired:
+        "اسم المنتج مطلوب",
+
+      itemUpdated:
+        "تم تحديث المنتج",
+
+      itemCreated:
+        "تم إنشاء المنتج",
+
+      itemSaveFailed:
+        "تعذر حفظ المنتج",
+
+      editItem:
+        "تعديل المنتج",
+
+      newItem:
+        "منتج جديد",
+
+      itemName:
+        "اسم المنتج",
+
+      price:
+        "السعر",
+
+      itemImage:
+        "صورة المنتج",
+
+      itemIsAvailable:
+        "المنتج متوفر",
+
+      itemIsHidden:
+        "المنتج مخفي",
+
+      saveItem:
+        "حفظ المنتج",
+
+      createItem:
+        "إنشاء المنتج",
+
+      sectionIcon:
+        "أيقونة القسم",
+
+      sectionIconHint:
+        "ستظهر هذه الأيقونة بجانب اسم القسم في الموقع.",
+
+      noIcon:
+        "بدون",
+
+      crtgoIcons:
+        "أيقونات CRTGO",
+
+      symbols:
+        "رموز",
+
+      preview:
+        "معاينة",
+
+      iconPreviewHint:
+        "هكذا ستظهر الأيقونة.",
+
+      iconLabels: {
+        utensils:
+          "طعام",
+
+        pizza:
+          "بيتزا",
+
+        sandwich:
+          "ساندويش",
+
+        drinks:
+          "مشروبات",
+
+        coffee:
+          "قهوة",
+
+        dessert:
+          "حلويات",
+
+        icecream:
+          "آيس كريم",
+
+        salad:
+          "سلطات",
+
+        soup:
+          "شوربة",
+
+        meat:
+          "لحوم",
+
+        fish:
+          "أسماك",
+      },
+    },
+
+    dashboard: {
+      workspace:
+        "مساحة العمل",
+
+      subtitle:
+        "أدر جميع مواقع CRTGO الخاصة بك من مكان واحد.",
+
+      refreshed:
+        "تم تحديث مساحة العمل",
+
+      searchPlaceholder:
+        "البحث في المواقع...",
+
+      loadFailed:
+        "تعذر تحميل المواقع",
+
+      noResults:
+        "لم يتم العثور على نتائج",
+
+      noResultsHint:
+        "جرّب البحث باسم أو اسم نطاق آخر.",
+
+      firstWebsite:
+        "أنشئ موقعك الأول",
+
+      firstWebsiteHint:
+        "أنشئ أول موقع CRTGO لك، ثم أضف القائمة والهوية ومعلومات التواصل وساعات العمل.",
+
+      openWebsite:
+        "فتح الموقع",
+
+      websiteNamePlaceholder:
+        "برغر هاوس",
+
+      hostnameHint:
+        "سيصبح هذا عنوان الموقع العام.",
+
+      descriptionPlaceholder:
+        "وصف مختصر...",
+
+      notLoggedIn:
+        "لم يتم تسجيل الدخول.",
+
+      hostnameUsed:
+        "اسم النطاق هذا مستخدم بالفعل.",
+
+      created:
+        "تم إنشاء الموقع",
+
+      createFailed:
+        "تعذر إنشاء الموقع",
+
+      creating:
+        "جارٍ الإنشاء...",
+
+      createWebsite:
+        "إنشاء الموقع",
+    },
+
+    authPage: {
+      checkingSession:
+        "جارٍ التحقق من الجلسة...",
+
+      secureAdmin:
+        "إدارة CRTGO الآمنة",
+
+      heroTitle:
+        "أنشئ وأدر مواقعك بسهولة.",
+
+      heroText:
+        "أنشئ مواقع CRTGO سريعة وأدر القوائم والهوية ومعلومات التواصل وساعات العمل واللغات من مكان واحد.",
+
+      featureWebsites:
+        "إدارة جميع مواقعك",
+
+      featureMenus:
+        "إدارة القوائم والمحتوى",
+
+      featureBranding:
+        "التحكم بالهوية والمظهر",
+
+      welcome:
+        "مرحباً بعودتك",
+
+      getStarted:
+        "ابدأ الآن",
+
+      loginTitle:
+        "تسجيل الدخول",
+
+      signupTitle:
+        "إنشاء حساب",
+
+      loginSubtitle:
+        "سجّل الدخول للمتابعة إلى مساحة عمل CRTGO.",
+
+      signupSubtitle:
+        "أنشئ حساب CRTGO وابدأ بإنشاء موقعك الأول.",
+
+      login:
+        "تسجيل الدخول",
+
+      signup:
+        "إنشاء حساب",
+
+      createAccount:
+        "إنشاء الحساب",
+
+      username:
+        "اسم المستخدم",
+
+      displayName:
+        "الاسم الظاهر",
+
+      displayNamePlaceholder:
+        "اسمك",
+
+      email:
+        "البريد الإلكتروني",
+
+      password:
+        "كلمة المرور",
+
+      showPassword:
+        "إظهار كلمة المرور",
+
+      hidePassword:
+        "إخفاء كلمة المرور",
+
+      pleaseWait:
+        "يرجى الانتظار...",
+
+      footer:
+        "إدارة CRTGO · أدر جميع مواقعك من مساحة عمل واحدة.",
+
+      emailRequired:
+        "البريد الإلكتروني مطلوب.",
+
+      passwordRequired:
+        "كلمة المرور مطلوبة.",
+
+      passwordTooShort:
+        "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.",
+
+      usernameRequired:
+        "اسم المستخدم مطلوب.",
+
+      displayNameRequired:
+        "الاسم الظاهر مطلوب.",
+
+      usernameInvalid:
+        "يمكن أن يحتوي اسم المستخدم على أحرف إنجليزية وأرقام ونقاط وشرطات سفلية فقط.",
+
+      usernameTaken:
+        "اسم المستخدم هذا مستخدم بالفعل.",
+
+      welcomeBack:
+        "مرحباً بعودتك",
+
+      accountCreated:
+        "تم إنشاء الحساب",
+
+      invalidCredentials:
+        "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+
+      emailNotConfirmed:
+        "يرجى تأكيد البريد الإلكتروني قبل تسجيل الدخول.",
+
+      emailUsed:
+        "يوجد حساب مسجل بهذا البريد الإلكتروني بالفعل.",
+
+      somethingWentWrong:
+        "حدث خطأ ما.",
+    },
+
+    account: {
+      eyebrow:
+        "الملف الشخصي",
+
+      title:
+        "الحساب",
+
+      subtitle:
+        "أدر ملفك الشخصي ومعلومات حساب CRTGO.",
+
+      backToWebsites:
+        "العودة إلى المواقع",
+
+      ownerConsole:
+        "لوحة المالك",
+
+      ownerConsoleHint:
+        "إدارة المنصة وعملاء CRTGO.",
+
+      open:
+        "فتح",
+
+      defaultName:
+        "مستخدم CRTGO",
+
+      noEmail:
+        "لا يوجد بريد إلكتروني",
+
+      userId:
+        "معرّف المستخدم",
+
+      username:
+        "اسم المستخدم",
+
+      notSet:
+        "غير محدد",
+
+      profileDetails:
+        "تفاصيل الملف الشخصي",
+
+      profileDetailsHint:
+        "عدّل المعلومات المستخدمة في حساب CRTGO الخاص بك.",
+
+      displayName:
+        "الاسم الظاهر",
+
+      displayNamePlaceholder:
+        "اسمك",
+
+      email:
+        "البريد الإلكتروني",
+
+      emailHint:
+        "لا يمكن تغيير بريد تسجيل الدخول من هنا.",
+
+      status:
+        "حالة الحساب",
+
+      statusHint:
+        "معلومات عن حساب CRTGO وصلاحيات الوصول.",
+
+      authProvider:
+        "طريقة تسجيل الدخول",
+
+      emailProvider:
+        "البريد الإلكتروني",
+
+      accountType:
+        "نوع الحساب",
+
+      platformAdmin:
+        "إدارة المنصة",
+
+      clientAccount:
+        "عميل",
+
+      role:
+        "الصلاحية",
+
+      superAdmin:
+        "مدير عام",
+
+      websiteOwner:
+        "مالك مواقع",
+
+      unsaved:
+        "لديك تغييرات غير محفوظة في الحساب.",
+
+      userNotFound:
+        "لم يتم العثور على المستخدم.",
+
+      loadFailed:
+        "تعذر تحميل الحساب",
+
+      usernameRequired:
+        "اسم المستخدم مطلوب.",
+
+      displayNameRequired:
+        "الاسم الظاهر مطلوب.",
+
+      usernameInvalid:
+        "يمكن أن يحتوي اسم المستخدم على أحرف إنجليزية وأرقام ونقاط وشرطات سفلية فقط.",
+
+      usernameTaken:
+        "اسم المستخدم هذا مستخدم بالفعل.",
+
+      updated:
+        "تم تحديث الحساب",
+
+      saveFailed:
+        "تعذر حفظ الحساب",
+    },
   },
 };
 
-const AdminI18nContext = createContext(null);
-
-function getInitialLanguage() {
-  if (typeof window === "undefined") return "en";
-
-  const saved = localStorage.getItem("crtgo-admin-language");
-
-  if (saved && ADMIN_LANGUAGES[saved]) {
-    return saved;
-  }
-
-  return "en";
+function getNestedValue(
+  object,
+  path
+) {
+  return path
+    .split(".")
+    .reduce(
+      (
+        current,
+        key
+      ) =>
+        current?.[key],
+      object
+    );
 }
 
-export function AdminI18nProvider({ children }) {
-  const [language, setLanguageState] = useState(getInitialLanguage);
+export function AdminI18nProvider({
+  children,
+}) {
+  const [
+    language,
+    setLanguageState,
+  ] = useState(() => {
+    if (
+      typeof window ===
+      "undefined"
+    ) {
+      return "en";
+    }
 
-  const meta = ADMIN_LANGUAGES[language] || ADMIN_LANGUAGES.en;
+    const saved =
+      localStorage.getItem(
+        STORAGE_KEY
+      );
+
+    return LANGUAGES[saved]
+      ? saved
+      : "en";
+  });
+
+  const languageMeta =
+    LANGUAGES[language] ||
+    LANGUAGES.en;
 
   useEffect(() => {
-    localStorage.setItem("crtgo-admin-language", language);
-    document.documentElement.lang = language;
-    document.documentElement.dir = meta.dir;
-  }, [language, meta.dir]);
+    document.documentElement.lang =
+      languageMeta.code;
 
-  function setLanguage(nextLanguage) {
-    if (!ADMIN_LANGUAGES[nextLanguage]) return;
-    setLanguageState(nextLanguage);
+    document.documentElement.dir =
+      languageMeta.dir;
+  }, [
+    languageMeta.code,
+    languageMeta.dir,
+  ]);
+
+  function setLanguage(
+    code
+  ) {
+    if (
+      !LANGUAGES[code]
+    ) {
+      return;
+    }
+
+    setLanguageState(
+      code
+    );
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      code
+    );
   }
 
-  function t(key, fallback = key) {
-    return DICTIONARY[language]?.[key] || DICTIONARY.en?.[key] || fallback;
+  function t(
+    key,
+    variables = {}
+  ) {
+    const translated =
+      getNestedValue(
+        translations[
+          language
+        ],
+        key
+      );
+
+    const english =
+      getNestedValue(
+        translations.en,
+        key
+      );
+
+    let value =
+      translated ??
+      english ??
+      key;
+
+    if (
+      typeof value !==
+      "string"
+    ) {
+      return value;
+    }
+
+    for (
+      const [
+        variable,
+        replacement,
+      ] of Object.entries(
+        variables
+      )
+    ) {
+      value =
+        value.replaceAll(
+          `{${variable}}`,
+          String(
+            replacement ??
+              ""
+          )
+        );
+    }
+
+    return value;
   }
 
-  const value = useMemo(
-    () => ({
-      language,
-      setLanguage,
-      meta,
-      dir: meta.dir,
-      languages: Object.values(ADMIN_LANGUAGES),
-      t,
-    }),
-    [language, meta]
-  );
+  const value =
+    useMemo(
+      () => ({
+        language,
+        setLanguage,
+        dir:
+          languageMeta.dir,
+        t,
+      }),
+      [
+        language,
+        languageMeta.dir,
+      ]
+    );
 
   return (
-    <AdminI18nContext.Provider value={value}>
+    <AdminI18nContext.Provider
+      value={
+        value
+      }
+    >
       {children}
     </AdminI18nContext.Provider>
   );
 }
 
 export function useAdminI18n() {
-  const context = useContext(AdminI18nContext);
+  const context =
+    useContext(
+      AdminI18nContext
+    );
 
   if (!context) {
-    throw new Error("useAdminI18n must be used inside AdminI18nProvider");
+    throw new Error(
+      "useAdminI18n must be used inside AdminI18nProvider"
+    );
   }
 
   return context;

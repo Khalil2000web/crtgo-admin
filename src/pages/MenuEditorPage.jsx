@@ -3,13 +3,16 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import {
   useParams,
 } from "react-router-dom";
+
 import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+
 import {
   ImagePlus,
   Loader2,
@@ -17,12 +20,24 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+
 import toast from "react-hot-toast";
 
-import { supabase } from "../lib/supabase";
-import { useConfirm } from "../components/ConfirmProvider";
+import {
+  supabase,
+} from "../lib/supabase";
+
+import {
+  useAdminI18n,
+} from "../lib/adminI18n";
+
+import {
+  useConfirm,
+} from "../components/ConfirmProvider";
+
 import ProjectTabs from "../components/ProjectTabs";
 import ImageUploadField from "../components/ImageUploadField";
+
 import {
   Badge,
   Button,
@@ -42,48 +57,54 @@ import {
   SECTION_ICONS,
 } from "../lib/sectionIcons";
 
+
 async function loadProjectMenu(
   projectId
 ) {
-  const { data, error } =
-    await supabase
-      .from("projects")
-      .select(`
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("projects")
+    .select(`
+      id,
+      name,
+      slug,
+      status,
+      enabled_languages,
+      default_language,
+
+      sections (
         id,
+        project_id,
         name,
-        slug,
-        status,
-        enabled_languages,
-        default_language,
+        description,
+        cover_url,
+        icon_type,
+        icon_value,
+        sort_order,
+        name_i18n,
+        description_i18n,
 
-sections (
-  id,
-  project_id,
-  name,
-  description,
-  cover_url,
-  icon_type,
-  icon_value,
-  sort_order,
-  name_i18n,
-  description_i18n,
-
-          items (
-            id,
-            section_id,
-            name,
-            description,
-            price,
-            image_url,
-            is_available,
-            sort_order,
-            name_i18n,
-            description_i18n
-          )
+        items (
+          id,
+          section_id,
+          name,
+          description,
+          price,
+          image_url,
+          is_available,
+          sort_order,
+          name_i18n,
+          description_i18n
         )
-      `)
-      .eq("id", projectId)
-      .single();
+      )
+    `)
+    .eq(
+      "id",
+      projectId
+    )
+    .single();
 
   if (error) {
     throw error;
@@ -92,19 +113,34 @@ sections (
   return data;
 }
 
+
 function sortByOrder(
   items = []
 ) {
   return [...items].sort(
-    (a, b) =>
-      Number(a.sort_order || 0) -
-      Number(b.sort_order || 0)
+    (
+      a,
+      b
+    ) =>
+      Number(
+        a.sort_order || 0
+      ) -
+      Number(
+        b.sort_order || 0
+      )
   );
 }
 
+
 export default function MenuEditorPage() {
-  const { projectId } =
-    useParams();
+  const {
+    projectId,
+  } = useParams();
+
+  const {
+    t,
+    dir,
+  } = useAdminI18n();
 
   const queryClient =
     useQueryClient();
@@ -112,44 +148,52 @@ export default function MenuEditorPage() {
   const confirm =
     useConfirm();
 
-const [
-  newSection,
-  setNewSection,
-] = useState({
-  name: "",
-  icon_type: "none",
-  icon_value: "",
-});
+
+  const [
+    newSection,
+    setNewSection,
+  ] = useState({
+    name: "",
+    icon_type: "none",
+    icon_value: "",
+  });
+
 
   const [
     addingSection,
     setAddingSection,
   ] = useState(false);
 
+
   const [
     sectionModal,
     setSectionModal,
   ] = useState(null);
+
 
   const [
     itemModal,
     setItemModal,
   ] = useState(null);
 
+
   const [
     deletingSectionId,
     setDeletingSectionId,
   ] = useState(null);
+
 
   const [
     deletingItemId,
     setDeletingItemId,
   ] = useState(null);
 
+
   const [
     togglingItemId,
     setTogglingItemId,
   ] = useState(null);
+
 
   const {
     data: project,
@@ -161,24 +205,37 @@ const [
       "project-menu",
       projectId,
     ],
+
     queryFn: () =>
       loadProjectMenu(
         projectId
       ),
-    enabled: Boolean(projectId),
+
+    enabled:
+      Boolean(projectId),
   });
+
 
   const sections =
     useMemo(() => {
       return sortByOrder(
-        project?.sections || []
-      ).map((section) => ({
-        ...section,
-        items: sortByOrder(
-          section.items || []
-        ),
-      }));
-    }, [project]);
+        project?.sections ||
+          []
+      ).map(
+        (section) => ({
+          ...section,
+
+          items:
+            sortByOrder(
+              section.items ||
+                []
+            ),
+        })
+      );
+    }, [
+      project,
+    ]);
+
 
   const allItems =
     sections.flatMap(
@@ -186,11 +243,13 @@ const [
         section.items || []
     );
 
+
   const availableItems =
     allItems.filter(
       (item) =>
         item.is_available
     );
+
 
   const hiddenItems =
     allItems.filter(
@@ -198,36 +257,61 @@ const [
         !item.is_available
     );
 
+
   const itemsWithoutImages =
     allItems.filter(
       (item) =>
         !item.image_url
     );
 
+
   async function refresh() {
-    await queryClient.invalidateQueries({
-      queryKey: [
-        "project-menu",
-        projectId,
-      ],
-    });
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: [
+          "project-menu",
+          projectId,
+        ],
+      }),
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "project-languages",
+          projectId,
+        ],
+      }),
+    ]);
   }
 
-async function addSection(e) {
-  e.preventDefault();
 
-  const name =
-    newSection.name.trim();
+  async function addSection(
+    event
+  ) {
+    event.preventDefault();
 
-  if (!name) {
-    return;
-  }
+    const name =
+      newSection.name.trim();
 
-  setAddingSection(true);
+    if (!name) {
+      toast.error(
+        t(
+          "menuEditor.sectionNameRequired"
+        )
+      );
 
-  try {
-    const { error } =
-      await supabase
+      return;
+    }
+
+
+    setAddingSection(
+      true
+    );
+
+
+    try {
+      const {
+        error,
+      } = await supabase
         .from("sections")
         .insert({
           project_id:
@@ -239,84 +323,123 @@ async function addSection(e) {
             newSection.icon_type,
 
           icon_value:
-            newSection.icon_type === "none"
+            newSection.icon_type ===
+            "none"
               ? null
-              : newSection.icon_value || null,
+              : newSection.icon_value ||
+                null,
 
           sort_order:
-            sections.length + 1,
+            sections.length +
+            1,
         });
 
-    if (error) {
-      throw error;
-    }
-
-    setNewSection({
-      name: "",
-      icon_type: "none",
-      icon_value: "",
-    });
-
-    toast.success(
-      "Section added"
-    );
-
-    await refresh();
-  } catch (err) {
-    toast.error(
-      err.message ||
-        "Failed to add section"
-    );
-  } finally {
-    setAddingSection(false);
-  }
-}
-
-  async function deleteSection(
-    section
-  ) {
-    const ok = await confirm({
-      title: "Delete section?",
-      message: `This deletes "${section.name}" and every item inside it.`,
-      confirmText:
-        "Delete section",
-      danger: true,
-    });
-
-    if (!ok) {
-      return;
-    }
-
-    setDeletingSectionId(
-      section.id
-    );
-
-    try {
-      /*
-       * items.section_id uses ON DELETE CASCADE.
-       */
-      const { error } =
-        await supabase
-          .from("sections")
-          .delete()
-          .eq(
-            "id",
-            section.id
-          );
 
       if (error) {
         throw error;
       }
 
+
+      setNewSection({
+        name: "",
+        icon_type: "none",
+        icon_value: "",
+      });
+
+
       toast.success(
-        "Section deleted"
+        t(
+          "menuEditor.sectionAdded"
+        )
       );
+
 
       await refresh();
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to delete section"
+        err?.message ||
+          t(
+            "menuEditor.sectionAddFailed"
+          )
+      );
+    } finally {
+      setAddingSection(
+        false
+      );
+    }
+  }
+
+
+  async function deleteSection(
+    section
+  ) {
+    const ok =
+      await confirm({
+        title:
+          t(
+            "menuEditor.deleteSectionTitle"
+          ),
+
+        message:
+          t(
+            "menuEditor.deleteSectionMessage",
+            {
+              name:
+                section.name,
+            }
+          ),
+
+        confirmText:
+          t(
+            "menuEditor.deleteSection"
+          ),
+
+        danger:
+          true,
+      });
+
+
+    if (!ok) {
+      return;
+    }
+
+
+    setDeletingSectionId(
+      section.id
+    );
+
+
+    try {
+      const {
+        error,
+      } = await supabase
+        .from("sections")
+        .delete()
+        .eq(
+          "id",
+          section.id
+        );
+
+
+      if (error) {
+        throw error;
+      }
+
+
+      toast.success(
+        t(
+          "menuEditor.sectionDeleted"
+        )
+      );
+
+
+      await refresh();
+    } catch (err) {
+      toast.error(
+        err?.message ||
+          t(
+            "menuEditor.sectionDeleteFailed"
+          )
       );
     } finally {
       setDeletingSectionId(
@@ -325,6 +448,7 @@ async function addSection(e) {
     }
   }
 
+
   async function toggleItem(
     item
   ) {
@@ -332,34 +456,45 @@ async function addSection(e) {
       item.id
     );
 
+
     try {
-      const { error } =
-        await supabase
-          .from("items")
-          .update({
-            is_available:
-              !item.is_available,
-          })
-          .eq(
-            "id",
-            item.id
-          );
+      const {
+        error,
+      } = await supabase
+        .from("items")
+        .update({
+          is_available:
+            !item.is_available,
+        })
+        .eq(
+          "id",
+          item.id
+        );
+
 
       if (error) {
         throw error;
       }
 
+
       toast.success(
         item.is_available
-          ? "Item hidden"
-          : "Item available"
+          ? t(
+              "menuEditor.itemHidden"
+            )
+          : t(
+              "menuEditor.itemAvailable"
+            )
       );
+
 
       await refresh();
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to update item"
+        err?.message ||
+          t(
+            "menuEditor.itemUpdateFailed"
+          )
       );
     } finally {
       setTogglingItemId(
@@ -368,45 +503,77 @@ async function addSection(e) {
     }
   }
 
+
   async function deleteItem(
     item
   ) {
-    const ok = await confirm({
-      title: "Delete item?",
-      message: `This deletes "${item.name}".`,
-      confirmText:
-        "Delete item",
-      danger: true,
-    });
+    const ok =
+      await confirm({
+        title:
+          t(
+            "menuEditor.deleteItemTitle"
+          ),
+
+        message:
+          t(
+            "menuEditor.deleteItemMessage",
+            {
+              name:
+                item.name,
+            }
+          ),
+
+        confirmText:
+          t(
+            "menuEditor.deleteItem"
+          ),
+
+        danger:
+          true,
+      });
+
 
     if (!ok) {
       return;
     }
 
+
     setDeletingItemId(
       item.id
     );
 
+
     try {
-      const { error } =
-        await supabase
-          .from("items")
-          .delete()
-          .eq("id", item.id);
+      const {
+        error,
+      } = await supabase
+        .from("items")
+        .delete()
+        .eq(
+          "id",
+          item.id
+        );
+
 
       if (error) {
         throw error;
       }
 
+
       toast.success(
-        "Item deleted"
+        t(
+          "menuEditor.itemDeleted"
+        )
       );
+
 
       await refresh();
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to delete item"
+        err?.message ||
+          t(
+            "menuEditor.itemDeleteFailed"
+          )
       );
     } finally {
       setDeletingItemId(
@@ -415,46 +582,74 @@ async function addSection(e) {
     }
   }
 
+
   if (isLoading) {
     return (
-      <main className="h-full overflow-y-auto bg-[#090909] p-5 text-white">
+      <main
+        dir={dir}
+        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+      >
         <SkeletonCard className="h-40" />
+
         <SkeletonCard className="mt-5 h-[600px]" />
       </main>
     );
   }
+
 
   if (
     error ||
     !project
   ) {
     return (
-      <main className="h-full overflow-y-auto bg-[#090909] p-5 text-white">
+      <main
+        dir={dir}
+        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+      >
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-red-200">
           {error?.message ||
-            "Website not found."}
+            t(
+              "project.notFound"
+            )}
         </p>
       </main>
     );
   }
 
+
   return (
-    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden bg-[#090909] pb-32 text-white">
+    <main
+      dir={dir}
+      className="h-full min-w-0 overflow-y-auto overflow-x-hidden bg-[#090909] pb-32 text-white"
+    >
       <PageHeader
-        eyebrow="Menu Editor"
-        title={project.name}
-        subtitle="Create sections and items for this website."
+        eyebrow={t(
+          "menuEditor.eyebrow"
+        )}
+        title={
+          project.name
+        }
+        subtitle={t(
+          "menuEditor.subtitle"
+        )}
       />
+
 
       <ProjectTabs
-        projectId={projectId}
+        projectId={
+          projectId
+        }
       />
 
+
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <h2 className="text-3xl font-black">
-            Menu
+            {t(
+              "project.menu"
+            )}
           </h2>
+
 
           {isFetching && (
             <Badge tone="neutral">
@@ -462,51 +657,71 @@ async function addSection(e) {
                 size={13}
                 className="animate-spin"
               />
-              Syncing
+
+              {t(
+                "common.syncing"
+              )}
             </Badge>
           )}
         </div>
 
+
+        {/* STATS */}
+
         <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-5">
           <Card className="p-4">
             <Stat
-              label="Sections"
+              label={t(
+                "project.sections"
+              )}
               value={
                 sections.length
               }
             />
           </Card>
 
+
           <Card className="p-4">
             <Stat
-              label="Items"
+              label={t(
+                "project.items"
+              )}
               value={
                 allItems.length
               }
             />
           </Card>
 
+
           <Card className="p-4">
             <Stat
-              label="Available"
+              label={t(
+                "project.available"
+              )}
               value={
                 availableItems.length
               }
             />
           </Card>
 
+
           <Card className="p-4">
             <Stat
-              label="Hidden"
+              label={t(
+                "project.hidden"
+              )}
               value={
                 hiddenItems.length
               }
             />
           </Card>
 
+
           <Card className="p-4">
             <Stat
-              label="No Images"
+              label={t(
+                "project.noImages"
+              )}
               value={
                 itemsWithoutImages.length
               }
@@ -514,97 +729,139 @@ async function addSection(e) {
           </Card>
         </div>
 
+
         <div className="mt-6 grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+
+          {/* ADD SECTION */}
+
           <aside className="h-fit rounded-[28px] border border-white/10 bg-[#111111] p-5">
             <h2 className="text-xl font-black">
-              Add Section
+              {t(
+                "project.addSection"
+              )}
             </h2>
 
+
             <p className="mt-1 text-sm font-bold leading-6 text-white/40">
-              Examples: burgers, drinks, desserts.
+              {t(
+                "menuEditor.addSectionHint"
+              )}
             </p>
 
-<form
-  onSubmit={addSection}
-  className="mt-4 grid gap-4"
->
-  <div>
-    <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-white/30">
-      SECTION NAME
-    </p>
 
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-3">
-      {newSection.icon_type !==
-        "none" &&
-        newSection.icon_value && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-white">
-            <SelectedSectionIcon
-              type={
-                newSection.icon_type
+            <form
+              onSubmit={
+                addSection
               }
-              value={
-                newSection.icon_value
-              }
-            />
-          </div>
-        )}
+              className="mt-4 grid gap-4"
+            >
+              <div>
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-white/30">
+                  {t(
+                    "project.sectionName"
+                  )}
+                </p>
 
-      <input
-        value={
-          newSection.name
-        }
-        onChange={(e) =>
-          setNewSection(
-            (current) => ({
-              ...current,
-              name:
-                e.target.value,
-            })
-          )
-        }
-        placeholder="Burgers"
-        className="min-h-12 w-full bg-transparent text-sm font-bold text-white outline-none placeholder:text-white/25"
-      />
-    </div>
-  </div>
 
-  <SectionIconPicker
-    type={
-      newSection.icon_type
-    }
-    value={
-      newSection.icon_value
-    }
-    onChange={(
-      type,
-      value
-    ) =>
-      setNewSection(
-        (current) => ({
-          ...current,
-          icon_type: type,
-          icon_value: value,
-        })
-      )
-    }
-  />
+                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/25 px-3">
+                  {newSection.icon_type !==
+                    "none" &&
+                    newSection.icon_value && (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-white">
+                        <SelectedSectionIcon
+                          type={
+                            newSection.icon_type
+                          }
+                          value={
+                            newSection.icon_value
+                          }
+                        />
+                      </div>
+                    )}
 
-  <Button
-    type="submit"
-    loading={
-      addingSection
-    }
-    loadingText="Adding..."
-    disabled={
-      !newSection.name.trim()
-    }
-  >
-    <Plus size={16} />
 
-    Add Section
-  </Button>
-</form>
+                  <input
+                    value={
+                      newSection.name
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setNewSection(
+                        (
+                          current
+                        ) => ({
+                          ...current,
+
+                          name:
+                            event
+                              .target
+                              .value,
+                        })
+                      )
+                    }
+                    placeholder={t(
+                      "menuEditor.sectionPlaceholder"
+                    )}
+                    className="min-h-12 w-full bg-transparent text-sm font-bold text-white outline-none placeholder:text-white/25"
+                  />
+                </div>
+              </div>
+
+
+              <SectionIconPicker
+                type={
+                  newSection.icon_type
+                }
+                value={
+                  newSection.icon_value
+                }
+                onChange={(
+                  type,
+                  value
+                ) =>
+                  setNewSection(
+                    (
+                      current
+                    ) => ({
+                      ...current,
+
+                      icon_type:
+                        type,
+
+                      icon_value:
+                        value,
+                    })
+                  )
+                }
+              />
+
+
+              <Button
+                type="submit"
+                loading={
+                  addingSection
+                }
+                loadingText={t(
+                  "menuEditor.adding"
+                )}
+                disabled={
+                  !newSection.name.trim()
+                }
+              >
+                <Plus
+                  size={16}
+                />
+
+                {t(
+                  "project.addSection"
+                )}
+              </Button>
+            </form>
           </aside>
+
+
+          {/* SECTIONS */}
 
           <div className="grid gap-5">
             {sections.length ? (
@@ -617,32 +874,47 @@ async function addSection(e) {
                     className="rounded-[28px] border border-white/10 bg-[#111111] p-5"
                   >
                     <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
-<div className="flex items-center gap-3">
-  {section.icon_type !==
-    "none" &&
-    section.icon_value && (
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-white">
-        <AdminSectionIcon
-          section={section}
-        />
-      </div>
-    )}
 
-  <div className="min-w-0">
-    <h2 className="truncate text-2xl font-black">
-      {section.name}
-    </h2>
+                      {/* SECTION HEADER */}
 
-    {section.description && (
-      <p className="mt-1 text-sm font-bold text-white/35">
-        {section.description}
-      </p>
-    )}
-  </div>
-</div>
+                      <div className="flex min-w-0 items-center gap-3">
+                        {section.icon_type !==
+                          "none" &&
+                          section.icon_value && (
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-white">
+                              <AdminSectionIcon
+                                section={
+                                  section
+                                }
+                              />
+                            </div>
+                          )}
 
-                      <div className="flex gap-2">
+
+                        <div className="min-w-0">
+                          <h2 className="truncate text-2xl font-black">
+                            {
+                              section.name
+                            }
+                          </h2>
+
+
+                          {section.description && (
+                            <p className="mt-1 text-sm font-bold text-white/35">
+                              {
+                                section.description
+                              }
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+
+                      {/* SECTION ACTIONS */}
+
+                      <div className="flex shrink-0 flex-wrap gap-2">
                         <Button
+                          type="button"
                           variant="secondary"
                           size="sm"
                           onClick={() =>
@@ -654,10 +926,15 @@ async function addSection(e) {
                           <Pencil
                             size={15}
                           />
-                          Edit
+
+                          {t(
+                            "common.edit"
+                          )}
                         </Button>
 
+
                         <Button
+                          type="button"
                           variant="danger"
                           size="sm"
                           loading={
@@ -675,7 +952,9 @@ async function addSection(e) {
                           />
                         </Button>
 
+
                         <Button
+                          type="button"
                           size="sm"
                           onClick={() =>
                             setItemModal({
@@ -687,10 +966,16 @@ async function addSection(e) {
                           <Plus
                             size={15}
                           />
-                          Item
+
+                          {t(
+                            "menuEditor.item"
+                          )}
                         </Button>
                       </div>
                     </div>
+
+
+                    {/* ITEMS */}
 
                     {section.items
                       ?.length ? (
@@ -704,6 +989,9 @@ async function addSection(e) {
                               className="rounded-2xl border border-white/10 bg-black/25 p-3"
                             >
                               <div className="flex gap-4">
+
+                                {/* IMAGE */}
+
                                 <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-white/30">
                                   {item.image_url ? (
                                     <img
@@ -715,21 +1003,23 @@ async function addSection(e) {
                                     />
                                   ) : (
                                     <ImagePlus
-                                      size={
-                                        22
-                                      }
+                                      size={22}
                                     />
                                   )}
                                 </div>
 
+
+                                {/* INFO */}
+
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-start justify-between gap-3">
-                                    <div>
+                                    <div className="min-w-0">
                                       <h3 className="text-lg font-black">
                                         {
                                           item.name
                                         }
                                       </h3>
+
 
                                       {item.description && (
                                         <p className="mt-1 line-clamp-2 text-sm font-bold text-white/40">
@@ -740,7 +1030,11 @@ async function addSection(e) {
                                       )}
                                     </div>
 
-                                    <p className="shrink-0 text-lg font-black text-[#ff7a00]">
+
+                                    <p
+                                      className="shrink-0 text-lg font-black text-[#ff7a00]"
+                                      dir="ltr"
+                                    >
                                       ₪
                                       {Number(
                                         item.price ||
@@ -750,6 +1044,7 @@ async function addSection(e) {
                                       )}
                                     </p>
                                   </div>
+
 
                                   <div className="mt-4 flex flex-wrap gap-2">
                                     <button
@@ -763,33 +1058,49 @@ async function addSection(e) {
                                           item
                                         )
                                       }
-                                      className={`rounded-xl px-3 py-2 text-xs font-black ${
+                                      className={`rounded-xl px-3 py-2 text-xs font-black transition ${
                                         item.is_available
-                                          ? "bg-green-500/10 text-green-200"
-                                          : "bg-red-500/10 text-red-200"
+                                          ? "bg-green-500/10 text-green-200 hover:bg-green-500/15"
+                                          : "bg-red-500/10 text-red-200 hover:bg-red-500/15"
                                       }`}
                                     >
-                                      {item.is_available
-                                        ? "Available"
-                                        : "Hidden"}
+                                      {togglingItemId ===
+                                      item.id ? (
+                                        <Loader2
+                                          size={14}
+                                          className="animate-spin"
+                                        />
+                                      ) : item.is_available ? (
+                                        t(
+                                          "project.available"
+                                        )
+                                      ) : (
+                                        t(
+                                          "project.hidden"
+                                        )
+                                      )}
                                     </button>
 
+
                                     <Button
+                                      type="button"
                                       variant="secondary"
                                       size="sm"
                                       onClick={() =>
-                                        setItemModal(
-                                          {
-                                            section,
-                                            item,
-                                          }
-                                        )
+                                        setItemModal({
+                                          section,
+                                          item,
+                                        })
                                       }
                                     >
-                                      Edit
+                                      {t(
+                                        "common.edit"
+                                      )}
                                     </Button>
 
+
                                     <Button
+                                      type="button"
                                       variant="danger"
                                       size="sm"
                                       loading={
@@ -802,7 +1113,9 @@ async function addSection(e) {
                                         )
                                       }
                                     >
-                                      Delete
+                                      {t(
+                                        "common.delete"
+                                      )}
                                     </Button>
                                   </div>
                                 </div>
@@ -812,12 +1125,19 @@ async function addSection(e) {
                         )}
                       </div>
                     ) : (
+
+                      /* NO ITEMS */
+
                       <div className="mt-4 rounded-2xl border border-dashed border-white/10 bg-black/25 p-6 text-center">
                         <p className="text-sm font-bold text-white/40">
-                          No items yet.
+                          {t(
+                            "menuEditor.noItems"
+                          )}
                         </p>
 
+
                         <Button
+                          type="button"
                           className="mt-4"
                           onClick={() =>
                             setItemModal({
@@ -829,7 +1149,10 @@ async function addSection(e) {
                           <Plus
                             size={16}
                           />
-                          Add First Item
+
+                          {t(
+                            "menuEditor.addFirstItem"
+                          )}
                         </Button>
                       </div>
                     )}
@@ -837,30 +1160,46 @@ async function addSection(e) {
                 )
               )
             ) : (
+
+              /* NO SECTIONS */
+
               <EmptyState
                 icon={
                   <Plus
                     size={38}
                   />
                 }
-                title="No sections yet"
-                text="Add the first section to start building the menu."
+                title={t(
+                  "menuEditor.noSections"
+                )}
+                text={t(
+                  "menuEditor.noSectionsHint"
+                )}
               />
             )}
           </div>
         </div>
       </section>
 
+
       <SectionModal
-        section={sectionModal}
+        section={
+          sectionModal
+        }
         onClose={() =>
-          setSectionModal(null)
+          setSectionModal(
+            null
+          )
         }
         onDone={() => {
-          setSectionModal(null);
+          setSectionModal(
+            null
+          );
+
           refresh();
         }}
       />
+
 
       <ItemModal
         key={
@@ -868,12 +1207,19 @@ async function addSection(e) {
             ? `${itemModal.section.id}-${itemModal.item?.id || "new"}`
             : "empty"
         }
-        data={itemModal}
+        data={
+          itemModal
+        }
         onClose={() =>
-          setItemModal(null)
+          setItemModal(
+            null
+          )
         }
         onDone={() => {
-          setItemModal(null);
+          setItemModal(
+            null
+          );
+
           refresh();
         }}
       />
@@ -881,16 +1227,26 @@ async function addSection(e) {
   );
 }
 
+
 function SectionModal({
   section,
   onClose,
   onDone,
 }) {
-  const [saving, setSaving] =
-    useState(false);
+  const {
+    t,
+  } = useAdminI18n();
 
-const [form, setForm] =
-  useState({
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
+
+
+  const [
+    form,
+    setForm,
+  ] = useState({
     name: "",
     description: "",
     cover_url: "",
@@ -898,370 +1254,552 @@ const [form, setForm] =
     icon_value: "",
   });
 
-useEffect(() => {
-  setForm({
-    name:
-      section?.name || "",
 
-    description:
-      section?.description || "",
+  useEffect(() => {
+    setForm({
+      name:
+        section?.name ||
+        "",
 
-    cover_url:
-      section?.cover_url || "",
+      description:
+        section?.description ||
+        "",
 
-    icon_type:
-      section?.icon_type ||
-      "none",
+      cover_url:
+        section?.cover_url ||
+        "",
 
-    icon_value:
-      section?.icon_value ||
-      "",
-  });
-}, [section]);
+      icon_type:
+        section?.icon_type ||
+        "none",
+
+      icon_value:
+        section?.icon_value ||
+        "",
+    });
+  }, [
+    section,
+  ]);
+
 
   if (!section) {
     return null;
   }
 
-  async function submit(e) {
-    e.preventDefault();
+
+  async function submit(
+    event
+  ) {
+    event.preventDefault();
 
     const name =
       form.name.trim();
 
+
     if (!name) {
       toast.error(
-        "Section name is required"
+        t(
+          "menuEditor.sectionNameRequired"
+        )
       );
 
       return;
     }
 
+
     setSaving(true);
 
+
     try {
-const { error } =
-  await supabase
-    .from("sections")
-    .update({
-      name,
+      const {
+        error,
+      } = await supabase
+        .from("sections")
+        .update({
+          name,
 
-      description:
-        form.description.trim() ||
-        null,
+          description:
+            form.description.trim() ||
+            null,
 
-      cover_url:
-        form.cover_url.trim() ||
-        null,
+          cover_url:
+            form.cover_url.trim() ||
+            null,
 
-      icon_type:
-        form.icon_type,
+          icon_type:
+            form.icon_type,
 
-      icon_value:
-        form.icon_type === "none"
-          ? null
-          : form.icon_value || null,
-    })
-          .eq(
-            "id",
-            section.id
-          );
+          icon_value:
+            form.icon_type ===
+            "none"
+              ? null
+              : form.icon_value ||
+                null,
+        })
+        .eq(
+          "id",
+          section.id
+        );
+
 
       if (error) {
         throw error;
       }
 
+
       toast.success(
-        "Section saved"
+        t(
+          "menuEditor.sectionSaved"
+        )
       );
+
 
       onDone();
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to save section"
+        err?.message ||
+          t(
+            "menuEditor.sectionSaveFailed"
+          )
       );
     } finally {
       setSaving(false);
     }
   }
 
+
   return (
     <Modal
-      open={Boolean(section)}
-      title="Section Settings"
-      onClose={onClose}
+      open={Boolean(
+        section
+      )}
+      title={t(
+        "menuEditor.sectionSettings"
+      )}
+      onClose={
+        onClose
+      }
     >
       <form
-        onSubmit={submit}
+        onSubmit={
+          submit
+        }
         className="grid gap-4"
       >
-        <Field label="Section name">
+        <Field
+          label={t(
+            "project.sectionName"
+          )}
+        >
           <Input
-            value={form.name}
-            onChange={(e) =>
+            value={
+              form.name
+            }
+            onChange={(
+              event
+            ) =>
               setForm(
-                (current) => ({
+                (
+                  current
+                ) => ({
                   ...current,
+
                   name:
-                    e.target.value,
+                    event
+                      .target
+                      .value,
                 })
               )
             }
           />
         </Field>
 
-        <Field label="Description">
+
+        <Field
+          label={t(
+            "project.description"
+          )}
+        >
           <Textarea
             value={
               form.description
             }
-            onChange={(e) =>
+            onChange={(
+              event
+            ) =>
               setForm(
-                (current) => ({
+                (
+                  current
+                ) => ({
                   ...current,
+
                   description:
-                    e.target.value,
+                    event
+                      .target
+                      .value,
                 })
               )
             }
           />
         </Field>
 
-                <SectionIconPicker
-  type={form.icon_type}
-  value={form.icon_value}
-  onChange={(type, value) =>
-    setForm((current) => ({
-      ...current,
-      icon_type: type,
-      icon_value: value,
-    }))
-  }
-/>
+
+        <SectionIconPicker
+          type={
+            form.icon_type
+          }
+          value={
+            form.icon_value
+          }
+          onChange={(
+            type,
+            value
+          ) =>
+            setForm(
+              (
+                current
+              ) => ({
+                ...current,
+
+                icon_type:
+                  type,
+
+                icon_value:
+                  value,
+              })
+            )
+          }
+        />
+
 
         <ImageUploadField
-          label="Section cover"
+          label={t(
+            "menuEditor.sectionCover"
+          )}
           value={
             form.cover_url
           }
-          onChange={(url) =>
+          onChange={(
+            url
+          ) =>
             setForm(
-              (current) => ({
+              (
+                current
+              ) => ({
                 ...current,
-                cover_url: url,
+
+                cover_url:
+                  url,
               })
             )
           }
           folder={`sections/${section.id}`}
         />
 
+
         <Button
           type="submit"
-          loading={saving}
+          loading={
+            saving
+          }
+          loadingText={t(
+            "common.saving"
+          )}
           disabled={
             !form.name.trim()
           }
         >
-          Save Section
+          {t(
+            "menuEditor.saveSection"
+          )}
         </Button>
       </form>
     </Modal>
   );
 }
 
+
 function ItemModal({
   data,
   onClose,
   onDone,
 }) {
-  const [loading, setLoading] =
-    useState(false);
+  const {
+    t,
+  } = useAdminI18n();
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
+
 
   const section =
     data?.section;
 
+
   const item =
     data?.item;
 
-  const [form, setForm] =
-    useState({
-      name:
-        item?.name || "",
-      description:
-        item?.description ||
-        "",
-      price:
-        item?.price ?? "",
-      image_url:
-        item?.image_url || "",
-      is_available:
-        item?.is_available ??
-        true,
-    });
+
+  const [
+    form,
+    setForm,
+  ] = useState({
+    name:
+      item?.name || "",
+
+    description:
+      item?.description ||
+      "",
+
+    price:
+      item?.price ?? "",
+
+    image_url:
+      item?.image_url ||
+      "",
+
+    is_available:
+      item?.is_available ??
+      true,
+  });
+
 
   if (!data) {
     return null;
   }
 
+
   function updateField(
     key,
     value
   ) {
-    setForm((current) => ({
-      ...current,
-      [key]: value,
-    }));
+    setForm(
+      (current) => ({
+        ...current,
+        [key]: value,
+      })
+    );
   }
 
-  async function submit(e) {
-    e.preventDefault();
+
+  async function submit(
+    event
+  ) {
+    event.preventDefault();
 
     const name =
       form.name.trim();
 
+
     if (!name) {
       toast.error(
-        "Item name is required."
+        t(
+          "menuEditor.itemNameRequired"
+        )
       );
 
       return;
     }
 
+
     setLoading(true);
+
 
     try {
       const payload = {
         name,
+
         description:
           form.description.trim() ||
           null,
-        price: Number(
-          form.price || 0
-        ),
+
+        price:
+          Number(
+            form.price || 0
+          ),
+
         image_url:
           form.image_url.trim() ||
           null,
+
         is_available:
           Boolean(
             form.is_available
           ),
       };
 
+
       if (item?.id) {
-        const { error } =
-          await supabase
-            .from("items")
-            .update(payload)
-            .eq(
-              "id",
-              item.id
-            );
+        const {
+          error,
+        } = await supabase
+          .from("items")
+          .update(
+            payload
+          )
+          .eq(
+            "id",
+            item.id
+          );
+
 
         if (error) {
           throw error;
         }
 
+
         toast.success(
-          "Item updated"
+          t(
+            "menuEditor.itemUpdated"
+          )
         );
       } else {
-        const { error } =
-          await supabase
-            .from("items")
-            .insert({
-              ...payload,
-              section_id:
-                section.id,
-              sort_order:
-                (section.items
-                  ?.length || 0) +
-                1,
-            });
+        const {
+          error,
+        } = await supabase
+          .from("items")
+          .insert({
+            ...payload,
+
+            section_id:
+              section.id,
+
+            sort_order:
+              (section.items
+                ?.length ||
+                0) + 1,
+          });
+
 
         if (error) {
           throw error;
         }
 
+
         toast.success(
-          "Item created"
+          t(
+            "menuEditor.itemCreated"
+          )
         );
       }
+
 
       onDone();
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to save item"
+        err?.message ||
+          t(
+            "menuEditor.itemSaveFailed"
+          )
       );
     } finally {
       setLoading(false);
     }
   }
 
+
   return (
     <Modal
       open
       title={
         item
-          ? "Edit Item"
-          : "New Item"
+          ? t(
+              "menuEditor.editItem"
+            )
+          : t(
+              "menuEditor.newItem"
+            )
       }
-      onClose={onClose}
+      onClose={
+        onClose
+      }
     >
       <form
-        onSubmit={submit}
+        onSubmit={
+          submit
+        }
         className="grid gap-4"
       >
-        <Field label="Item name">
+        <Field
+          label={t(
+            "menuEditor.itemName"
+          )}
+        >
           <Input
             required
-            value={form.name}
-            onChange={(e) =>
+            value={
+              form.name
+            }
+            onChange={(
+              event
+            ) =>
               updateField(
                 "name",
-                e.target.value
+                event.target.value
               )
             }
           />
         </Field>
 
-        <Field label="Description">
+
+        <Field
+          label={t(
+            "project.description"
+          )}
+        >
           <Textarea
             value={
               form.description
             }
-            onChange={(e) =>
+            onChange={(
+              event
+            ) =>
               updateField(
                 "description",
-                e.target.value
+                event.target.value
               )
             }
           />
         </Field>
 
-        <Field label="Price">
+
+        <Field
+          label={t(
+            "menuEditor.price"
+          )}
+        >
           <Input
             type="number"
             step="0.01"
             min="0"
-            value={form.price}
-            onChange={(e) =>
+            value={
+              form.price
+            }
+            onChange={(
+              event
+            ) =>
               updateField(
                 "price",
-                e.target.value
+                event.target.value
               )
             }
             dir="ltr"
           />
         </Field>
 
+
         <ImageUploadField
-          label="Item image"
+          label={t(
+            "menuEditor.itemImage"
+          )}
           value={
             form.image_url
           }
-          onChange={(url) =>
+          onChange={(
+            url
+          ) =>
             updateField(
               "image_url",
               url
@@ -1270,37 +1808,55 @@ function ItemModal({
           folder={`items/${section.id}`}
         />
 
-        <label className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-black">
+
+        <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm font-black">
           <span>
             {form.is_available
-              ? "Item is available"
-              : "Item is hidden"}
+              ? t(
+                  "menuEditor.itemIsAvailable"
+                )
+              : t(
+                  "menuEditor.itemIsHidden"
+                )}
           </span>
+
 
           <input
             type="checkbox"
             checked={
               form.is_available
             }
-            onChange={(e) =>
+            onChange={(
+              event
+            ) =>
               updateField(
                 "is_available",
-                e.target.checked
+                event.target.checked
               )
             }
           />
         </label>
 
+
         <Button
           type="submit"
-          loading={loading}
+          loading={
+            loading
+          }
+          loadingText={t(
+            "common.saving"
+          )}
           disabled={
             !form.name.trim()
           }
         >
           {item
-            ? "Save Item"
-            : "Create Item"}
+            ? t(
+                "menuEditor.saveItem"
+              )
+            : t(
+                "menuEditor.createItem"
+              )}
         </Button>
       </form>
     </Modal>
@@ -1313,24 +1869,36 @@ function SectionIconPicker({
   value,
   onChange,
 }) {
+  const {
+    t,
+  } = useAdminI18n();
+
+
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-black text-white">
-            أيقونة القسم
-          </p>
+      <div>
+        <p className="text-sm font-black text-white">
+          {t(
+            "menuEditor.sectionIcon"
+          )}
+        </p>
 
-          <p className="mt-1 text-xs font-bold text-white/35">
-            ستظهر بجانب اسم القسم في الموقع.
-          </p>
-        </div>
+
+        <p className="mt-1 text-xs font-bold text-white/35">
+          {t(
+            "menuEditor.sectionIconHint"
+          )}
+        </p>
       </div>
 
+
       {/* TYPE */}
+
       <div className="mt-4 grid grid-cols-3 gap-2">
         <IconTypeButton
-          active={type === "none"}
+          active={
+            type === "none"
+          }
           onClick={() =>
             onChange(
               "none",
@@ -1338,48 +1906,66 @@ function SectionIconPicker({
             )
           }
         >
-          بدون
+          {t(
+            "menuEditor.noIcon"
+          )}
         </IconTypeButton>
+
 
         <IconTypeButton
           active={
-            type === "lucide"
+            type ===
+            "lucide"
           }
           onClick={() =>
             onChange(
               "lucide",
-              type === "lucide"
+              type ===
+                "lucide"
                 ? value
                 : "utensils"
             )
           }
         >
-          أيقونات CRTGO
+          {t(
+            "menuEditor.crtgoIcons"
+          )}
         </IconTypeButton>
+
 
         <IconTypeButton
           active={
-            type === "emoji"
+            type ===
+            "emoji"
           }
           onClick={() =>
             onChange(
               "emoji",
-              type === "emoji"
+              type ===
+                "emoji"
                 ? value
                 : "🍔"
             )
           }
         >
-          رموز
+          {t(
+            "menuEditor.symbols"
+          )}
         </IconTypeButton>
       </div>
 
+
       {/* CRTGO ICONS */}
-      {type === "lucide" && (
+
+      {type ===
+        "lucide" && (
         <div className="mt-4">
           <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-white/30">
-            CRTGO ICONS
+            {t(
+              "menuEditor.crtgoIcons"
+            )}
           </p>
+
 
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
             {Object.entries(
@@ -1393,11 +1979,29 @@ function SectionIconPicker({
                   config.icon;
 
                 const selected =
-                  value === key;
+                  value ===
+                  key;
+
+                const translationKey =
+                  `menuEditor.iconLabels.${key}`;
+
+                const translated =
+                  t(
+                    translationKey
+                  );
+
+                const label =
+                  translated ===
+                  translationKey
+                    ? config.label
+                    : translated;
+
 
                 return (
                   <button
-                    key={key}
+                    key={
+                      key
+                    }
                     type="button"
                     onClick={() =>
                       onChange(
@@ -1416,9 +2020,10 @@ function SectionIconPicker({
                       strokeWidth={2}
                     />
 
+
                     <span className="max-w-full truncate text-[10px] font-black">
                       {
-                        config.label
+                        label
                       }
                     </span>
                   </button>
@@ -1429,22 +2034,34 @@ function SectionIconPicker({
         </div>
       )}
 
+
       {/* EMOJIS */}
-      {type === "emoji" && (
+
+      {type ===
+        "emoji" && (
         <div className="mt-4">
           <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-white/30">
-            SYMBOLS
+            {t(
+              "menuEditor.symbols"
+            )}
           </p>
+
 
           <div className="grid grid-cols-6 gap-2 sm:grid-cols-9">
             {SECTION_EMOJIS.map(
-              (emoji) => {
+              (
+                emoji
+              ) => {
                 const selected =
-                  value === emoji;
+                  value ===
+                  emoji;
+
 
                 return (
                   <button
-                    key={emoji}
+                    key={
+                      emoji
+                    }
                     type="button"
                     onClick={() =>
                       onChange(
@@ -1458,7 +2075,9 @@ function SectionIconPicker({
                         : "border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.04]"
                     }`}
                   >
-                    {emoji}
+                    {
+                      emoji
+                    }
                   </button>
                 );
               }
@@ -1467,24 +2086,36 @@ function SectionIconPicker({
         </div>
       )}
 
+
       {/* PREVIEW */}
+
       {type !== "none" &&
         value && (
-          <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 p-4">
+          <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-black/25 p-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.12em] text-white/30">
-                PREVIEW
+                {t(
+                  "menuEditor.preview"
+                )}
               </p>
 
+
               <p className="mt-1 text-sm font-bold text-white/60">
-                هكذا ستظهر الأيقونة
+                {t(
+                  "menuEditor.iconPreviewHint"
+                )}
               </p>
             </div>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
+
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/[0.06] text-white">
               <SelectedSectionIcon
-                type={type}
-                value={value}
+                type={
+                  type
+                }
+                value={
+                  value
+                }
               />
             </div>
           </div>
@@ -1492,6 +2123,7 @@ function SectionIconPicker({
     </div>
   );
 }
+
 
 function IconTypeButton({
   active,
@@ -1501,14 +2133,18 @@ function IconTypeButton({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={
+        onClick
+      }
       className={`min-h-11 rounded-2xl border px-3 text-xs font-black transition ${
         active
           ? "border-[#ff7a00] bg-[#ff7a00]/10 text-[#ff7a00]"
           : "border-white/10 bg-black/20 text-white/50 hover:bg-white/[0.04] hover:text-white"
       }`}
     >
-      {children}
+      {
+        children
+      }
     </button>
   );
 }
@@ -1518,7 +2154,9 @@ function SelectedSectionIcon({
   type,
   value,
 }) {
-  if (type === "emoji") {
+  if (
+    type === "emoji"
+  ) {
     return (
       <span className="text-2xl">
         {value}
@@ -1526,16 +2164,24 @@ function SelectedSectionIcon({
     );
   }
 
-  if (type === "lucide") {
+
+  if (
+    type === "lucide"
+  ) {
     const config =
-      SECTION_ICONS[value];
+      SECTION_ICONS[
+        value
+      ];
+
 
     if (!config) {
       return null;
     }
 
+
     const Icon =
       config.icon;
+
 
     return (
       <Icon
@@ -1545,8 +2191,10 @@ function SelectedSectionIcon({
     );
   }
 
+
   return null;
 }
+
 
 function AdminSectionIcon({
   section,
@@ -1557,10 +2205,13 @@ function AdminSectionIcon({
   ) {
     return (
       <span className="text-xl leading-none">
-        {section.icon_value}
+        {
+          section.icon_value
+        }
       </span>
     );
   }
+
 
   if (
     section.icon_type ===
@@ -1571,12 +2222,15 @@ function AdminSectionIcon({
         section.icon_value
       ];
 
+
     if (!config) {
       return null;
     }
 
+
     const Icon =
       config.icon;
+
 
     return (
       <Icon
@@ -1586,6 +2240,6 @@ function AdminSectionIcon({
     );
   }
 
+
   return null;
 }
-

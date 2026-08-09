@@ -3,15 +3,18 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import {
   Link,
   useNavigate,
   useParams,
 } from "react-router-dom";
+
 import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+
 import {
   Archive,
   ArrowLeft,
@@ -22,15 +25,19 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
+
 import toast from "react-hot-toast";
 
 import ProjectTabs from "../components/ProjectTabs";
 import { useConfirm } from "../components/ConfirmProvider";
+import { useAdminI18n } from "../lib/adminI18n";
 import { supabase } from "../lib/supabase";
 import { slugify } from "../lib/slug";
+
 import {
   getPublicProjectUrl,
 } from "../lib/urls";
+
 import {
   Badge,
   Button,
@@ -42,13 +49,21 @@ import {
   Textarea,
 } from "../components/ui";
 
-async function loadProject(projectId) {
-  const { data, error } =
-    await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", projectId)
-      .single();
+
+async function loadProject(
+  projectId
+) {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("projects")
+    .select("*")
+    .eq(
+      "id",
+      projectId
+    )
+    .single();
 
   if (error) {
     throw error;
@@ -57,37 +72,58 @@ async function loadProject(projectId) {
   return data;
 }
 
-function emptyToNull(value) {
-  const clean = String(
-    value || ""
-  ).trim();
+
+function emptyToNull(
+  value
+) {
+  const clean =
+    String(
+      value || ""
+    ).trim();
 
   return clean || null;
 }
 
-function getInitialForm(project) {
+
+function getInitialForm(
+  project
+) {
   return {
-    name: project?.name || "",
-    slug: project?.slug || "",
+    name:
+      project?.name || "",
+
+    slug:
+      project?.slug || "",
+
     description:
-      project?.description || "",
+      project?.description ||
+      "",
+
     location:
       project?.location || "",
-    phone: project?.phone || "",
+
+    phone:
+      project?.phone || "",
+
     whatsapp:
       project?.whatsapp || "",
+
     instagram:
       project?.instagram || "",
+
     facebook:
       project?.facebook || "",
+
     tiktok:
       project?.tiktok || "",
   };
 }
 
+
 export default function ProjectGeneralPage() {
-  const { projectId } =
-    useParams();
+  const {
+    projectId,
+  } = useParams();
 
   const navigate =
     useNavigate();
@@ -95,22 +131,34 @@ export default function ProjectGeneralPage() {
   const confirm =
     useConfirm();
 
+  const {
+    t,
+    dir,
+  } = useAdminI18n();
+
   const queryClient =
     useQueryClient();
 
-  const [form, setForm] =
-    useState(null);
+  const [
+    form,
+    setForm,
+  ] = useState(null);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
 
   const [
     changingStatus,
     setChangingStatus,
   ] = useState(false);
 
-  const [deleting, setDeleting] =
-    useState(false);
+  const [
+    deleting,
+    setDeleting,
+  ] = useState(false);
+
 
   const {
     data: project,
@@ -122,10 +170,16 @@ export default function ProjectGeneralPage() {
       "project",
       projectId,
     ],
+
     queryFn: () =>
-      loadProject(projectId),
-    enabled: Boolean(projectId),
+      loadProject(
+        projectId
+      ),
+
+    enabled:
+      Boolean(projectId),
   });
+
 
   const initialForm =
     useMemo(() => {
@@ -138,6 +192,7 @@ export default function ProjectGeneralPage() {
       );
     }, [project]);
 
+
   const dirty =
     useMemo(() => {
       if (
@@ -149,9 +204,15 @@ export default function ProjectGeneralPage() {
 
       return (
         JSON.stringify(form) !==
-        JSON.stringify(initialForm)
+        JSON.stringify(
+          initialForm
+        )
       );
-    }, [form, initialForm]);
+    }, [
+      form,
+      initialForm,
+    ]);
+
 
   useEffect(() => {
     if (!project) {
@@ -159,19 +220,27 @@ export default function ProjectGeneralPage() {
     }
 
     setForm(
-      getInitialForm(project)
+      getInitialForm(
+        project
+      )
     );
-  }, [project?.id]);
+  }, [
+    project?.id,
+  ]);
+
 
   function updateField(
     key,
     value
   ) {
-    setForm((current) => ({
-      ...current,
-      [key]: value,
-    }));
+    setForm(
+      (current) => ({
+        ...current,
+        [key]: value,
+      })
+    );
   }
+
 
   async function refresh() {
     await Promise.all([
@@ -181,26 +250,41 @@ export default function ProjectGeneralPage() {
           projectId,
         ],
       }),
+
       queryClient.invalidateQueries({
-        queryKey: ["projects"],
+        queryKey: [
+          "projects",
+        ],
       }),
+
       queryClient.invalidateQueries({
         queryKey: [
           "project-menu",
           projectId,
         ],
       }),
+
       queryClient.invalidateQueries({
         queryKey: [
           "project-appearance",
           projectId,
         ],
       }),
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          "project-languages",
+          projectId,
+        ],
+      }),
     ]);
   }
 
-  async function saveChanges(e) {
-    e.preventDefault();
+
+  async function saveChanges(
+    event
+  ) {
+    event.preventDefault();
 
     if (
       !project ||
@@ -214,106 +298,147 @@ export default function ProjectGeneralPage() {
       form.name.trim();
 
     const slug =
-      slugify(form.slug);
+      slugify(
+        form.slug
+      );
+
 
     if (!name) {
       toast.error(
-        "Website name is required"
+        t(
+          "general.nameRequired"
+        )
       );
 
       return;
     }
+
 
     if (!slug) {
       toast.error(
-        "Hostname is required"
+        t(
+          "general.hostnameRequired"
+        )
       );
 
       return;
     }
+
 
     setSaving(true);
 
     try {
       const {
-        data: duplicate,
+        data:
+          duplicate,
+
         error:
           duplicateError,
       } = await supabase
         .from("projects")
         .select("id")
-        .ilike("slug", slug)
-        .neq("id", project.id)
+        .ilike(
+          "slug",
+          slug
+        )
+        .neq(
+          "id",
+          project.id
+        )
         .maybeSingle();
 
-      if (duplicateError) {
+
+      if (
+        duplicateError
+      ) {
         throw duplicateError;
       }
 
+
       if (duplicate) {
-        throw new Error(
-          "Another website already uses this hostname."
+        toast.error(
+          t(
+            "general.hostnameTaken"
+          )
         );
+
+        return;
       }
 
-      const { error } =
-        await supabase
-          .from("projects")
-          .update({
-            name,
-            slug,
-            description:
-              emptyToNull(
-                form.description
-              ),
-            location:
-              emptyToNull(
-                form.location
-              ),
-            phone:
-              emptyToNull(
-                form.phone
-              ),
-            whatsapp:
-              emptyToNull(
-                form.whatsapp
-              ),
-            instagram:
-              emptyToNull(
-                form.instagram
-              ),
-            facebook:
-              emptyToNull(
-                form.facebook
-              ),
-            tiktok:
-              emptyToNull(
-                form.tiktok
-              ),
-          })
-          .eq(
-            "id",
-            project.id
-          );
+
+      const {
+        error,
+      } = await supabase
+        .from("projects")
+        .update({
+          name,
+          slug,
+
+          description:
+            emptyToNull(
+              form.description
+            ),
+
+          location:
+            emptyToNull(
+              form.location
+            ),
+
+          phone:
+            emptyToNull(
+              form.phone
+            ),
+
+          whatsapp:
+            emptyToNull(
+              form.whatsapp
+            ),
+
+          instagram:
+            emptyToNull(
+              form.instagram
+            ),
+
+          facebook:
+            emptyToNull(
+              form.facebook
+            ),
+
+          tiktok:
+            emptyToNull(
+              form.tiktok
+            ),
+        })
+        .eq(
+          "id",
+          project.id
+        );
+
 
       if (error) {
         throw error;
       }
 
+
       toast.success(
-        "Website saved"
+        t(
+          "general.saved"
+        )
       );
 
       await refresh();
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to save website"
+        err?.message ||
+          t(
+            "general.saveFailed"
+          )
       );
     } finally {
       setSaving(false);
     }
   }
+
 
   async function archiveOrRestore() {
     if (!project) {
@@ -324,127 +449,196 @@ export default function ProjectGeneralPage() {
       project.status !==
       "archived";
 
-    const ok = await confirm({
-      title: willArchive
-        ? "Archive website?"
-        : "Restore website?",
-      message: willArchive
-        ? "This website will stop being publicly available."
-        : "This website will become public again.",
-      confirmText: willArchive
-        ? "Archive website"
-        : "Restore website",
-      danger: willArchive,
-    });
+
+    const ok =
+      await confirm({
+        title:
+          willArchive
+            ? t(
+                "general.archiveTitle"
+              )
+            : t(
+                "general.restoreTitle"
+              ),
+
+        message:
+          willArchive
+            ? t(
+                "general.archiveMessage"
+              )
+            : t(
+                "general.restoreMessage"
+              ),
+
+        confirmText:
+          willArchive
+            ? t(
+                "general.archiveWebsite"
+              )
+            : t(
+                "general.restoreWebsite"
+              ),
+
+        danger:
+          willArchive,
+      });
+
 
     if (!ok) {
       return;
     }
 
-    setChangingStatus(true);
+
+    setChangingStatus(
+      true
+    );
 
     try {
-      const { error } =
-        await supabase
-          .from("projects")
-          .update({
-            status:
-              willArchive
-                ? "archived"
-                : "active",
-          })
-          .eq(
-            "id",
-            project.id
-          );
+      const {
+        error,
+      } = await supabase
+        .from("projects")
+        .update({
+          status:
+            willArchive
+              ? "archived"
+              : "active",
+        })
+        .eq(
+          "id",
+          project.id
+        );
+
 
       if (error) {
         throw error;
       }
 
+
       toast.success(
         willArchive
-          ? "Website archived"
-          : "Website restored"
+          ? t(
+              "general.archivedSuccess"
+            )
+          : t(
+              "general.restoredSuccess"
+            )
       );
 
       await refresh();
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to update website"
+        err?.message ||
+          t(
+            "general.statusFailed"
+          )
       );
     } finally {
-      setChangingStatus(false);
+      setChangingStatus(
+        false
+      );
     }
   }
 
+
   async function deleteProject() {
-    const ok = await confirm({
-      title:
-        "Delete website forever?",
-      message:
-        "This deletes the website, every section, and every item inside it. This cannot be undone.",
-      confirmText:
-        "Delete forever",
-      danger: true,
-    });
+    if (!project) {
+      return;
+    }
+
+
+    const ok =
+      await confirm({
+        title:
+          t(
+            "general.deleteTitle"
+          ),
+
+        message:
+          t(
+            "general.deleteMessage"
+          ),
+
+        confirmText:
+          t(
+            "general.deleteForever"
+          ),
+
+        danger:
+          true,
+      });
+
 
     if (!ok) {
       return;
     }
 
+
     setDeleting(true);
 
     try {
-      /*
-       * sections.project_id uses ON DELETE CASCADE.
-       * items.section_id also uses ON DELETE CASCADE.
-       *
-       * So deleting the project is enough.
-       */
-      const { error } =
-        await supabase
-          .from("projects")
-          .delete()
-          .eq(
-            "id",
-            project.id
-          );
+      const {
+        error,
+      } = await supabase
+        .from("projects")
+        .delete()
+        .eq(
+          "id",
+          project.id
+        );
+
 
       if (error) {
         throw error;
       }
 
+
       toast.success(
-        "Website deleted"
+        t(
+          "general.deletedSuccess"
+        )
       );
 
+
       queryClient.invalidateQueries({
-        queryKey: ["projects"],
+        queryKey: [
+          "projects",
+        ],
       });
 
-      navigate("/", {
-        replace: true,
-      });
+
+      navigate(
+        "/",
+        {
+          replace: true,
+        }
+      );
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to delete website"
+        err?.message ||
+          t(
+            "general.deleteFailed"
+          )
       );
     } finally {
       setDeleting(false);
     }
   }
 
+
   if (isLoading) {
     return (
-      <main className="h-full overflow-y-auto bg-[#090909] p-5 text-white">
+      <main
+        dir={dir}
+        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+      >
         <SkeletonCard className="h-40" />
+
         <SkeletonCard className="mt-5 h-[600px]" />
       </main>
     );
   }
+
 
   if (
     error ||
@@ -452,33 +646,52 @@ export default function ProjectGeneralPage() {
     !form
   ) {
     return (
-      <main className="h-full overflow-y-auto bg-[#090909] p-5 text-white">
+      <main
+        dir={dir}
+        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+      >
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           {error?.message ||
-            "Website not found."}
+            t(
+              "project.notFound"
+            )}
         </p>
       </main>
     );
   }
 
+
   const archived =
     project.status ===
     "archived";
+
 
   const publicUrl =
     getPublicProjectUrl(
       form.slug
     );
 
+
   return (
-    <main className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white">
+    <main
+      dir={dir}
+      className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] text-white"
+    >
       <PageHeader
-        eyebrow="Website Settings"
-        title={project.name}
-        subtitle="Manage your website identity, hostname, contact information, and status."
+        eyebrow={t(
+          "project.websiteSettings"
+        )}
+        title={
+          project.name
+        }
+        subtitle={t(
+          "general.subtitle"
+        )}
         action={
           <a
-            href={publicUrl}
+            href={
+              publicUrl
+            }
             target="_blank"
             rel="noreferrer"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
@@ -487,37 +700,61 @@ export default function ProjectGeneralPage() {
               size={17}
             />
 
-            Open Website
+            {t(
+              "general.openWebsite"
+            )}
           </a>
         }
       />
 
+
       <ProjectTabs
-        projectId={projectId}
+        projectId={
+          projectId
+        }
       />
 
+
       <form
-        onSubmit={saveChanges}
+        onSubmit={
+          saveChanges
+        }
         className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6"
       >
         <Link
           to="/"
           className="inline-flex items-center gap-2 py-2 text-sm font-black text-white/45 transition hover:text-white"
         >
-          <ArrowLeft size={16} />
-          Back to websites
+          <ArrowLeft
+            size={16}
+            className={
+              dir === "rtl"
+                ? "rotate-180"
+                : ""
+            }
+          />
+
+          {t(
+            "general.backToWebsites"
+          )}
         </Link>
+
 
         <div className="mt-5 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-3xl font-black tracking-[-0.05em]">
-              General
+              {t(
+                "project.general"
+              )}
             </h2>
 
             <p className="mt-1 text-sm font-bold text-white/35">
-              Everything here belongs directly to this website.
+              {t(
+                "general.generalHint"
+              )}
             </p>
           </div>
+
 
           <div className="flex gap-2">
             <Badge
@@ -528,9 +765,14 @@ export default function ProjectGeneralPage() {
               }
             >
               {archived
-                ? "Archived"
-                : "Active"}
+                ? t(
+                    "common.archived"
+                  )
+                : t(
+                    "common.active"
+                  )}
             </Badge>
+
 
             {isFetching && (
               <Badge tone="neutral">
@@ -538,41 +780,66 @@ export default function ProjectGeneralPage() {
                   size={13}
                   className="animate-spin"
                 />
-                Syncing
+
+                {t(
+                  "common.syncing"
+                )}
               </Badge>
             )}
           </div>
         </div>
 
+
         <div className="mt-6 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="grid min-w-0 gap-5">
+
+            {/* WEBSITE IDENTITY */}
+
             <Card className="p-5">
               <h3 className="text-xl font-black">
-                Website identity
+                {t(
+                  "general.identity"
+                )}
               </h3>
 
+
               <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <Field label="Website name">
+                <Field
+                  label={t(
+                    "project.websiteName"
+                  )}
+                >
                   <Input
-                    value={form.name}
-                    onChange={(e) =>
+                    value={
+                      form.name
+                    }
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "name",
-                        e.target.value
+                        event.target.value
                       )
                     }
                   />
                 </Field>
 
-                <Field label="Hostname">
+
+                <Field
+                  label={t(
+                    "project.hostname"
+                  )}
+                >
                   <Input
                     value={
                       form.slug
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "slug",
-                        e.target.value
+                        event.target.value
                       )
                     }
                     onBlur={() =>
@@ -588,138 +855,192 @@ export default function ProjectGeneralPage() {
                 </Field>
               </div>
 
+
               <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
                 <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-white/35">
                   <LinkIcon
                     size={14}
                   />
-                  Public URL
+
+                  {t(
+                    "general.publicUrl"
+                  )}
                 </p>
 
+
                 <a
-                  href={publicUrl}
+                  href={
+                    publicUrl
+                  }
                   target="_blank"
                   rel="noreferrer"
                   className="mt-2 block break-all text-sm font-black text-[#ff7a00]"
                   dir="ltr"
                 >
-                  {publicUrl}
+                  {
+                    publicUrl
+                  }
                 </a>
               </div>
             </Card>
 
+
+            {/* WEBSITE INFORMATION */}
+
             <Card className="p-5">
               <h3 className="text-xl font-black">
-                Website information
+                {t(
+                  "general.information"
+                )}
               </h3>
 
+
               <div className="mt-5 grid gap-4">
-                <Field label="Description">
+                <Field
+                  label={t(
+                    "project.description"
+                  )}
+                >
                   <Textarea
                     value={
                       form.description
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "description",
-                        e.target.value
+                        event.target.value
                       )
                     }
                   />
                 </Field>
 
-                <Field label="Location">
+
+                <Field
+                  label={t(
+                    "project.location"
+                  )}
+                >
                   <Input
                     value={
                       form.location
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "location",
-                        e.target.value
+                        event.target.value
                       )
                     }
-                    placeholder="Haifa, Israel"
+                    placeholder={t(
+                      "general.locationPlaceholder"
+                    )}
                   />
                 </Field>
               </div>
             </Card>
 
+
+            {/* CONTACT */}
+
             <Card className="p-5">
               <h3 className="text-xl font-black">
-                Contact & Social
+                {t(
+                  "project.contactSocial"
+                )}
               </h3>
 
+
               <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <Field label="Phone">
+                <Field
+                  label={t(
+                    "general.phone"
+                  )}
+                >
                   <Input
                     value={
                       form.phone
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "phone",
-                        e.target.value
+                        event.target.value
                       )
                     }
                     dir="ltr"
                   />
                 </Field>
+
 
                 <Field label="WhatsApp">
                   <Input
                     value={
                       form.whatsapp
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "whatsapp",
-                        e.target.value
+                        event.target.value
                       )
                     }
                     dir="ltr"
                   />
                 </Field>
+
 
                 <Field label="Instagram">
                   <Input
                     value={
                       form.instagram
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "instagram",
-                        e.target.value
+                        event.target.value
                       )
                     }
                     dir="ltr"
                   />
                 </Field>
+
 
                 <Field label="Facebook">
                   <Input
                     value={
                       form.facebook
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "facebook",
-                        e.target.value
+                        event.target.value
                       )
                     }
                     dir="ltr"
                   />
                 </Field>
 
+
                 <Field label="TikTok">
                   <Input
                     value={
                       form.tiktok
                     }
-                    onChange={(e) =>
+                    onChange={(
+                      event
+                    ) =>
                       updateField(
                         "tiktok",
-                        e.target.value
+                        event.target.value
                       )
                     }
                     dir="ltr"
@@ -729,11 +1050,20 @@ export default function ProjectGeneralPage() {
             </Card>
           </section>
 
+
+          {/* RIGHT SIDEBAR */}
+
           <aside className="grid h-fit gap-5 xl:sticky xl:top-6">
+
+            {/* STATUS */}
+
             <Card className="p-5">
               <h3 className="text-xl font-black">
-                Website Status
+                {t(
+                  "project.websiteStatus"
+                )}
               </h3>
+
 
               <div className="mt-5 grid gap-3">
                 <Button
@@ -761,60 +1091,109 @@ export default function ProjectGeneralPage() {
                   )}
 
                   {archived
-                    ? "Restore Website"
-                    : "Archive Website"}
+                    ? t(
+                        "general.restoreWebsite"
+                      )
+                    : t(
+                        "general.archiveWebsite"
+                      )}
                 </Button>
               </div>
             </Card>
 
+
+            {/* SAVE */}
+
             <Card className="p-5">
               <h3 className="text-xl font-black">
-                Save
+                {t(
+                  "common.save"
+                )}
               </h3>
+
 
               <Button
                 type="submit"
                 className="mt-5 w-full"
-                loading={saving}
-                loadingText="Saving..."
-                disabled={!dirty}
+                loading={
+                  saving
+                }
+                loadingText={t(
+                  "common.saving"
+                )}
+                disabled={
+                  !dirty
+                }
               >
-                <Save size={16} />
-                Save Changes
+                <Save
+                  size={16}
+                />
+
+                {t(
+                  "project.saveChanges"
+                )}
               </Button>
             </Card>
 
+
+            {/* DANGER */}
+
             <Card className="border-red-400/15 bg-red-500/5 p-5">
               <h3 className="text-xl font-black text-red-200">
-                Danger Zone
+                {t(
+                  "general.dangerZone"
+                )}
               </h3>
 
+
               <p className="mt-2 text-sm font-bold leading-6 text-red-100/45">
-                Deleting this website also deletes all sections and items.
+                {t(
+                  "general.dangerHint"
+                )}
               </p>
+
 
               <Button
                 type="button"
                 variant="danger"
                 className="mt-5 w-full"
-                loading={deleting}
+                loading={
+                  deleting
+                }
                 onClick={
                   deleteProject
                 }
               >
-                <Trash2 size={16} />
-                Delete Website
+                <Trash2
+                  size={16}
+                />
+
+                {t(
+                  "general.deleteWebsite"
+                )}
               </Button>
             </Card>
           </aside>
         </div>
 
+
+        {/* SAVE BAR */}
+
         {dirty && (
-          <div className="fixed bottom-4 left-4 right-4 z-[80] rounded-[26px] border border-white/10 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-2xl lg:left-[19rem]">
+          <div
+            className={`fixed bottom-24 left-4 right-4 z-[80] rounded-[24px] border border-white/10 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl ${
+              dir === "rtl"
+                ? "lg:right-[19rem]"
+                : "lg:left-[19rem]"
+            }`}
+          >
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-black text-white/70">
-                You have unsaved changes.
+                {t(
+                  "project.unsaved"
+                )}
               </p>
+
 
               <div className="flex gap-2">
                 <Button
@@ -825,17 +1204,28 @@ export default function ProjectGeneralPage() {
                       initialForm
                     )
                   }
-                  disabled={saving}
+                  disabled={
+                    saving
+                  }
                 >
-                  Discard
+                  {t(
+                    "common.discard"
+                  )}
                 </Button>
+
 
                 <Button
                   type="submit"
-                  loading={saving}
-                  loadingText="Saving..."
+                  loading={
+                    saving
+                  }
+                  loadingText={t(
+                    "common.saving"
+                  )}
                 >
-                  Save Changes
+                  {t(
+                    "project.saveChanges"
+                  )}
                 </Button>
               </div>
             </div>

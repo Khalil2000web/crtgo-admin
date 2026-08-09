@@ -2,25 +2,38 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import {
   useParams,
 } from "react-router-dom";
+
 import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+
 import {
   ExternalLink,
   Save,
 } from "lucide-react";
+
 import toast from "react-hot-toast";
 
-import { supabase } from "../lib/supabase";
+import {
+  supabase,
+} from "../lib/supabase";
+
 import {
   getPublicProjectUrl,
 } from "../lib/urls";
+
+import {
+  useAdminI18n,
+} from "../lib/adminI18n";
+
 import ProjectTabs from "../components/ProjectTabs";
 import ImageUploadField from "../components/ImageUploadField";
+
 import {
   Button,
   Card,
@@ -30,24 +43,32 @@ import {
   SkeletonCard,
 } from "../components/ui";
 
-async function loadProject(projectId) {
-  const { data, error } =
-    await supabase
-      .from("projects")
-      .select(`
-        id,
-        name,
-        slug,
-        status,
-        logo_url,
-        favicon_url,
-        cover_images,
-        primary_color,
-        background_color,
-        text_color
-      `)
-      .eq("id", projectId)
-      .single();
+
+async function loadProject(
+  projectId
+) {
+  const {
+    data,
+    error,
+  } = await supabase
+    .from("projects")
+    .select(`
+      id,
+      name,
+      slug,
+      status,
+      logo_url,
+      favicon_url,
+      cover_images,
+      primary_color,
+      background_color,
+      text_color
+    `)
+    .eq(
+      "id",
+      projectId
+    )
+    .single();
 
   if (error) {
     throw error;
@@ -56,20 +77,30 @@ async function loadProject(projectId) {
   return data;
 }
 
+
 export default function ProjectAppearancePage() {
-  const { projectId } =
-    useParams();
+  const {
+    projectId,
+  } = useParams();
+
+  const {
+    t,
+    dir,
+  } = useAdminI18n();
 
   const queryClient =
     useQueryClient();
 
-  const [saving, setSaving] =
-    useState(false);
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
 
   const [
     localForm,
     setLocalForm,
   ] = useState(null);
+
 
   const {
     data: project,
@@ -80,10 +111,16 @@ export default function ProjectAppearancePage() {
       "project-appearance",
       projectId,
     ],
+
     queryFn: () =>
-      loadProject(projectId),
-    enabled: Boolean(projectId),
+      loadProject(
+        projectId
+      ),
+
+    enabled:
+      Boolean(projectId),
   });
+
 
   const initialForm =
     useMemo(() => {
@@ -96,30 +133,45 @@ export default function ProjectAppearancePage() {
 
       return {
         logo_url:
-          project?.logo_url || "",
+          project?.logo_url ||
+          "",
+
         favicon_url:
           project?.favicon_url ||
           "",
+
         cover_url:
-          covers[0] || "",
+          covers[0] ||
+          "",
+
         primary_color:
           project?.primary_color ||
           "#000000",
+
         background_color:
           project?.background_color ||
           "#ffffff",
+
         text_color:
           project?.text_color ||
           "#000000",
       };
-    }, [project]);
+    }, [
+      project,
+    ]);
+
 
   const form =
-    localForm || initialForm;
+    localForm ||
+    initialForm;
+
 
   const dirty =
     JSON.stringify(form) !==
-    JSON.stringify(initialForm);
+    JSON.stringify(
+      initialForm
+    );
+
 
   function updateField(
     key,
@@ -129,18 +181,26 @@ export default function ProjectAppearancePage() {
       (current) => ({
         ...(current ||
           initialForm),
-        [key]: value,
+
+        [key]:
+          value,
       })
     );
   }
 
+
   function discard() {
-    setLocalForm(null);
+    setLocalForm(
+      null
+    );
 
     toast.success(
-      "Changes discarded"
+      t(
+        "common.changesDiscarded"
+      )
     );
   }
+
 
   async function save() {
     if (
@@ -153,46 +213,52 @@ export default function ProjectAppearancePage() {
     setSaving(true);
 
     try {
-      const { error } =
-        await supabase
-          .from("projects")
-          .update({
-            logo_url:
-              form.logo_url.trim() ||
-              null,
+      const {
+        error,
+      } = await supabase
+        .from("projects")
+        .update({
+          logo_url:
+            form.logo_url.trim() ||
+            null,
 
-            favicon_url:
-              form.favicon_url.trim() ||
-              null,
+          favicon_url:
+            form.favicon_url.trim() ||
+            null,
 
-            cover_images:
-              form.cover_url.trim()
-                ? [
-                    form.cover_url.trim(),
-                  ]
-                : [],
+          cover_images:
+            form.cover_url.trim()
+              ? [
+                  form.cover_url.trim(),
+                ]
+              : [],
 
-            primary_color:
-              form.primary_color,
+          primary_color:
+            form.primary_color,
 
-            background_color:
-              form.background_color,
+          background_color:
+            form.background_color,
 
-            text_color:
-              form.text_color,
-          })
-          .eq(
-            "id",
-            project.id
-          );
+          text_color:
+            form.text_color,
+        })
+        .eq(
+          "id",
+          project.id
+        );
+
 
       if (error) {
         throw error;
       }
 
+
       toast.success(
-        "Appearance saved"
+        t(
+          "appearance.saved"
+        )
       );
+
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -210,155 +276,252 @@ export default function ProjectAppearancePage() {
         }),
 
         queryClient.invalidateQueries({
-          queryKey: ["projects"],
+          queryKey: [
+            "projects",
+          ],
         }),
       ]);
 
-      setLocalForm(null);
+
+      setLocalForm(
+        null
+      );
     } catch (err) {
       toast.error(
-        err.message ||
-          "Failed to save appearance"
+        err?.message ||
+          t(
+            "appearance.saveFailed"
+          )
       );
     } finally {
       setSaving(false);
     }
   }
 
+
   if (isLoading) {
     return (
-      <main className="h-full overflow-y-auto bg-[#090909] p-5 text-white">
+      <main
+        dir={dir}
+        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+      >
         <SkeletonCard className="h-40" />
+
         <SkeletonCard className="mt-5 h-[620px]" />
       </main>
     );
   }
+
 
   if (
     error ||
     !project
   ) {
     return (
-      <main className="h-full overflow-y-auto bg-[#090909] p-5 text-white">
+      <main
+        dir={dir}
+        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+      >
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-red-200">
           {error?.message ||
-            "Website not found"}
+            t(
+              "project.notFound"
+            )}
         </p>
       </main>
     );
   }
+
 
   const publicUrl =
     getPublicProjectUrl(
       project.slug
     );
 
+
   return (
-    <main className="h-full overflow-y-auto bg-[#090909] pb-32 text-white">
+    <main
+      dir={dir}
+      className="h-full overflow-y-auto bg-[#090909] pb-32 text-white"
+    >
       <PageHeader
-        eyebrow="Website Settings"
-        title="Appearance"
-        subtitle="Customize the standard CRTGO website."
+        eyebrow={t(
+          "project.websiteSettings"
+        )}
+        title={t(
+          "appearance.title"
+        )}
+        subtitle={t(
+          "appearance.subtitle"
+        )}
         action={
           <div className="flex gap-2">
             <a
-              href={publicUrl}
+              href={
+                publicUrl
+              }
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-4 text-sm font-black text-white/70 transition hover:bg-white/[0.075] hover:text-white"
             >
               <ExternalLink
                 size={17}
               />
-              Preview
+
+              {t(
+                "appearance.preview"
+              )}
             </a>
+
 
             <Button
               onClick={save}
-              loading={saving}
-              disabled={!dirty}
+              loading={
+                saving
+              }
+              loadingText={t(
+                "common.saving"
+              )}
+              disabled={
+                !dirty
+              }
             >
-              <Save size={17} />
-              Save
+              <Save
+                size={17}
+              />
+
+              {t(
+                "common.save"
+              )}
             </Button>
           </div>
         }
       />
 
+
       <ProjectTabs
-        projectId={projectId}
+        projectId={
+          projectId
+        }
       />
 
+
       <section className="mx-auto grid max-w-7xl gap-5 px-4 py-6 sm:px-6">
+
+        {/* IMAGES */}
+
         <Card className="p-5">
           <h2 className="text-2xl font-black">
-            Images
+            {t(
+              "appearance.images"
+            )}
           </h2>
 
+
           <p className="mt-1 text-sm font-bold text-white/40">
-            These images are used by the standard CRTGO website.
+            {t(
+              "appearance.imagesHint"
+            )}
           </p>
+
 
           <div className="mt-5 grid gap-5 xl:grid-cols-3">
             <ImageUploadField
-              label="Logo"
-              value={form.logo_url}
-              onChange={(url) =>
+              label={t(
+                "appearance.logo"
+              )}
+              value={
+                form.logo_url
+              }
+              onChange={(
+                url
+              ) =>
                 updateField(
                   "logo_url",
                   url
                 )
               }
               folder={`projects/${projectId}/logo`}
-              hint="Business logo."
+              hint={t(
+                "appearance.logoHint"
+              )}
             />
 
+
             <ImageUploadField
-              label="Cover image"
-              value={form.cover_url}
-              onChange={(url) =>
+              label={t(
+                "appearance.coverImage"
+              )}
+              value={
+                form.cover_url
+              }
+              onChange={(
+                url
+              ) =>
                 updateField(
                   "cover_url",
                   url
                 )
               }
               folder={`projects/${projectId}/cover`}
-              hint="Main website cover image."
+              hint={t(
+                "appearance.coverHint"
+              )}
             />
 
+
             <ImageUploadField
-              label="Favicon"
+              label={t(
+                "appearance.favicon"
+              )}
               value={
                 form.favicon_url
               }
-              onChange={(url) =>
+              onChange={(
+                url
+              ) =>
                 updateField(
                   "favicon_url",
                   url
                 )
               }
               folder={`projects/${projectId}/favicon`}
-              hint="Small browser/site icon."
+              hint={t(
+                "appearance.faviconHint"
+              )}
             />
           </div>
         </Card>
 
+
+        {/* COLORS */}
+
         <Card className="p-5">
           <h2 className="text-2xl font-black">
-            Colors
+            {t(
+              "appearance.colors"
+            )}
           </h2>
 
+
           <p className="mt-1 text-sm font-bold text-white/40">
-            For now these are the only visual customizations clients need.
+            {t(
+              "appearance.colorsHint"
+            )}
           </p>
+
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <ColorField
-              label="Primary color"
+              label={t(
+                "appearance.primaryColor"
+              )}
               value={
                 form.primary_color
               }
-              onChange={(value) =>
+              onChange={(
+                value
+              ) =>
                 updateField(
                   "primary_color",
                   value
@@ -366,12 +529,17 @@ export default function ProjectAppearancePage() {
               }
             />
 
+
             <ColorField
-              label="Background"
+              label={t(
+                "appearance.backgroundColor"
+              )}
               value={
                 form.background_color
               }
-              onChange={(value) =>
+              onChange={(
+                value
+              ) =>
                 updateField(
                   "background_color",
                   value
@@ -379,12 +547,17 @@ export default function ProjectAppearancePage() {
               }
             />
 
+
             <ColorField
-              label="Text"
+              label={t(
+                "appearance.textColor"
+              )}
               value={
                 form.text_color
               }
-              onChange={(value) =>
+              onChange={(
+                value
+              ) =>
                 updateField(
                   "text_color",
                   value
@@ -395,27 +568,57 @@ export default function ProjectAppearancePage() {
         </Card>
       </section>
 
+
+      {/* SAVE BAR */}
+
       {dirty && (
-        <div className="fixed bottom-4 left-4 right-4 z-[80] rounded-[26px] border border-white/10 bg-[#111111]/95 p-3 shadow-2xl backdrop-blur-2xl lg:left-[19rem]">
+        <div
+          className={`fixed bottom-24 left-4 right-4 z-[80] rounded-[24px] border border-white/10 bg-[#111111]/95 p-3 shadow-2xl shadow-black/40 backdrop-blur-xl ${
+            dir === "rtl"
+              ? "md:right-[22rem]"
+              : "md:left-[22rem]"
+          }`}
+        >
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-black text-white/70">
-              You have unsaved appearance changes.
+              {t(
+                "appearance.unsaved"
+              )}
             </p>
+
 
             <div className="flex gap-2">
               <Button
+                type="button"
                 variant="secondary"
-                onClick={discard}
-                disabled={saving}
+                onClick={
+                  discard
+                }
+                disabled={
+                  saving
+                }
               >
-                Discard
+                {t(
+                  "common.discard"
+                )}
               </Button>
 
+
               <Button
-                onClick={save}
-                loading={saving}
+                type="button"
+                onClick={
+                  save
+                }
+                loading={
+                  saving
+                }
+                loadingText={t(
+                  "common.saving"
+                )}
               >
-                Save Changes
+                {t(
+                  "project.saveChanges"
+                )}
               </Button>
             </div>
           </div>
@@ -425,24 +628,34 @@ export default function ProjectAppearancePage() {
   );
 }
 
+
 function ColorField({
   label,
   value,
   onChange,
 }) {
   return (
-    <Field label={label}>
+    <Field
+      label={
+        label
+      }
+    >
       <div className="rounded-[22px] border border-white/10 bg-black/25 p-4">
         <Input
           type="color"
-          value={value}
-          onChange={(e) =>
+          value={
+            value
+          }
+          onChange={(
+            event
+          ) =>
             onChange(
-              e.target.value
+              event.target.value
             )
           }
           className="h-14 cursor-pointer p-1"
         />
+
 
         <p
           className="mt-3 text-sm font-black text-white/70"
