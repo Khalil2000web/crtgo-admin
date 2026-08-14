@@ -1,4 +1,6 @@
-import { supabase } from "./supabase";
+import {
+  supabase,
+} from "./supabase";
 
 
 async function getFunctionErrorMessage(
@@ -61,12 +63,62 @@ export async function revalidatePublicProject(
 
   try {
     const {
+      data: {
+        session,
+      },
+
+      error:
+        sessionError,
+    } =
+      await supabase.auth.getSession();
+
+
+    if (
+      sessionError
+    ) {
+      return {
+        ok:
+          false,
+
+        error:
+          sessionError.message ||
+          "Could not verify your session.",
+      };
+    }
+
+
+    const accessToken =
+      String(
+        session?.access_token ||
+          ""
+      ).trim();
+
+
+    if (
+      !accessToken
+    ) {
+      return {
+        ok:
+          false,
+
+        error:
+          "Authentication required.",
+      };
+    }
+
+
+    const {
       data,
       error,
     } =
       await supabase.functions.invoke(
         "revalidate-public-project",
         {
+          headers: {
+            Authorization:
+              `Bearer ${accessToken}`,
+          },
+
           body: {
             projectId:
               cleanProjectId,
