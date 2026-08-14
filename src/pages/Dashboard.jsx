@@ -19,7 +19,6 @@ import {
 import {
   ArrowUpRight,
   Globe2,
-  Loader2,
   Plus,
   RefreshCw,
   Search,
@@ -124,7 +123,9 @@ export default function Dashboard() {
   const {
     t,
     dir,
-  } = useAdminI18n();
+  } =
+    useAdminI18n();
+
 
   const queryClient =
     useQueryClient();
@@ -133,13 +134,19 @@ export default function Dashboard() {
   const [
     search,
     setSearch,
-  ] = useState("");
+  ] =
+    useState(
+      ""
+    );
 
 
   const [
     newProjectOpen,
     setNewProjectOpen,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
 
   const {
@@ -147,46 +154,58 @@ export default function Dashboard() {
     isLoading,
     error,
     isFetching,
-  } = useQuery({
-    queryKey: [
-      "projects",
-    ],
+  } =
+    useQuery({
+      queryKey: [
+        "projects",
+      ],
 
-    queryFn:
-      loadProjects,
-  });
+      queryFn:
+        loadProjects,
+    });
 
 
   const filteredProjects =
-    useMemo(() => {
-      const q =
-        search
-          .trim()
-          .toLowerCase();
+    useMemo(
+      () => {
+        const q =
+          search
+            .trim()
+            .toLowerCase();
 
 
-      if (!q) {
-        return projects;
-      }
+        if (!q) {
+          return projects;
+        }
 
 
-      return projects.filter(
-        (project) =>
-          [
-            project.name,
-            project.slug,
-            project.description,
-            project.status,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase()
-            .includes(q)
-      );
-    }, [
-      projects,
-      search,
-    ]);
+        return projects.filter(
+          (
+            project
+          ) =>
+            [
+              project.name,
+              project.slug,
+              project.description,
+              project.status,
+            ]
+              .filter(
+                Boolean
+              )
+              .join(
+                " "
+              )
+              .toLowerCase()
+              .includes(
+                q
+              )
+        );
+      },
+      [
+        projects,
+        search,
+      ]
+    );
 
 
   async function refresh() {
@@ -207,7 +226,9 @@ export default function Dashboard() {
 
   return (
     <main
-      dir={dir}
+      dir={
+        dir
+      }
       className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-20 text-white"
     >
       <PageHeader
@@ -228,7 +249,9 @@ export default function Dashboard() {
             }
           >
             <RefreshCw
-              size={17}
+              size={
+                17
+              }
               className={
                 isFetching
                   ? "animate-spin"
@@ -245,8 +268,6 @@ export default function Dashboard() {
 
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {/* NEW WEBSITE */}
-
         <div className="mb-4">
           <Button
             onClick={() =>
@@ -256,7 +277,9 @@ export default function Dashboard() {
             }
           >
             <Plus
-              size={17}
+              size={
+                17
+              }
             />
 
             {t(
@@ -266,14 +289,15 @@ export default function Dashboard() {
         </div>
 
 
-        {/* SEARCH */}
-
         <div className="rounded-[28px] border border-white/10 bg-[#111111] p-3">
           <div className="relative">
             <Search
-              size={17}
+              size={
+                17
+              }
               className={`absolute top-1/2 -translate-y-1/2 text-white/35 ${
-                dir === "rtl"
+                dir ===
+                "rtl"
                   ? "right-4"
                   : "left-4"
               }`}
@@ -295,7 +319,8 @@ export default function Dashboard() {
                 "dashboard.searchPlaceholder"
               )}
               className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/25 text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00] ${
-                dir === "rtl"
+                dir ===
+                "rtl"
                   ? "pl-4 pr-11"
                   : "pl-11 pr-4"
               }`}
@@ -303,8 +328,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-
-        {/* ERROR */}
 
         {error && (
           <p className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
@@ -316,12 +339,11 @@ export default function Dashboard() {
         )}
 
 
-        {/* LOADING */}
-
         {isLoading ? (
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({
-              length: 6,
+              length:
+                6,
             }).map(
               (
                 _,
@@ -337,9 +359,6 @@ export default function Dashboard() {
             )}
           </div>
         ) : filteredProjects.length ? (
-
-          /* WEBSITES */
-
           <motion.div
             layout
             className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -364,14 +383,13 @@ export default function Dashboard() {
             )}
           </motion.div>
         ) : (
-
-          /* EMPTY */
-
           <div className="mt-6">
             <EmptyState
               icon={
                 <Globe2
-                  size={38}
+                  size={
+                    38
+                  }
                 />
               }
               title={
@@ -402,7 +420,9 @@ export default function Dashboard() {
                     }
                   >
                     <Plus
-                      size={17}
+                      size={
+                        17
+                      }
                     />
 
                     {t(
@@ -449,7 +469,8 @@ function ProjectCard({
 }) {
   const {
     t,
-  } = useAdminI18n();
+  } =
+    useAdminI18n();
 
 
   const publicUrl =
@@ -493,12 +514,18 @@ function ProjectCard({
   return (
     <motion.div
       initial={{
-        opacity: 0,
-        y: 14,
+        opacity:
+          0,
+
+        y:
+          14,
       }}
       animate={{
-        opacity: 1,
-        y: 0,
+        opacity:
+          1,
+
+        y:
+          0,
       }}
       transition={{
         delay:
@@ -525,7 +552,9 @@ function ProjectCard({
               />
             ) : (
               <Store
-                size={28}
+                size={
+                  28
+                }
               />
             )}
           </div>
@@ -548,7 +577,9 @@ function ProjectCard({
 
 
         <h2 className="mt-7 truncate text-2xl font-black tracking-[-0.05em]">
-          {project.name}
+          {
+            project.name
+          }
         </h2>
 
 
@@ -556,7 +587,9 @@ function ProjectCard({
           className="mt-2 truncate text-sm font-bold text-white/35"
           dir="ltr"
         >
-          {publicUrl}
+          {
+            publicUrl
+          }
         </p>
 
 
@@ -578,7 +611,9 @@ function ProjectCard({
 
 
           <ArrowUpRight
-            size={19}
+            size={
+              19
+            }
             className="text-white/30 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#ff7a00]"
           />
         </div>
@@ -595,26 +630,42 @@ function NewProjectModal({
 }) {
   const {
     t,
-  } = useAdminI18n();
+  } =
+    useAdminI18n();
 
 
   const [
     loading,
     setLoading,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
 
 
   const [
     form,
     setForm,
-  ] = useState({
-    name: "",
-    slug: "",
-    description: "",
-    phone: "",
-    whatsapp: "",
-    instagram: "",
-  });
+  ] =
+    useState({
+      name:
+        "",
+
+      slug:
+        "",
+
+      description:
+        "",
+
+      phone:
+        "",
+
+      whatsapp:
+        "",
+
+      instagram:
+        "",
+    });
 
 
   function updateField(
@@ -622,15 +673,22 @@ function NewProjectModal({
     value
   ) {
     setForm(
-      (current) => {
+      (
+        current
+      ) => {
         const next = {
           ...current,
-          [key]: value,
+
+          [
+            key
+          ]:
+            value,
         };
 
 
         if (
-          key === "name"
+          key ===
+          "name"
         ) {
           next.slug =
             slugify(
@@ -650,7 +708,9 @@ function NewProjectModal({
   ) {
     event.preventDefault();
 
-    setLoading(true);
+    setLoading(
+      true
+    );
 
 
     try {
@@ -714,14 +774,19 @@ function NewProjectModal({
 
         error:
           existingError,
-      } = await supabase
-        .from("projects")
-        .select("id")
-        .ilike(
-          "slug",
-          slug
-        )
-        .maybeSingle();
+      } =
+        await supabase
+          .from(
+            "projects"
+          )
+          .select(
+            "id"
+          )
+          .ilike(
+            "slug",
+            slug
+          )
+          .maybeSingle();
 
 
       if (
@@ -743,35 +808,38 @@ function NewProjectModal({
       const {
         error:
           projectError,
-      } = await supabase
-        .from("projects")
-        .insert({
-          owner_id:
-            user.id,
+      } =
+        await supabase
+          .from(
+            "projects"
+          )
+          .insert({
+            owner_id:
+              user.id,
 
-          name,
+            name,
 
-          slug,
+            slug,
 
-          description:
-            form.description.trim() ||
-            null,
+            description:
+              form.description.trim() ||
+              null,
 
-          phone:
-            form.phone.trim() ||
-            null,
+            phone:
+              form.phone.trim() ||
+              null,
 
-          whatsapp:
-            form.whatsapp.trim() ||
-            null,
+            whatsapp:
+              form.whatsapp.trim() ||
+              null,
 
-          instagram:
-            form.instagram.trim() ||
-            null,
+            instagram:
+              form.instagram.trim() ||
+              null,
 
-          status:
-            "active",
-        });
+            status:
+              "active",
+          });
 
 
       if (
@@ -789,17 +857,30 @@ function NewProjectModal({
 
 
       setForm({
-        name: "",
-        slug: "",
-        description: "",
-        phone: "",
-        whatsapp: "",
-        instagram: "",
+        name:
+          "",
+
+        slug:
+          "",
+
+        description:
+          "",
+
+        phone:
+          "",
+
+        whatsapp:
+          "",
+
+        instagram:
+          "",
       });
 
 
       onDone();
-    } catch (err) {
+    } catch (
+      err
+    ) {
       toast.error(
         err?.message ||
           t(
@@ -807,9 +888,21 @@ function NewProjectModal({
           )
       );
     } finally {
-      setLoading(false);
+      setLoading(
+        false
+      );
     }
   }
+
+
+  const previewUrl =
+    form.slug
+      ? getPublicProjectUrl(
+          slugify(
+            form.slug
+          )
+        )
+      : "";
 
 
   return (
@@ -860,11 +953,10 @@ function NewProjectModal({
             "project.hostname"
           )}
           hint={
-            form.slug
-              ? `${form.slug}.w.crtgo.com`
-              : t(
-                  "dashboard.hostnameHint"
-                )
+            previewUrl ||
+            t(
+              "dashboard.hostnameHint"
+            )
           }
         >
           <Input
@@ -996,7 +1088,9 @@ function NewProjectModal({
           size="lg"
         >
           <Plus
-            size={17}
+            size={
+              17
+            }
           />
 
           {t(

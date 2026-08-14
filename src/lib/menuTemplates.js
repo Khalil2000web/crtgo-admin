@@ -2,7 +2,7 @@ function getPublicMenuBaseUrl() {
   const value =
     import.meta.env.VITE_PUBLIC_MENU_BASE_URL ||
     import.meta.env.VITE_MENU_PUBLIC_BASE_URL ||
-    "https://menu.crtgo.com";
+    "https://menu.crtrgo.com";
 
   return String(value).replace(/\/+$/, "");
 }

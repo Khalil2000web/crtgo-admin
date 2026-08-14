@@ -500,7 +500,7 @@ export default function AuthPage() {
               className="text-lg font-black tracking-[-0.05em]"
               dir="ltr"
             >
-              CRTGO
+              CRTRGO
             </p>
 
             <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/25">

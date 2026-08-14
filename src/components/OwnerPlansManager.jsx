@@ -666,7 +666,7 @@ export default function OwnerPlansManager() {
 
             <CheckRow
               title="Allow QR codes"
-              description="Client can create and use permanent CRTGO QR links."
+              description="Client can create and use permanent CRTRGO QR links."
               checked={form.qr_codes}
               onChange={() => updateField("qr_codes", !form.qr_codes)}
             />

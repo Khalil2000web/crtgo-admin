@@ -1928,7 +1928,7 @@ function SectionIconPicker({
           }
         >
           {t(
-            "menuEditor.crtgoIcons"
+            "menuEditor.crtrgoIcons"
           )}
         </IconTypeButton>
 
@@ -1955,14 +1955,14 @@ function SectionIconPicker({
       </div>
 
 
-      {/* CRTGO ICONS */}
+      {/* CRTRGO ICONS */}
 
       {type ===
         "lucide" && (
         <div className="mt-4">
           <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-white/30">
             {t(
-              "menuEditor.crtgoIcons"
+              "menuEditor.crtrgoIcons"
             )}
           </p>
 

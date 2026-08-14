@@ -287,7 +287,7 @@ function SidebarContent({
     user?.email?.split(
       "@"
     )[0] ||
-    "CRTGO";
+    "CRTRGO";
 
   return (
     <>
@@ -435,7 +435,7 @@ function Brand({
             : "text-4xl"
         }`}
       >
-        CRTGO
+        CRTRGO
       </h1>
 
       {!small && (

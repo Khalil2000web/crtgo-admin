@@ -10,7 +10,7 @@ const AdminI18nContext =
   createContext(null);
 
 const STORAGE_KEY =
-  "crtgo-admin-language";
+  "crtrgo-admin-language";
 
 const LANGUAGES = {
   en: {
@@ -431,7 +431,7 @@ const translations = {
         "Appearance",
 
       subtitle:
-        "Customize the look and branding of the standard CRTGO website.",
+        "Customize the look and branding of the standard CRTRGO website.",
 
       preview:
         "Preview",
@@ -440,7 +440,7 @@ const translations = {
         "Images",
 
       imagesHint:
-        "These images are used throughout the standard CRTGO website.",
+        "These images are used throughout the standard CRTRGO website.",
 
       logo:
         "Logo",
@@ -627,8 +627,8 @@ const translations = {
       noIcon:
         "None",
 
-      crtgoIcons:
-        "CRTGO Icons",
+      crtrgoIcons:
+        "CRTRGO Icons",
 
       symbols:
         "Symbols",
@@ -680,7 +680,7 @@ const translations = {
         "Workspace",
 
       subtitle:
-        "Manage your CRTGO websites from one workspace.",
+        "Manage your CRTRGO websites from one workspace.",
 
       refreshed:
         "Workspace refreshed",
@@ -701,7 +701,7 @@ const translations = {
         "Create your first website",
 
       firstWebsiteHint:
-        "Create your first CRTGO website. You can add your menu, branding, contact information, and working hours after creation.",
+        "Create your first CRTRGO website. You can add your menu, branding, contact information, and working hours after creation.",
 
       openWebsite:
         "Open Website",
@@ -739,13 +739,13 @@ const translations = {
         "Checking your session...",
 
       secureAdmin:
-        "Secure CRTGO Admin",
+        "Secure CRTRGO Admin",
 
       heroTitle:
         "Build and manage your websites.",
 
       heroText:
-        "Create fast CRTGO websites, manage menus, branding, contact information, working hours, and languages from one place.",
+        "Create fast CRTRGO websites, manage menus, branding, contact information, working hours, and languages from one place.",
 
       featureWebsites:
         "Manage all your websites",
@@ -769,10 +769,10 @@ const translations = {
         "Create account",
 
       loginSubtitle:
-        "Sign in to continue to your CRTGO workspace.",
+        "Sign in to continue to your CRTRGO workspace.",
 
       signupSubtitle:
-        "Create your CRTGO account and start building your first website.",
+        "Create your CRTRGO account and start building your first website.",
 
       login:
         "Log in",
@@ -808,7 +808,7 @@ const translations = {
         "Please wait...",
 
       footer:
-        "CRTGO Admin · Manage your websites from one workspace.",
+        "CRTRGO Admin · Manage your websites from one workspace.",
 
       emailRequired:
         "Email is required.",
@@ -858,7 +858,7 @@ const translations = {
         "Account",
 
       subtitle:
-        "Manage your CRTGO profile and account information.",
+        "Manage your CRTRGO profile and account information.",
 
       backToWebsites:
         "Back to websites",
@@ -867,13 +867,13 @@ const translations = {
         "Owner Console",
 
       ownerConsoleHint:
-        "Manage platform administration and CRTGO clients.",
+        "Manage platform administration and CRTRGO clients.",
 
       open:
         "Open",
 
       defaultName:
-        "CRTGO User",
+        "CRTRGO User",
 
       noEmail:
         "No email",
@@ -891,7 +891,7 @@ const translations = {
         "Profile details",
 
       profileDetailsHint:
-        "Update the information used for your CRTGO account.",
+        "Update the information used for your CRTRGO account.",
 
       displayName:
         "Display name",
@@ -909,7 +909,7 @@ const translations = {
         "Account status",
 
       statusHint:
-        "Information about your CRTGO account and access.",
+        "Information about your CRTRGO account and access.",
 
       authProvider:
         "Auth provider",
@@ -1381,7 +1381,7 @@ const translations = {
         "المظهر",
 
       subtitle:
-        "خصص مظهر وهوية موقع CRTGO الخاص بك.",
+        "خصص مظهر وهوية موقع CRTRGO الخاص بك.",
 
       preview:
         "معاينة",
@@ -1390,7 +1390,7 @@ const translations = {
         "الصور",
 
       imagesHint:
-        "تُستخدم هذه الصور في أنحاء موقع CRTGO الخاص بك.",
+        "تُستخدم هذه الصور في أنحاء موقع CRTRGO الخاص بك.",
 
       logo:
         "الشعار",
@@ -1577,8 +1577,8 @@ const translations = {
       noIcon:
         "بدون",
 
-      crtgoIcons:
-        "أيقونات CRTGO",
+      crtrgoIcons:
+        "أيقونات CRTRGO",
 
       symbols:
         "رموز",
@@ -1630,7 +1630,7 @@ const translations = {
         "مساحة العمل",
 
       subtitle:
-        "أدر جميع مواقع CRTGO الخاصة بك من مكان واحد.",
+        "أدر جميع مواقع CRTRGO الخاصة بك من مكان واحد.",
 
       refreshed:
         "تم تحديث مساحة العمل",
@@ -1651,7 +1651,7 @@ const translations = {
         "أنشئ موقعك الأول",
 
       firstWebsiteHint:
-        "أنشئ أول موقع CRTGO لك، ثم أضف القائمة والهوية ومعلومات التواصل وساعات العمل.",
+        "أنشئ أول موقع CRTRGO لك، ثم أضف القائمة والهوية ومعلومات التواصل وساعات العمل.",
 
       openWebsite:
         "فتح الموقع",
@@ -1689,13 +1689,13 @@ const translations = {
         "جارٍ التحقق من الجلسة...",
 
       secureAdmin:
-        "إدارة CRTGO الآمنة",
+        "إدارة CRTRGO الآمنة",
 
       heroTitle:
         "أنشئ وأدر مواقعك بسهولة.",
 
       heroText:
-        "أنشئ مواقع CRTGO سريعة وأدر القوائم والهوية ومعلومات التواصل وساعات العمل واللغات من مكان واحد.",
+        "أنشئ مواقع CRTRGO سريعة وأدر القوائم والهوية ومعلومات التواصل وساعات العمل واللغات من مكان واحد.",
 
       featureWebsites:
         "إدارة جميع مواقعك",
@@ -1719,10 +1719,10 @@ const translations = {
         "إنشاء حساب",
 
       loginSubtitle:
-        "سجّل الدخول للمتابعة إلى مساحة عمل CRTGO.",
+        "سجّل الدخول للمتابعة إلى مساحة عمل CRTRGO.",
 
       signupSubtitle:
-        "أنشئ حساب CRTGO وابدأ بإنشاء موقعك الأول.",
+        "أنشئ حساب CRTRGO وابدأ بإنشاء موقعك الأول.",
 
       login:
         "تسجيل الدخول",
@@ -1758,7 +1758,7 @@ const translations = {
         "يرجى الانتظار...",
 
       footer:
-        "إدارة CRTGO · أدر جميع مواقعك من مساحة عمل واحدة.",
+        "إدارة CRTRGO · أدر جميع مواقعك من مساحة عمل واحدة.",
 
       emailRequired:
         "البريد الإلكتروني مطلوب.",
@@ -1808,7 +1808,7 @@ const translations = {
         "الحساب",
 
       subtitle:
-        "أدر ملفك الشخصي ومعلومات حساب CRTGO.",
+        "أدر ملفك الشخصي ومعلومات حساب CRTRGO.",
 
       backToWebsites:
         "العودة إلى المواقع",
@@ -1817,13 +1817,13 @@ const translations = {
         "لوحة المالك",
 
       ownerConsoleHint:
-        "إدارة المنصة وعملاء CRTGO.",
+        "إدارة المنصة وعملاء CRTRGO.",
 
       open:
         "فتح",
 
       defaultName:
-        "مستخدم CRTGO",
+        "مستخدم CRTRGO",
 
       noEmail:
         "لا يوجد بريد إلكتروني",
@@ -1841,7 +1841,7 @@ const translations = {
         "تفاصيل الملف الشخصي",
 
       profileDetailsHint:
-        "عدّل المعلومات المستخدمة في حساب CRTGO الخاص بك.",
+        "عدّل المعلومات المستخدمة في حساب CRTRGO الخاص بك.",
 
       displayName:
         "الاسم الظاهر",
@@ -1859,7 +1859,7 @@ const translations = {
         "حالة الحساب",
 
       statusHint:
-        "معلومات عن حساب CRTGO وصلاحيات الوصول.",
+        "معلومات عن حساب CRTRGO وصلاحيات الوصول.",
 
       authProvider:
         "طريقة تسجيل الدخول",
