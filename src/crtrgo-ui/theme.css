@@ -1,0 +1,117 @@
+.crtrgo-ui {
+  --cg-accent: #ff7a00;
+  --cg-accent-hover: #ff922e;
+  --cg-accent-soft: rgba(255, 122, 0, 0.1);
+
+  --cg-bg: #f7f7f8;
+  --cg-surface: #ffffff;
+  --cg-surface-raised: #ffffff;
+  --cg-surface-soft: #f1f1f3;
+
+  --cg-text: #171717;
+  --cg-text-secondary: #66666d;
+  --cg-text-muted: #94949c;
+
+  --cg-border: rgba(20, 20, 24, 0.09);
+  --cg-border-strong: rgba(20, 20, 24, 0.15);
+
+  --cg-success: #168754;
+  --cg-warning: #b76b00;
+  --cg-danger: #d63d3d;
+
+  --cg-radius-sm: 10px;
+  --cg-radius-md: 16px;
+  --cg-radius-lg: 22px;
+  --cg-radius-xl: 28px;
+
+  --cg-shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 1px 8px rgba(0, 0, 0, 0.025);
+
+  --cg-shadow-md:
+    0 8px 30px rgba(0, 0, 0, 0.06);
+
+  --cg-font:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  font-family: var(--cg-font);
+  color: var(--cg-text);
+  background: var(--cg-bg);
+}
+
+
+.crtrgo-ui[data-theme="dark"] {
+  --cg-bg: #0c0c0d;
+  --cg-surface: #151516;
+  --cg-surface-raised: #1a1a1c;
+  --cg-surface-soft: #202023;
+
+  --cg-text: #f5f5f6;
+  --cg-text-secondary: #aaaab2;
+  --cg-text-muted: #707079;
+
+  --cg-border: rgba(255, 255, 255, 0.08);
+  --cg-border-strong: rgba(255, 255, 255, 0.14);
+
+  --cg-shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.25);
+
+  --cg-shadow-md:
+    0 12px 40px rgba(0, 0, 0, 0.28);
+}
+
+
+.crtrgo-ui *,
+.crtrgo-ui *::before,
+.crtrgo-ui *::after {
+  box-sizing: border-box;
+}
+
+
+.crtrgo-ui button,
+.crtrgo-ui input,
+.crtrgo-ui textarea,
+.crtrgo-ui select {
+  font: inherit;
+}
+
+
+.cg-focus:focus-visible {
+  outline: 3px solid rgba(255, 122, 0, 0.22);
+  outline-offset: 2px;
+}
+
+
+.cg-page {
+  min-height: 100%;
+  background: var(--cg-bg);
+  color: var(--cg-text);
+}
+
+
+.cg-container {
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+
+.cg-section {
+  padding-block: 32px;
+}
+
+
+@media (min-width: 768px) {
+  .cg-container {
+    width: min(1180px, calc(100% - 56px));
+  }
+
+  .cg-section {
+    padding-block: 48px;
+  }
+}

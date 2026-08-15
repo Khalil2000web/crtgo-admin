@@ -8,17 +8,25 @@ import {
 
 import {
   Building2,
-  HelpCircle,
+  ChevronRight,
+  CircleHelp,
+  Globe2,
   Languages,
+  LayoutDashboard,
   LogOut,
   Menu,
   Settings,
+  ShoppingBag,
+  Sparkles,
+  Store,
   UserCircle2,
+  UtensilsCrossed,
   X,
 } from "lucide-react";
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -32,30 +40,180 @@ import {
   useAdminI18n,
 } from "../lib/adminI18n";
 
+
+const SHELL_COPY = {
+  en: {
+    workspace:
+      "Workspace",
+
+    platform:
+      "Carter Go",
+
+    overview:
+      "Businesses",
+
+    services:
+      "Services",
+
+    menu:
+      "Menu",
+
+    store:
+      "Store",
+
+    websites:
+      "Websites",
+
+    active:
+      "Active",
+
+    comingSoon:
+      "Soon",
+
+    account:
+      "Account",
+
+    settings:
+      "Settings",
+
+    help:
+      "Help",
+
+    logout:
+      "Log out",
+
+    currentService:
+      "Current service",
+
+    menuWorkspace:
+      "Menu workspace",
+
+    backToBusinesses:
+      "All businesses",
+
+    accountArea:
+      "Account",
+
+    platformHint:
+      "One account. All your services.",
+
+    loading:
+      "Loading...",
+  },
+
+
+  ar: {
+    workspace:
+      "مساحة العمل",
+
+    platform:
+      "Carter Go",
+
+    overview:
+      "الأعمال",
+
+    services:
+      "الخدمات",
+
+    menu:
+      "القائمة",
+
+    store:
+      "المتجر",
+
+    websites:
+      "المواقع",
+
+    active:
+      "فعال",
+
+    comingSoon:
+      "قريباً",
+
+    account:
+      "الحساب",
+
+    settings:
+      "الإعدادات",
+
+    help:
+      "المساعدة",
+
+    logout:
+      "تسجيل الخروج",
+
+    currentService:
+      "الخدمة الحالية",
+
+    menuWorkspace:
+      "مساحة القائمة",
+
+    backToBusinesses:
+      "كل الأعمال",
+
+    accountArea:
+      "الحساب",
+
+    platformHint:
+      "حساب واحد. كل خدماتك.",
+
+    loading:
+      "جارٍ التحميل...",
+  },
+};
+
+
 export default function AppShell() {
   const navigate =
     useNavigate();
 
+
   const location =
     useLocation();
+
 
   const {
     dir,
     t,
-  } = useAdminI18n();
+  } =
+    useAdminI18n();
+
+
+  const copy =
+    dir ===
+    "rtl"
+      ? SHELL_COPY.ar
+      : SHELL_COPY.en;
+
 
   const [
     mobileOpen,
     setMobileOpen,
-  ] = useState(false);
+  ] =
+    useState(
+      false
+    );
+
 
   const [
     user,
     setUser,
-  ] = useState(null);
+  ] =
+    useState(
+      null
+    );
+
+
+  const insideMenuService =
+    location.pathname.startsWith(
+      "/project/"
+    );
+
 
   useEffect(() => {
-    let alive = true;
+    let alive =
+      true;
+
 
     async function loadUser() {
       const {
@@ -64,34 +222,50 @@ export default function AppShell() {
       } =
         await supabase.auth.getUser();
 
-      if (!alive) {
+
+      if (
+        !alive
+      ) {
         return;
       }
+
 
       if (
         error ||
         !data.user
       ) {
-        setUser(null);
+        setUser(
+          null
+        );
+
         return;
       }
 
-      setUser(data.user);
+
+      setUser(
+        data.user
+      );
     }
+
 
     loadUser();
 
+
     const {
-      data: authListener,
+      data:
+        authListener,
     } =
       supabase.auth.onAuthStateChange(
         (
           _event,
           session
         ) => {
-          if (!alive) {
+          if (
+            !alive
+          ) {
             return;
           }
+
 
           setUser(
             session?.user ||
@@ -100,8 +274,11 @@ export default function AppShell() {
         }
       );
 
+
     return () => {
-      alive = false;
+      alive =
+        false;
+
 
       authListener
         ?.subscription
@@ -109,47 +286,76 @@ export default function AppShell() {
     };
   }, []);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
 
   useEffect(() => {
-    if (!mobileOpen) {
+    setMobileOpen(
+      false
+    );
+  }, [
+    location.pathname,
+  ]);
+
+
+  useEffect(() => {
+    if (
+      !mobileOpen
+    ) {
       return;
     }
 
-    const previousOverflow =
-      document.body.style.overflow;
 
-    document.body.style.overflow =
+    const previousOverflow =
+      document.body.style
+        .overflow;
+
+
+    document.body.style
+      .overflow =
       "hidden";
 
+
     return () => {
-      document.body.style.overflow =
+      document.body.style
+        .overflow =
         previousOverflow;
     };
-  }, [mobileOpen]);
+  }, [
+    mobileOpen,
+  ]);
+
 
   async function logout() {
     try {
-      const { error } =
+      const {
+        error,
+      } =
         await supabase.auth.signOut();
 
-      if (error) {
+
+      if (
+        error
+      ) {
         throw error;
       }
 
+
       toast.success(
-        t("auth.loggedOut")
+        t(
+          "auth.loggedOut"
+        )
       );
+
 
       navigate(
         "/login",
         {
-          replace: true,
+          replace:
+            true,
         }
       );
-    } catch (error) {
+    } catch (
+      error
+    ) {
       toast.error(
         error?.message ||
           t(
@@ -159,19 +365,35 @@ export default function AppShell() {
     }
   }
 
+
   return (
     <main
       dir="ltr"
       className="flex h-dvh min-h-0 overflow-hidden bg-[#090909] text-white"
     >
+
       {/* DESKTOP SIDEBAR */}
 
-      <aside className="hidden h-full w-[18rem] shrink-0 border-e border-white/10 bg-[#0b0b0b] p-4 lg:flex lg:flex-col">
+      <aside className="hidden h-full w-[18.5rem] shrink-0 border-e border-white/10 bg-[#0b0b0b] lg:flex lg:flex-col">
         <SidebarContent
-          user={user}
-          logout={logout}
+          user={
+            user
+          }
+          logout={
+            logout
+          }
+          copy={
+            copy
+          }
+          dir={
+            dir
+          }
+          insideMenuService={
+            insideMenuService
+          }
         />
       </aside>
+
 
       {/* MOBILE SIDEBAR */}
 
@@ -192,14 +414,18 @@ export default function AppShell() {
           }}
         >
           <aside
-            className={`flex h-full w-80 max-w-[88vw] flex-col overflow-y-auto bg-[#0b0b0b] p-4 no-scrollbar ${
-              dir === "rtl"
+            className={`flex h-full w-80 max-w-[88vw] flex-col overflow-y-auto bg-[#0b0b0b] no-scrollbar ${
+              dir ===
+              "rtl"
                 ? "ms-auto border-s border-white/10"
                 : "me-auto border-e border-white/10"
             }`}
           >
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <Brand />
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-4">
+              <Brand
+                compact
+              />
+
 
               <button
                 type="button"
@@ -216,26 +442,44 @@ export default function AppShell() {
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 text-white/50 transition hover:bg-white/5 hover:text-white"
               >
                 <X
-                  size={18}
+                  size={
+                    18
+                  }
                 />
               </button>
             </div>
 
+
             <SidebarContent
-              user={user}
-              logout={logout}
+              user={
+                user
+              }
+              logout={
+                logout
+              }
+              copy={
+                copy
+              }
+              dir={
+                dir
+              }
+              insideMenuService={
+                insideMenuService
+              }
               hideBrand
             />
           </aside>
         </div>
       )}
 
+
       {/* MAIN CONTENT */}
 
       <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+
         {/* MOBILE HEADER */}
 
-        <header className="flex h-16 w-full shrink-0 items-center gap-3 border-b border-white/10 bg-[#080808]/85 px-4 backdrop-blur-xl lg:hidden">
+        <header className="flex h-16 w-full shrink-0 items-center gap-3 border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl lg:hidden">
           <button
             type="button"
             onClick={() =>
@@ -247,22 +491,33 @@ export default function AppShell() {
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 text-white/60 transition hover:bg-white/5 hover:text-white"
           >
             <Menu
-              size={19}
+              size={
+                19
+              }
             />
           </button>
 
-          <Brand small />
+
+          <Brand
+            compact
+          />
+
 
           <div className="ms-auto flex items-center gap-2">
             <AdminLanguageSwitcher />
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff7a00] text-sm font-black text-black">
+
+            <Link
+              to="/account"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff7a00] text-sm font-black text-black"
+            >
               {getUserInitial(
                 user
               )}
-            </div>
+            </Link>
           </div>
         </header>
+
 
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
           <Outlet />
@@ -272,32 +527,42 @@ export default function AppShell() {
   );
 }
 
+
 function SidebarContent({
   user,
   logout,
+  copy,
+  dir,
+  insideMenuService,
   hideBrand = false,
 }) {
-  const {
-    t,
-  } = useAdminI18n();
-
   const displayName =
     user?.user_metadata
       ?.display_name ||
     user?.email?.split(
       "@"
     )[0] ||
-    "CRTRGO";
+    "Carter Go";
+
 
   return (
-    <>
+    <div
+      dir={
+        dir
+      }
+      className="flex h-full min-h-0 flex-col p-4"
+    >
       {!hideBrand && (
         <Brand />
       )}
 
-      {/* ACCOUNT */}
 
-      <div className="mt-6 rounded-[24px] border border-white/10 bg-white/[0.035] p-3">
+      {/* USER */}
+
+      <Link
+        to="/account"
+        className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.035] p-3 transition hover:border-[#ff7a00]/25 hover:bg-white/[0.05]"
+      >
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#ff7a00] text-sm font-black text-black">
             {getUserInitial(
@@ -305,23 +570,39 @@ function SidebarContent({
             )}
           </div>
 
-          <div className="min-w-0">
+
+          <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-black">
-              {displayName}
+              {
+                displayName
+              }
             </p>
+
 
             <p
               className="truncate text-xs font-bold text-white/35"
               dir="ltr"
             >
               {user?.email ||
-                t(
-                  "common.loading"
-                )}
+                copy.loading}
             </p>
           </div>
+
+
+          <ChevronRight
+            size={
+              15
+            }
+            className={`shrink-0 text-white/20 ${
+              dir ===
+              "rtl"
+                ? "rotate-180"
+                : ""
+            }`}
+          />
         </div>
-      </div>
+      </Link>
+
 
       {/* LANGUAGE */}
 
@@ -331,123 +612,325 @@ function SidebarContent({
         />
       </div>
 
-      {/* NAVIGATION */}
 
-      <nav className="mt-6 grid gap-2">
-        <SideLink
-          to="/"
-          icon={
-            <Building2
-              size={18}
-            />
-          }
-          label={
-            t(
-              "nav.websites"
-            )
-          }
-        />
+      {/* PLATFORM NAVIGATION */}
 
-        <SideLink
-          to="/account"
-          icon={
-            <UserCircle2
-              size={18}
-            />
+      <div className="mt-7">
+        <SidebarLabel>
+          {
+            copy.workspace
           }
-          label={
-            t(
-              "nav.account"
-            )
-          }
-        />
+        </SidebarLabel>
 
-        <button
-          type="button"
-          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-white/38 transition hover:bg-white/[0.045] hover:text-white"
-        >
-          <Settings
-            size={18}
+
+        <nav className="mt-2 grid gap-1.5">
+          <SideLink
+            to="/"
+            icon={
+              <Building2
+                size={
+                  18
+                }
+              />
+            }
+            label={
+              copy.overview
+            }
+          />
+        </nav>
+      </div>
+
+
+      {/* SERVICES */}
+
+      <div className="mt-7">
+        <SidebarLabel>
+          {
+            copy.services
+          }
+        </SidebarLabel>
+
+
+        <div className="mt-2 grid gap-1.5">
+
+          {/* MENU */}
+
+          <ServiceNavItem
+            icon={
+              <UtensilsCrossed
+                size={
+                  18
+                }
+              />
+            }
+            label={
+              copy.menu
+            }
+            status={
+              copy.active
+            }
+            active={
+              insideMenuService
+            }
+            available
           />
 
-          <span>
-            {t(
-              "nav.settings"
-            )}
-          </span>
-        </button>
 
-        <button
-          type="button"
-          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-white/38 transition hover:bg-white/[0.045] hover:text-white"
-        >
-          <HelpCircle
-            size={18}
+          {/* STORE */}
+
+          <ServiceNavItem
+            icon={
+              <ShoppingBag
+                size={
+                  18
+                }
+              />
+            }
+            label={
+              copy.store
+            }
+            status={
+              copy.comingSoon
+            }
           />
 
-          <span>
-            {t(
-              "nav.help"
-            )}
-          </span>
-        </button>
-      </nav>
+
+          {/* WEBSITES */}
+
+          <ServiceNavItem
+            icon={
+              <Globe2
+                size={
+                  18
+                }
+              />
+            }
+            label={
+              copy.websites
+            }
+            status={
+              copy.comingSoon
+            }
+          />
+        </div>
+      </div>
+
+
+      {/* CURRENT SERVICE */}
+
+      {insideMenuService && (
+        <div className="mt-6 rounded-[24px] border border-[#ff7a00]/20 bg-[#ff7a00]/[0.06] p-4">
+          <div className="flex items-center gap-2 text-[#ff9a3b]">
+            <Sparkles
+              size={
+                15
+              }
+            />
+
+
+            <p className="text-[10px] font-black uppercase tracking-[0.16em]">
+              {
+                copy.currentService
+              }
+            </p>
+          </div>
+
+
+          <div className="mt-3 flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[#ff7a00]/10 text-[#ff8d22]">
+              <Store
+                size={
+                  18
+                }
+              />
+            </div>
+
+
+            <div>
+              <p className="text-sm font-black">
+                {
+                  copy.menu
+                }
+              </p>
+
+              <p className="mt-0.5 text-[11px] font-bold text-white/30">
+                {
+                  copy.menuWorkspace
+                }
+              </p>
+            </div>
+          </div>
+
+
+          <Link
+            to="/"
+            className="mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5 text-xs font-black text-white/45 transition hover:border-[#ff7a00]/25 hover:text-white"
+          >
+            <span>
+              {
+                copy.backToBusinesses
+              }
+            </span>
+
+
+            <ChevronRight
+              size={
+                14
+              }
+              className={
+                dir ===
+                "rtl"
+                  ? "rotate-180"
+                  : ""
+              }
+            />
+          </Link>
+        </div>
+      )}
+
+
+      {/* ACCOUNT */}
+
+      <div className="mt-7">
+        <SidebarLabel>
+          {
+            copy.accountArea
+          }
+        </SidebarLabel>
+
+
+        <nav className="mt-2 grid gap-1.5">
+          <SideLink
+            to="/account"
+            icon={
+              <UserCircle2
+                size={
+                  18
+                }
+              />
+            }
+            label={
+              copy.account
+            }
+          />
+
+
+          <DisabledNavItem
+            icon={
+              <Settings
+                size={
+                  18
+                }
+              />
+            }
+            label={
+              copy.settings
+            }
+          />
+
+
+          <DisabledNavItem
+            icon={
+              <CircleHelp
+                size={
+                  18
+                }
+              />
+            }
+            label={
+              copy.help
+            }
+          />
+        </nav>
+      </div>
+
 
       {/* LOGOUT */}
 
-      <div className="mt-auto grid gap-2 pb-5 pt-12">
+      <div className="mt-auto border-t border-white/10 pt-4">
         <button
           type="button"
-          onClick={logout}
-          className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400/80 transition hover:bg-red-400/[0.099] hover:text-red-300"
+          onClick={
+            logout
+          }
+          className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-400/80 transition hover:bg-red-400/[0.08] hover:text-red-300"
         >
           <LogOut
-            size={18}
+            size={
+              18
+            }
           />
 
+
           <span>
-            {t(
-              "nav.logout"
-            )}
+            {
+              copy.logout
+            }
           </span>
         </button>
       </div>
-    </>
+    </div>
   );
 }
 
-function Brand({
-  small = false,
-}) {
-  const {
-    t,
-  } = useAdminI18n();
 
+function SidebarLabel({
+  children,
+}) {
+  return (
+    <p className="px-3 text-[10px] font-black uppercase tracking-[0.18em] text-white/20">
+      {
+        children
+      }
+    </p>
+  );
+}
+
+
+function Brand({
+  compact = false,
+}) {
   return (
     <Link
       to="/"
       className="block min-w-0"
+      dir="ltr"
     >
-      <h1
-        className={`font-black tracking-[-0.04em] ${
-          small
-            ? "text-2xl"
-            : "text-4xl"
-        }`}
-      >
-        CRTRGO
-      </h1>
+      <div className="flex items-center gap-3">
+        <div
+          className={`flex shrink-0 items-center justify-center rounded-2xl bg-[#ff7a00] font-black text-black ${
+            compact
+              ? "h-9 w-9 text-xs"
+              : "h-11 w-11 text-sm"
+          }`}
+        >
+          C
+        </div>
 
-      {!small && (
-        <p className="mt-1 text-xs font-black uppercase tracking-[0.28em] text-white/30">
-          {t(
-            "brand.admin"
+
+        <div className="min-w-0">
+          <h1
+            className={`font-black tracking-[-0.045em] ${
+              compact
+                ? "text-xl"
+                : "text-2xl"
+            }`}
+          >
+            CRTRGO
+          </h1>
+
+
+          {!compact && (
+            <p className="mt-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/25">
+              Carter Go Workspace
+            </p>
           )}
-        </p>
-      )}
+        </div>
+      </div>
     </Link>
   );
 }
+
 
 function SideLink({
   to,
@@ -456,8 +939,13 @@ function SideLink({
 }) {
   return (
     <NavLink
-      to={to}
-      end={to === "/"}
+      to={
+        to
+      }
+      end={
+        to ===
+        "/"
+      }
       className={({
         isActive,
       }) =>
@@ -468,14 +956,90 @@ function SideLink({
         }`
       }
     >
-      {icon}
+      {
+        icon
+      }
+
 
       <span>
-        {label}
+        {
+          label
+        }
       </span>
     </NavLink>
   );
 }
+
+
+function ServiceNavItem({
+  icon,
+  label,
+  status,
+  active = false,
+  available = false,
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
+        active
+          ? "border border-[#ff7a00]/20 bg-[#ff7a00]/10 text-[#ff9a3b]"
+          : available
+            ? "text-white/55"
+            : "text-white/25"
+      }`}
+    >
+      <span className="shrink-0">
+        {
+          icon
+        }
+      </span>
+
+
+      <span className="min-w-0 flex-1 truncate text-sm font-black">
+        {
+          label
+        }
+      </span>
+
+
+      <span
+        className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-black uppercase ${
+          active
+            ? "bg-[#ff7a00]/15 text-[#ff9a3b]"
+            : available
+              ? "bg-emerald-400/10 text-emerald-300/70"
+              : "bg-white/[0.04] text-white/20"
+        }`}
+      >
+        {
+          status
+        }
+      </span>
+    </div>
+  );
+}
+
+
+function DisabledNavItem({
+  icon,
+  label,
+}) {
+  return (
+    <div className="flex cursor-default items-center gap-3 rounded-2xl px-4 py-3 text-sm font-black text-white/20">
+      {
+        icon
+      }
+
+
+      <span>
+        {
+          label
+        }
+      </span>
+    </div>
+  );
+}
+
 
 function AdminLanguageSwitcher({
   expanded = false,
@@ -484,20 +1048,34 @@ function AdminLanguageSwitcher({
     language,
     setLanguage,
     t,
-  } = useAdminI18n();
+  } =
+    useAdminI18n();
+
 
   const languages = [
     {
-      code: "en",
-      short: "EN",
-      name: "English",
+      code:
+        "en",
+
+      short:
+        "EN",
+
+      name:
+        "English",
     },
+
     {
-      code: "ar",
-      short: "AR",
-      name: "العربية",
+      code:
+        "ar",
+
+      short:
+        "AR",
+
+      name:
+        "العربية",
     },
   ];
+
 
   return (
     <div
@@ -510,16 +1088,22 @@ function AdminLanguageSwitcher({
       {expanded && (
         <div className="flex h-8 w-8 shrink-0 items-center justify-center text-white/35">
           <Languages
-            size={16}
+            size={
+              16
+            }
           />
         </div>
       )}
 
+
       {languages.map(
-        (item) => {
+        (
+          item
+        ) => {
           const active =
             item.code ===
             language;
+
 
           return (
             <button
@@ -558,6 +1142,7 @@ function AdminLanguageSwitcher({
   );
 }
 
+
 function getUserInitial(
   user
 ) {
@@ -567,8 +1152,13 @@ function getUserInitial(
     user?.email ||
     "C";
 
-  return String(value)
+
+  return String(
+    value
+  )
     .trim()
-    .charAt(0)
+    .charAt(
+      0
+    )
     .toUpperCase();
 }

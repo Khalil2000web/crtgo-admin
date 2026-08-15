@@ -1378,70 +1378,85 @@ export default function ProjectGeneralPage() {
   }
 
 
-  async function refresh() {
-    setBillingClock(
-      Date.now()
-    );
+async function refresh() {
+  setBillingClock(
+    Date.now()
+  );
 
+  await Promise.all([
+    queryClient.invalidateQueries({
+      queryKey: [
+        "project",
+        projectId,
+      ],
+    }),
 
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: [
-          "project",
-          projectId,
-        ],
-      }),
+    queryClient.invalidateQueries({
+      queryKey: [
+        "projects",
+      ],
+    }),
 
-      queryClient.invalidateQueries({
-        queryKey: [
-          "projects",
-        ],
-      }),
+    queryClient.invalidateQueries({
+      queryKey: [
+        "workspace-dashboard",
+      ],
+    }),
 
-      queryClient.invalidateQueries({
-        queryKey: [
-          "project-menu",
-          projectId,
-        ],
-      }),
+    ...(project?.workspace_id
+      ? [
+          queryClient.invalidateQueries({
+            queryKey: [
+              "workspace",
+              project.workspace_id,
+            ],
+          }),
+        ]
+      : []),
 
-      queryClient.invalidateQueries({
-        queryKey: [
-          "project-appearance",
-          projectId,
-        ],
-      }),
+    queryClient.invalidateQueries({
+      queryKey: [
+        "project-menu",
+        projectId,
+      ],
+    }),
 
-      queryClient.invalidateQueries({
-        queryKey: [
-          "project-languages",
-          projectId,
-        ],
-      }),
+    queryClient.invalidateQueries({
+      queryKey: [
+        "project-appearance",
+        projectId,
+      ],
+    }),
 
-      queryClient.invalidateQueries({
-        queryKey: [
-          "project-subscription",
-          projectId,
-        ],
-      }),
+    queryClient.invalidateQueries({
+      queryKey: [
+        "project-languages",
+        projectId,
+      ],
+    }),
 
-      queryClient.invalidateQueries({
-        queryKey: [
-          "project-payment-history",
-          projectId,
-        ],
-      }),
+    queryClient.invalidateQueries({
+      queryKey: [
+        "project-subscription",
+        projectId,
+      ],
+    }),
 
-      queryClient.invalidateQueries({
-        queryKey: [
-          "billing-plan",
-          "standard",
-        ],
-      }),
-    ]);
-  }
+    queryClient.invalidateQueries({
+      queryKey: [
+        "project-payment-history",
+        projectId,
+      ],
+    }),
 
+    queryClient.invalidateQueries({
+      queryKey: [
+        "billing-plan",
+        "standard",
+      ],
+    }),
+  ]);
+}
 
   async function saveChanges(
     event
@@ -2288,13 +2303,33 @@ export default function ProjectGeneralPage() {
       });
 
 
-      navigate(
-        "/",
-        {
-          replace:
-            true,
-        }
-      );
+queryClient.invalidateQueries({
+  queryKey: [
+    "workspace-dashboard",
+  ],
+});
+
+if (
+  project.workspace_id
+) {
+  queryClient.invalidateQueries({
+    queryKey: [
+      "workspace",
+      project.workspace_id,
+    ],
+  });
+}
+
+
+navigate(
+  project.workspace_id
+    ? `/workspace/${project.workspace_id}`
+    : "/",
+  {
+    replace:
+      true,
+  }
+);
     } catch (
       err
     ) {
@@ -2557,10 +2592,14 @@ export default function ProjectGeneralPage() {
         }
         className="mx-auto w-full max-w-7xl px-4 py-6 pb-32 sm:px-6"
       >
-        <Link
-          to="/"
-          className="inline-flex cursor-pointer items-center gap-2 py-2 text-sm font-black text-white/45 transition hover:text-white"
-        >
+<Link
+  to={
+    project.workspace_id
+      ? `/workspace/${project.workspace_id}`
+      : "/"
+  }
+  className="inline-flex cursor-pointer items-center gap-2 py-2 text-sm font-black text-white/45 transition hover:text-white"
+>
           <ArrowLeft
             size={
               16
@@ -2573,9 +2612,9 @@ export default function ProjectGeneralPage() {
             }
           />
 
-          {t(
-            "general.backToWebsites"
-          )}
+{dir === "rtl"
+  ? "العودة إلى مساحة العمل"
+  : "Back to business workspace"}
         </Link>
 
 

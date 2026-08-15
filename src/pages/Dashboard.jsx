@@ -17,12 +17,14 @@ import {
 } from "@tanstack/react-query";
 
 import {
-  ArrowUpRight,
+  ArrowRight,
+  Building2,
   Globe2,
   Plus,
   RefreshCw,
   Search,
-  Store,
+  ShoppingBag,
+  UtensilsCrossed,
 } from "lucide-react";
 
 import toast from "react-hot-toast";
@@ -56,75 +58,344 @@ import {
 } from "../components/ui";
 
 
-async function getCurrentUser() {
+const COPY = {
+  en: {
+    eyebrow:
+      "Carter Go Workspace",
+
+    title:
+      "Your businesses",
+
+    subtitle:
+      "One account for every business and every Carter Go service.",
+
+    newBusiness:
+      "New business",
+
+    search:
+      "Search businesses or services...",
+
+    firstBusiness:
+      "Create your first business",
+
+    firstBusinessHint:
+      "Your Carter Go services will live inside a business workspace.",
+
+    noResults:
+      "No businesses found",
+
+    noResultsHint:
+      "Try another search.",
+
+    services:
+      "Services",
+
+    menu:
+      "Menu",
+
+    store:
+      "Store",
+
+    websites:
+      "Websites",
+
+    active:
+      "Active",
+
+    soon:
+      "Soon",
+
+    openBusiness:
+      "Open business",
+
+    refresh:
+      "Refresh",
+
+    refreshed:
+      "Workspace refreshed.",
+
+    createTitle:
+      "Create a business",
+
+    createSubtitle:
+      "We'll create the business workspace and connect its first Menu service.",
+
+    businessName:
+      "Business name",
+
+    menuAddress:
+      "Menu address",
+
+    addressHint:
+      "This becomes the public menu address.",
+
+    description:
+      "Description",
+
+    phone:
+      "Phone",
+
+    whatsapp:
+      "WhatsApp",
+
+    instagram:
+      "Instagram",
+
+    create:
+      "Create business",
+
+    creating:
+      "Creating business...",
+
+    created:
+      "Business created.",
+
+    failed:
+      "Could not create the business.",
+
+    loginRequired:
+      "You are not signed in.",
+
+    nameRequired:
+      "Business name is required.",
+
+    slugRequired:
+      "A public menu address is required.",
+
+    slugUsed:
+      "That public menu address is already being used.",
+  },
+
+
+  ar: {
+    eyebrow:
+      "مساحة عمل Carter Go",
+
+    title:
+      "أعمالك",
+
+    subtitle:
+      "حساب واحد لكل أعمالك وكل خدمات Carter Go.",
+
+    newBusiness:
+      "عمل جديد",
+
+    search:
+      "ابحث في الأعمال أو الخدمات...",
+
+    firstBusiness:
+      "أنشئ أول عمل",
+
+    firstBusinessHint:
+      "خدمات Carter Go الخاصة بك ستعيش داخل مساحة عمل للنشاط.",
+
+    noResults:
+      "لم يتم العثور على أعمال",
+
+    noResultsHint:
+      "جرّب بحثاً آخر.",
+
+    services:
+      "الخدمات",
+
+    menu:
+      "القائمة",
+
+    store:
+      "المتجر",
+
+    websites:
+      "المواقع",
+
+    active:
+      "فعال",
+
+    soon:
+      "قريباً",
+
+    openBusiness:
+      "فتح العمل",
+
+    refresh:
+      "تحديث",
+
+    refreshed:
+      "تم تحديث مساحة العمل.",
+
+    createTitle:
+      "إنشاء عمل",
+
+    createSubtitle:
+      "سننشئ مساحة العمل ونربط أول خدمة قائمة بها.",
+
+    businessName:
+      "اسم العمل",
+
+    menuAddress:
+      "عنوان القائمة",
+
+    addressHint:
+      "سيصبح هذا هو عنوان القائمة العام.",
+
+    description:
+      "الوصف",
+
+    phone:
+      "الهاتف",
+
+    whatsapp:
+      "WhatsApp",
+
+    instagram:
+      "Instagram",
+
+    create:
+      "إنشاء العمل",
+
+    creating:
+      "جارٍ إنشاء العمل...",
+
+    created:
+      "تم إنشاء العمل.",
+
+    failed:
+      "تعذر إنشاء العمل.",
+
+    loginRequired:
+      "أنت غير مسجل الدخول.",
+
+    nameRequired:
+      "اسم العمل مطلوب.",
+
+    slugRequired:
+      "عنوان القائمة مطلوب.",
+
+    slugUsed:
+      "عنوان القائمة مستخدم بالفعل.",
+  },
+};
+
+
+async function loadDashboard() {
   const {
     data: {
       user,
     },
-    error,
+    error:
+      userError,
   } =
     await supabase.auth.getUser();
 
-  if (error) {
-    throw error;
+
+  if (
+    userError
+  ) {
+    throw userError;
   }
 
-  return user;
-}
 
+  if (
+    !user
+  ) {
+    return {
+      user:
+        null,
 
-async function loadProjects() {
-  const user =
-    await getCurrentUser();
-
-  if (!user) {
-    return [];
+      workspaces:
+        [],
+    };
   }
 
 
   const {
     data,
     error,
-  } = await supabase
-    .from("projects")
-    .select(`
-      id,
-      owner_id,
-      name,
-      slug,
-      status,
-      description,
-      logo_url,
-      created_at,
-      updated_at
-    `)
-    .eq(
-      "owner_id",
-      user.id
-    )
-    .order(
-      "created_at",
-      {
-        ascending: false,
-      }
-    );
+  } =
+    await supabase
+      .from(
+        "workspaces"
+      )
+      .select(`
+        id,
+        owner_id,
+        name,
+        created_at,
+        updated_at,
+        workspace_services (
+          id,
+          service_key,
+          status
+        ),
+        projects (
+          id,
+          workspace_id,
+          name,
+          slug,
+          status,
+          description,
+          logo_url
+        )
+      `)
+      .order(
+        "created_at",
+        {
+          ascending:
+            false,
+        }
+      );
 
 
-  if (error) {
+  if (
+    error
+  ) {
     throw error;
   }
 
 
-  return data || [];
+  return {
+    user,
+
+    workspaces:
+      (
+        data ||
+        []
+      ).map(
+        (
+          workspace
+        ) => ({
+          ...workspace,
+
+          workspace_services:
+            Array.isArray(
+              workspace.workspace_services
+            )
+              ? workspace.workspace_services
+              : [],
+
+          projects:
+            Array.isArray(
+              workspace.projects
+            )
+              ? workspace.projects
+              : [],
+        })
+      ),
+  };
 }
 
 
 export default function Dashboard() {
   const {
-    t,
     dir,
   } =
     useAdminI18n();
+
+
+  const copy =
+    dir ===
+    "rtl"
+      ? COPY.ar
+      : COPY.en;
 
 
   const queryClient =
@@ -141,8 +412,8 @@ export default function Dashboard() {
 
 
   const [
-    newProjectOpen,
-    setNewProjectOpen,
+    newBusinessOpen,
+    setNewBusinessOpen,
   ] =
     useState(
       false
@@ -150,22 +421,27 @@ export default function Dashboard() {
 
 
   const {
-    data: projects = [],
+    data,
     isLoading,
     error,
     isFetching,
   } =
     useQuery({
       queryKey: [
-        "projects",
+        "workspace-dashboard",
       ],
 
       queryFn:
-        loadProjects,
+        loadDashboard,
     });
 
 
-  const filteredProjects =
+  const workspaces =
+    data?.workspaces ||
+    [];
+
+
+  const filtered =
     useMemo(
       () => {
         const q =
@@ -174,20 +450,40 @@ export default function Dashboard() {
             .toLowerCase();
 
 
-        if (!q) {
-          return projects;
+        if (
+          !q
+        ) {
+          return workspaces;
         }
 
 
-        return projects.filter(
+        return workspaces.filter(
           (
-            project
+            workspace
           ) =>
             [
-              project.name,
-              project.slug,
-              project.description,
-              project.status,
+              workspace.name,
+
+              ...workspace
+                .workspace_services
+                .map(
+                  (
+                    service
+                  ) =>
+                    service.service_key
+                ),
+
+              ...workspace
+                .projects
+                .flatMap(
+                  (
+                    project
+                  ) => [
+                    project.name,
+                    project.slug,
+                    project.description,
+                  ]
+                ),
             ]
               .filter(
                 Boolean
@@ -202,7 +498,7 @@ export default function Dashboard() {
         );
       },
       [
-        projects,
+        workspaces,
         search,
       ]
     );
@@ -211,36 +507,32 @@ export default function Dashboard() {
   async function refresh() {
     await queryClient.invalidateQueries({
       queryKey: [
-        "projects",
+        "workspace-dashboard",
       ],
     });
 
 
     toast.success(
-      t(
-        "dashboard.refreshed"
-      )
+      copy.refreshed
     );
   }
 
 
   return (
     <main
-      dir={
-        dir
-      }
-      className="h-full min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-[#090909] pb-20 text-white"
+      dir={dir}
+      className="h-full min-w-0 overflow-y-auto overflow-x-hidden bg-[#090909] pb-24 text-white"
     >
       <PageHeader
-        eyebrow={t(
-          "dashboard.workspace"
-        )}
-        title={t(
-          "nav.websites"
-        )}
-        subtitle={t(
-          "dashboard.subtitle"
-        )}
+        eyebrow={
+          copy.eyebrow
+        }
+        title={
+          copy.title
+        }
+        subtitle={
+          copy.subtitle
+        }
         action={
           <Button
             variant="secondary"
@@ -249,9 +541,7 @@ export default function Dashboard() {
             }
           >
             <RefreshCw
-              size={
-                17
-              }
+              size={17}
               className={
                 isFetching
                   ? "animate-spin"
@@ -259,42 +549,36 @@ export default function Dashboard() {
               }
             />
 
-            {t(
-              "common.refresh"
-            )}
+            {
+              copy.refresh
+            }
           </Button>
         }
       />
 
 
       <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="mb-4">
-          <Button
-            onClick={() =>
-              setNewProjectOpen(
-                true
-              )
-            }
-          >
-            <Plus
-              size={
-                17
-              }
-            />
+        <Button
+          onClick={() =>
+            setNewBusinessOpen(
+              true
+            )
+          }
+        >
+          <Plus
+            size={17}
+          />
 
-            {t(
-              "project.newWebsite"
-            )}
-          </Button>
-        </div>
+          {
+            copy.newBusiness
+          }
+        </Button>
 
 
-        <div className="rounded-[28px] border border-white/10 bg-[#111111] p-3">
+        <div className="mt-5 rounded-[28px] border border-white/10 bg-[#111111] p-3">
           <div className="relative">
             <Search
-              size={
-                17
-              }
+              size={17}
               className={`absolute top-1/2 -translate-y-1/2 text-white/35 ${
                 dir ===
                 "rtl"
@@ -302,7 +586,6 @@ export default function Dashboard() {
                   : "left-4"
               }`}
             />
-
 
             <input
               value={
@@ -315,10 +598,10 @@ export default function Dashboard() {
                   event.target.value
                 )
               }
-              placeholder={t(
-                "dashboard.searchPlaceholder"
-              )}
-              className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/25 text-sm font-bold text-white outline-none placeholder:text-white/25 transition focus:border-[#ff7a00] ${
+              placeholder={
+                copy.search
+              }
+              className={`min-h-12 w-full rounded-2xl border border-white/10 bg-black/25 text-sm font-bold text-white outline-none placeholder:text-white/25 focus:border-[#ff7a00] ${
                 dir ===
                 "rtl"
                   ? "pl-4 pr-11"
@@ -331,16 +614,15 @@ export default function Dashboard() {
 
         {error && (
           <p className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
-            {error?.message ||
-              t(
-                "dashboard.loadFailed"
-              )}
+            {
+              error.message
+            }
           </p>
         )}
 
 
         {isLoading ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({
               length:
                 6,
@@ -350,33 +632,34 @@ export default function Dashboard() {
                 index
               ) => (
                 <SkeletonCard
-                  key={
-                    index
-                  }
-                  className="h-64"
+                  key={index}
+                  className="h-80"
                 />
               )
             )}
           </div>
-        ) : filteredProjects.length ? (
+        ) : filtered.length ? (
           <motion.div
             layout
-            className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+            className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3"
           >
-            {filteredProjects.map(
+            {filtered.map(
               (
-                project,
+                workspace,
                 index
               ) => (
-                <ProjectCard
+                <WorkspaceCard
                   key={
-                    project.id
+                    workspace.id
                   }
-                  project={
-                    project
+                  workspace={
+                    workspace
                   }
                   index={
                     index
+                  }
+                  copy={
+                    copy
                   }
                 />
               )
@@ -386,48 +669,36 @@ export default function Dashboard() {
           <div className="mt-6">
             <EmptyState
               icon={
-                <Globe2
-                  size={
-                    38
-                  }
+                <Building2
+                  size={38}
                 />
               }
               title={
                 search
-                  ? t(
-                      "dashboard.noResults"
-                    )
-                  : t(
-                      "dashboard.firstWebsite"
-                    )
+                  ? copy.noResults
+                  : copy.firstBusiness
               }
               text={
                 search
-                  ? t(
-                      "dashboard.noResultsHint"
-                    )
-                  : t(
-                      "dashboard.firstWebsiteHint"
-                    )
+                  ? copy.noResultsHint
+                  : copy.firstBusinessHint
               }
               action={
                 !search && (
                   <Button
                     onClick={() =>
-                      setNewProjectOpen(
+                      setNewBusinessOpen(
                         true
                       )
                     }
                   >
                     <Plus
-                      size={
-                        17
-                      }
+                      size={17}
                     />
 
-                    {t(
-                      "project.newWebsite"
-                    )}
+                    {
+                      copy.newBusiness
+                    }
                   </Button>
                 )
               }
@@ -437,23 +708,27 @@ export default function Dashboard() {
       </section>
 
 
-      <NewProjectModal
+      <NewBusinessModal
         open={
-          newProjectOpen
+          newBusinessOpen
         }
         onClose={() =>
-          setNewProjectOpen(
+          setNewBusinessOpen(
             false
           )
         }
+        copy={
+          copy
+        }
         onDone={() => {
-          setNewProjectOpen(
+          setNewBusinessOpen(
             false
           );
 
+
           queryClient.invalidateQueries({
             queryKey: [
-              "projects",
+              "workspace-dashboard",
             ],
           });
         }}
@@ -463,56 +738,34 @@ export default function Dashboard() {
 }
 
 
-function ProjectCard({
-  project,
+function WorkspaceCard({
+  workspace,
   index,
+  copy,
 }) {
-  const {
-    t,
-  } =
-    useAdminI18n();
+  const services =
+    workspace.workspace_services;
 
 
-  const publicUrl =
-    getPublicProjectUrl(
-      project.slug
+  const project =
+    workspace.projects[0] ||
+    null;
+
+
+  const menuActive =
+    services.some(
+      (
+        service
+      ) =>
+        service.service_key ===
+          "menu" &&
+        service.status ===
+          "active"
     );
 
 
-  function getStatusLabel() {
-    if (
-      project.status ===
-      "active"
-    ) {
-      return t(
-        "common.active"
-      );
-    }
-
-    if (
-      project.status ===
-      "archived"
-    ) {
-      return t(
-        "common.archived"
-      );
-    }
-
-    if (
-      project.status ===
-      "draft"
-    ) {
-      return t(
-        "common.draft"
-      );
-    }
-
-    return project.status;
-  }
-
-
   return (
-    <motion.div
+    <motion.article
       initial={{
         opacity:
           0,
@@ -535,14 +788,15 @@ function ProjectCard({
         duration:
           0.18,
       }}
+      className="overflow-hidden rounded-[30px] border border-white/10 bg-[#111111] shadow-xl shadow-black/20"
     >
       <Link
-        to={`/project/${project.id}/general`}
-        className="group block min-h-64 rounded-[30px] border border-white/10 bg-[#111111]/95 p-5 shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-[#ff7a00]/50 hover:bg-[#161616]"
+        to={`/workspace/${workspace.id}`}
+        className="group block p-5 transition hover:bg-white/[0.02]"
       >
         <div className="flex items-start justify-between gap-4">
-          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.04] text-[#ff7a00]">
-            {project.logo_url ? (
+          <div className="flex size-16 items-center justify-center overflow-hidden rounded-[22px] border border-[#ff7a00]/20 bg-[#ff7a00]/10 text-[#ff8d22]">
+            {project?.logo_url ? (
               <img
                 src={
                   project.logo_url
@@ -551,50 +805,29 @@ function ProjectCard({
                 className="h-full w-full object-cover"
               />
             ) : (
-              <Store
-                size={
-                  28
-                }
+              <Building2
+                size={27}
               />
             )}
           </div>
 
 
-          <Badge
-            tone={
-              project.status ===
-              "active"
-                ? "success"
-                : project.status ===
-                    "archived"
-                  ? "warning"
-                  : "neutral"
-            }
-          >
-            {getStatusLabel()}
-          </Badge>
+          <ArrowRight
+            size={18}
+            className="text-white/25 transition group-hover:translate-x-1 group-hover:text-[#ff7a00]"
+          />
         </div>
 
 
-        <h2 className="mt-7 truncate text-2xl font-black tracking-[-0.05em]">
+        <h2 className="mt-6 truncate text-2xl font-black tracking-[-0.05em]">
           {
-            project.name
+            workspace.name
           }
         </h2>
 
 
-        <p
-          className="mt-2 truncate text-sm font-bold text-white/35"
-          dir="ltr"
-        >
-          {
-            publicUrl
-          }
-        </p>
-
-
-        {project.description && (
-          <p className="mt-4 line-clamp-2 text-sm font-bold leading-6 text-white/40">
+        {project?.description && (
+          <p className="mt-2 line-clamp-2 text-sm font-bold leading-6 text-white/35">
             {
               project.description
             }
@@ -602,38 +835,142 @@ function ProjectCard({
         )}
 
 
-        <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-          <span className="text-xs font-black uppercase text-white/30">
-            {t(
-              "dashboard.openWebsite"
-            )}
-          </span>
+        <p className="mt-6 text-[10px] font-black uppercase tracking-[0.16em] text-white/25">
+          {
+            copy.services
+          }
+        </p>
 
 
-          <ArrowUpRight
-            size={
-              19
+        <div className="mt-3 grid gap-2">
+          <MiniService
+            icon={
+              <UtensilsCrossed
+                size={15}
+              />
             }
-            className="text-white/30 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#ff7a00]"
+            label={
+              copy.menu
+            }
+            active={
+              menuActive
+            }
+            activeLabel={
+              copy.active
+            }
+            soonLabel={
+              copy.soon
+            }
+          />
+
+          <MiniService
+            icon={
+              <ShoppingBag
+                size={15}
+              />
+            }
+            label={
+              copy.store
+            }
+            active={
+              false
+            }
+            activeLabel={
+              copy.active
+            }
+            soonLabel={
+              copy.soon
+            }
+          />
+
+          <MiniService
+            icon={
+              <Globe2
+                size={15}
+              />
+            }
+            label={
+              copy.websites
+            }
+            active={
+              false
+            }
+            activeLabel={
+              copy.active
+            }
+            soonLabel={
+              copy.soon
+            }
           />
         </div>
+
+
+        <div className="mt-5 border-t border-white/10 pt-4 text-xs font-black text-[#ff8d22]">
+          {
+            copy.openBusiness
+          }
+        </div>
       </Link>
-    </motion.div>
+    </motion.article>
   );
 }
 
 
-function NewProjectModal({
+function MiniService({
+  icon,
+  label,
+  active,
+  activeLabel,
+  soonLabel,
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-black/20 px-3 py-2.5">
+      <span
+        className={
+          active
+            ? "text-[#ff8d22]"
+            : "text-white/20"
+        }
+      >
+        {
+          icon
+        }
+      </span>
+
+      <span
+        className={`min-w-0 flex-1 truncate text-xs font-black ${
+          active
+            ? "text-white/65"
+            : "text-white/30"
+        }`}
+      >
+        {
+          label
+        }
+      </span>
+
+      <Badge
+        tone={
+          active
+            ? "success"
+            : "neutral"
+        }
+      >
+        {active
+          ? activeLabel
+          : soonLabel}
+      </Badge>
+    </div>
+  );
+}
+
+
+function NewBusinessModal({
   open,
   onClose,
   onDone,
+  copy,
 }) {
-  const {
-    t,
-  } =
-    useAdminI18n();
-
-
   const [
     loading,
     setLoading,
@@ -678,10 +1015,7 @@ function NewProjectModal({
       ) => {
         const next = {
           ...current,
-
-          [
-            key
-          ]:
+          [key]:
             value,
         };
 
@@ -703,14 +1037,49 @@ function NewProjectModal({
   }
 
 
+  function reset() {
+    setForm({
+      name:
+        "",
+
+      slug:
+        "",
+
+      description:
+        "",
+
+      phone:
+        "",
+
+      whatsapp:
+        "",
+
+      instagram:
+        "",
+    });
+  }
+
+
   async function submit(
     event
   ) {
     event.preventDefault();
 
+
+    if (
+      loading
+    ) {
+      return;
+    }
+
+
     setLoading(
       true
     );
+
+
+    let workspaceId =
+      null;
 
 
     try {
@@ -731,11 +1100,11 @@ function NewProjectModal({
       }
 
 
-      if (!user) {
+      if (
+        !user
+      ) {
         throw new Error(
-          t(
-            "dashboard.notLoggedIn"
-          )
+          copy.loginRequired
         );
       }
 
@@ -750,20 +1119,20 @@ function NewProjectModal({
         );
 
 
-      if (!name) {
+      if (
+        !name
+      ) {
         throw new Error(
-          t(
-            "general.nameRequired"
-          )
+          copy.nameRequired
         );
       }
 
 
-      if (!slug) {
+      if (
+        !slug
+      ) {
         throw new Error(
-          t(
-            "general.hostnameRequired"
-          )
+          copy.slugRequired
         );
       }
 
@@ -796,12 +1165,73 @@ function NewProjectModal({
       }
 
 
-      if (existing) {
+      if (
+        existing
+      ) {
         throw new Error(
-          t(
-            "dashboard.hostnameUsed"
-          )
+          copy.slugUsed
         );
+      }
+
+
+      const {
+        data:
+          workspace,
+
+        error:
+          workspaceError,
+      } =
+        await supabase
+          .from(
+            "workspaces"
+          )
+          .insert({
+            owner_id:
+              user.id,
+
+            name,
+          })
+          .select(
+            "id"
+          )
+          .single();
+
+
+      if (
+        workspaceError
+      ) {
+        throw workspaceError;
+      }
+
+
+      workspaceId =
+        workspace.id;
+
+
+      const {
+        error:
+          serviceError,
+      } =
+        await supabase
+          .from(
+            "workspace_services"
+          )
+          .insert({
+            workspace_id:
+              workspace.id,
+
+            service_key:
+              "menu",
+
+            status:
+              "active",
+          });
+
+
+      if (
+        serviceError
+      ) {
+        throw serviceError;
       }
 
 
@@ -817,24 +1247,31 @@ function NewProjectModal({
             owner_id:
               user.id,
 
+            workspace_id:
+              workspace.id,
+
             name,
 
             slug,
 
             description:
-              form.description.trim() ||
+              form.description
+                .trim() ||
               null,
 
             phone:
-              form.phone.trim() ||
+              form.phone
+                .trim() ||
               null,
 
             whatsapp:
-              form.whatsapp.trim() ||
+              form.whatsapp
+                .trim() ||
               null,
 
             instagram:
-              form.instagram.trim() ||
+              form.instagram
+                .trim() ||
               null,
 
             status:
@@ -849,43 +1286,59 @@ function NewProjectModal({
       }
 
 
+      /*
+       * Creation is now complete.
+       * Don't allow later UI errors to
+       * trigger workspace rollback.
+       */
+      workspaceId =
+        null;
+
+
       toast.success(
-        t(
-          "dashboard.created"
-        )
+        copy.created
       );
 
 
-      setForm({
-        name:
-          "",
-
-        slug:
-          "",
-
-        description:
-          "",
-
-        phone:
-          "",
-
-        whatsapp:
-          "",
-
-        instagram:
-          "",
-      });
+      reset();
 
 
       onDone();
     } catch (
-      err
+      error
     ) {
+      if (
+        workspaceId
+      ) {
+        const {
+          error:
+            rollbackError,
+        } =
+          await supabase
+            .from(
+              "workspaces"
+            )
+            .delete()
+            .eq(
+              "id",
+              workspaceId
+            );
+
+
+        if (
+          rollbackError
+        ) {
+          console.error(
+            "[CRTRGO] Workspace rollback failed:",
+            rollbackError
+          );
+        }
+      }
+
+
       toast.error(
-        err?.message ||
-          t(
-            "dashboard.createFailed"
-          )
+        error?.message ||
+          copy.failed
       );
     } finally {
       setLoading(
@@ -907,12 +1360,10 @@ function NewProjectModal({
 
   return (
     <Modal
-      open={
-        open
+      open={open}
+      title={
+        copy.createTitle
       }
-      title={t(
-        "project.newWebsite"
-      )}
       onClose={
         onClose
       }
@@ -923,13 +1374,23 @@ function NewProjectModal({
         }
         className="grid gap-4"
       >
+        <p className="rounded-2xl border border-[#ff7a00]/20 bg-[#ff7a00]/10 p-4 text-xs font-bold leading-5 text-[#ffd0a3]/65">
+          {
+            copy.createSubtitle
+          }
+        </p>
+
+
         <Field
-          label={t(
-            "project.websiteName"
-          )}
+          label={
+            copy.businessName
+          }
         >
           <Input
             required
+            disabled={
+              loading
+            }
             value={
               form.name
             }
@@ -941,26 +1402,25 @@ function NewProjectModal({
                 event.target.value
               )
             }
-            placeholder={t(
-              "dashboard.websiteNamePlaceholder"
-            )}
+            placeholder="Juicy Rest"
           />
         </Field>
 
 
         <Field
-          label={t(
-            "project.hostname"
-          )}
+          label={
+            copy.menuAddress
+          }
           hint={
             previewUrl ||
-            t(
-              "dashboard.hostnameHint"
-            )
+            copy.addressHint
           }
         >
           <Input
             required
+            disabled={
+              loading
+            }
             value={
               form.slug
             }
@@ -980,18 +1440,21 @@ function NewProjectModal({
                 )
               )
             }
-            placeholder="burger-house"
+            placeholder="juicy-rest"
             dir="ltr"
           />
         </Field>
 
 
         <Field
-          label={t(
-            "project.description"
-          )}
+          label={
+            copy.description
+          }
         >
           <Textarea
+            disabled={
+              loading
+            }
             value={
               form.description
             }
@@ -1003,20 +1466,20 @@ function NewProjectModal({
                 event.target.value
               )
             }
-            placeholder={t(
-              "dashboard.descriptionPlaceholder"
-            )}
           />
         </Field>
 
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label={t(
-              "general.phone"
-            )}
+            label={
+              copy.phone
+            }
           >
             <Input
+              disabled={
+                loading
+              }
               value={
                 form.phone
               }
@@ -1028,14 +1491,20 @@ function NewProjectModal({
                   event.target.value
                 )
               }
-              placeholder="0500000000"
               dir="ltr"
             />
           </Field>
 
 
-          <Field label="WhatsApp">
+          <Field
+            label={
+              copy.whatsapp
+            }
+          >
             <Input
+              disabled={
+                loading
+              }
               value={
                 form.whatsapp
               }
@@ -1047,15 +1516,21 @@ function NewProjectModal({
                   event.target.value
                 )
               }
-              placeholder="972500000000"
               dir="ltr"
             />
           </Field>
         </div>
 
 
-        <Field label="Instagram">
+        <Field
+          label={
+            copy.instagram
+          }
+        >
           <Input
+            disabled={
+              loading
+            }
             value={
               form.instagram
             }
@@ -1075,27 +1550,25 @@ function NewProjectModal({
 
         <Button
           type="submit"
+          size="lg"
           loading={
             loading
           }
-          loadingText={t(
-            "dashboard.creating"
-          )}
+          loadingText={
+            copy.creating
+          }
           disabled={
             loading ||
             !form.name.trim()
           }
-          size="lg"
         >
           <Plus
-            size={
-              17
-            }
+            size={17}
           />
 
-          {t(
-            "dashboard.createWebsite"
-          )}
+          {
+            copy.create
+          }
         </Button>
       </form>
     </Modal>
