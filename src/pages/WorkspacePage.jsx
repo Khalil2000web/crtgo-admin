@@ -13,9 +13,13 @@ import {
   ArrowUpRight,
   Building2,
   CheckCircle2,
+  CreditCard,
+  Crown,
   Globe2,
+  Image as ImageIcon,
   Loader2,
   ShoppingBag,
+  Users,
   UtensilsCrossed,
 } from "lucide-react";
 
@@ -45,7 +49,7 @@ const COPY = {
       "Business workspace",
 
     subtitle:
-      "Manage the CRTRGO services connected to this business.",
+      "Manage the CRTRGO services and workspace controls connected to this business.",
 
     back:
       "All businesses",
@@ -92,9 +96,6 @@ const COPY = {
     publicMenu:
       "Public menu",
 
-    openPublic:
-      "Open public menu",
-
     owner:
       "Owner",
 
@@ -103,6 +104,42 @@ const COPY = {
 
     connectedServices:
       "Connected services",
+
+    workspaceControls:
+      "Workspace controls",
+
+    workspaceControlsHint:
+      "Manage the people, ownership, assets and billing behind this workspace.",
+
+    ownerOnly:
+      "Owner controls",
+
+    members:
+      "Members",
+
+    membersDescription:
+      "Add Carter Go accounts and control workspace roles.",
+
+    ownership:
+      "Ownership",
+
+    ownershipDescription:
+      "Review transfer readiness and change the workspace owner.",
+
+    assets:
+      "Service assets",
+
+    assetsDescription:
+      "Prepare Menu images and other workspace files for an ownership transfer.",
+
+    billing:
+      "Billing handoff",
+
+    billingDescription:
+      "Transfer billing responsibility without exposing the current owner's payment details.",
+
+    open:
+      "Open",
 
     loadFailed:
       "Could not load this business workspace.",
@@ -117,7 +154,7 @@ const COPY = {
       "مساحة عمل النشاط",
 
     subtitle:
-      "أدر خدمات CRTRGO المرتبطة بهذا النشاط.",
+      "أدر خدمات CRTRGO وإعدادات مساحة العمل المرتبطة بهذا النشاط.",
 
     back:
       "كل الأعمال",
@@ -164,9 +201,6 @@ const COPY = {
     publicMenu:
       "القائمة العامة",
 
-    openPublic:
-      "فتح القائمة العامة",
-
     owner:
       "المالك",
 
@@ -175,6 +209,42 @@ const COPY = {
 
     connectedServices:
       "الخدمات المرتبطة",
+
+    workspaceControls:
+      "إدارة مساحة العمل",
+
+    workspaceControlsHint:
+      "أدر الأعضاء والملكية والملفات والفوترة الخاصة بمساحة العمل.",
+
+    ownerOnly:
+      "إعدادات المالك",
+
+    members:
+      "الأعضاء",
+
+    membersDescription:
+      "أضف حسابات Carter Go وحدد أدوار أعضاء مساحة العمل.",
+
+    ownership:
+      "الملكية",
+
+    ownershipDescription:
+      "راجع جاهزية النقل وقم بتغيير مالك مساحة العمل.",
+
+    assets:
+      "ملفات الخدمات",
+
+    assetsDescription:
+      "جهّز صور القائمة وملفات مساحة العمل لنقل الملكية.",
+
+    billing:
+      "نقل الفوترة",
+
+    billingDescription:
+      "انقل مسؤولية الفوترة دون كشف بيانات دفع المالك الحالي.",
+
+    open:
+      "فتح",
 
     loadFailed:
       "تعذر تحميل مساحة العمل.",
@@ -267,6 +337,7 @@ async function loadWorkspace(
 
   return {
     user,
+
     workspace: {
       ...workspace,
 
@@ -338,8 +409,10 @@ export default function WorkspacePage() {
   ) {
     return (
       <main
-        dir={dir}
-        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+        dir={
+          dir
+        }
+        className="min-w-0 bg-[#090909] p-5 text-white"
       >
         <SkeletonCard className="h-36" />
 
@@ -359,8 +432,10 @@ export default function WorkspacePage() {
   ) {
     return (
       <main
-        dir={dir}
-        className="h-full overflow-y-auto bg-[#090909] p-5 text-white"
+        dir={
+          dir
+        }
+        className="min-w-0 bg-[#090909] p-5 text-white"
       >
         <p className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm font-bold text-red-200">
           {error?.message ||
@@ -426,8 +501,10 @@ export default function WorkspacePage() {
 
   return (
     <main
-      dir={dir}
-      className="h-full min-w-0 overflow-y-auto overflow-x-hidden bg-[#090909] pb-24 text-white"
+      dir={
+        dir
+      }
+      className="min-w-0 bg-[#090909] pb-24 text-white"
     >
       <PageHeader
         eyebrow={
@@ -443,7 +520,9 @@ export default function WorkspacePage() {
           isFetching ? (
             <Badge tone="neutral">
               <Loader2
-                size={13}
+                size={
+                  13
+                }
                 className="animate-spin"
               />
 
@@ -455,13 +534,14 @@ export default function WorkspacePage() {
 
 
       <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
-
         <Link
           to="/"
           className="inline-flex items-center gap-2 py-2 text-sm font-black text-white/40 transition hover:text-white"
         >
           <ArrowLeft
-            size={16}
+            size={
+              16
+            }
             className={
               dir ===
               "rtl"
@@ -479,6 +559,25 @@ export default function WorkspacePage() {
         {/* BUSINESS OVERVIEW */}
 
         <Card className="mt-5 overflow-hidden">
+          <div className="border-b border-white/[0.07] px-5 py-3 sm:px-6">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-white/25">
+                {
+                  copy.overview
+                }
+              </span>
+
+              <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-[0.08em] text-white/25">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#ff7a00]" />
+
+                {isOwner
+                  ? copy.owner
+                  : copy.member}
+              </span>
+            </div>
+          </div>
+
+
           <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="flex min-w-0 items-center gap-4">
               <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-[22px] border border-[#ff7a00]/20 bg-[#ff7a00]/10 text-[#ff8d22]">
@@ -493,7 +592,9 @@ export default function WorkspacePage() {
                   />
                 ) : (
                   <Building2
-                    size={27}
+                    size={
+                      27
+                    }
                   />
                 )}
               </div>
@@ -517,7 +618,9 @@ export default function WorkspacePage() {
 
                   <Badge tone="success">
                     <CheckCircle2
-                      size={13}
+                      size={
+                        13
+                      }
                     />
 
                     {activeServiceCount}{" "}
@@ -541,10 +644,141 @@ export default function WorkspacePage() {
         </Card>
 
 
+        {/* WORKSPACE CONTROLS */}
+
+        {isOwner && (
+          <>
+            <div className="mt-10 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#ff7a00]">
+                  {
+                    copy.ownerOnly
+                  }
+                </div>
+
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
+                  {
+                    copy.workspaceControls
+                  }
+                </h2>
+
+                <p className="mt-1 max-w-2xl text-sm font-bold leading-6 text-white/35">
+                  {
+                    copy.workspaceControlsHint
+                  }
+                </p>
+              </div>
+            </div>
+
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <WorkspaceControlCard
+                icon={
+                  <Users
+                    size={
+                      20
+                    }
+                  />
+                }
+                title={
+                  copy.members
+                }
+                description={
+                  copy.membersDescription
+                }
+                href={`/workspace/${workspaceId}/members`}
+                actionLabel={
+                  copy.open
+                }
+                dir={
+                  dir
+                }
+              />
+
+
+              <WorkspaceControlCard
+                icon={
+                  <Crown
+                    size={
+                      20
+                    }
+                  />
+                }
+                title={
+                  copy.ownership
+                }
+                description={
+                  copy.ownershipDescription
+                }
+                href={`/workspace/${workspaceId}/ownership`}
+                actionLabel={
+                  copy.open
+                }
+                dir={
+                  dir
+                }
+              />
+
+
+              <WorkspaceControlCard
+                icon={
+                  <ImageIcon
+                    size={
+                      20
+                    }
+                  />
+                }
+                title={
+                  copy.assets
+                }
+                description={
+                  copy.assetsDescription
+                }
+                href={`/workspace/${workspaceId}/asset-handoff`}
+                actionLabel={
+                  copy.open
+                }
+                dir={
+                  dir
+                }
+              />
+
+
+              <WorkspaceControlCard
+                icon={
+                  <CreditCard
+                    size={
+                      20
+                    }
+                  />
+                }
+                title={
+                  copy.billing
+                }
+                description={
+                  copy.billingDescription
+                }
+                href={`/workspace/${workspaceId}/billing-handoff`}
+                actionLabel={
+                  copy.open
+                }
+                dir={
+                  dir
+                }
+              />
+            </div>
+          </>
+        )}
+
+
         {/* SERVICES HEADER */}
 
-        <div className="mt-8">
-          <h2 className="text-3xl font-black tracking-[-0.05em]">
+        <div className="mt-12">
+          <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#ff7a00]">
+            CRTRGO
+          </div>
+
+          <h2 className="mt-2 text-3xl font-black tracking-[-0.05em]">
             {
               copy.services
             }
@@ -561,13 +795,14 @@ export default function WorkspacePage() {
         {/* SERVICES GRID */}
 
         <div className="mt-5 grid gap-5 lg:grid-cols-3">
-
           {/* MENU */}
 
           <ServiceCard
             icon={
               <UtensilsCrossed
-                size={25}
+                size={
+                  25
+                }
               />
             }
             title={
@@ -591,6 +826,9 @@ export default function WorkspacePage() {
             }
             actionLabel={
               copy.manage
+            }
+            dir={
+              dir
             }
           >
             {menuProject && (
@@ -626,7 +864,9 @@ export default function WorkspacePage() {
 
 
                   <ArrowUpRight
-                    size={15}
+                    size={
+                      15
+                    }
                     className="shrink-0"
                   />
                 </a>
@@ -640,7 +880,9 @@ export default function WorkspacePage() {
           <ServiceCard
             icon={
               <ShoppingBag
-                size={25}
+                size={
+                  25
+                }
               />
             }
             title={
@@ -652,6 +894,9 @@ export default function WorkspacePage() {
             status={
               copy.comingSoon
             }
+            dir={
+              dir
+            }
           />
 
 
@@ -660,7 +905,9 @@ export default function WorkspacePage() {
           <ServiceCard
             icon={
               <Globe2
-                size={25}
+                size={
+                  25
+                }
               />
             }
             title={
@@ -672,10 +919,82 @@ export default function WorkspacePage() {
             status={
               copy.comingSoon
             }
+            dir={
+              dir
+            }
           />
         </div>
       </section>
     </main>
+  );
+}
+
+
+function WorkspaceControlCard({
+  icon,
+  title,
+  description,
+  href,
+  actionLabel,
+  dir,
+}) {
+  return (
+    <Link
+      to={
+        href
+      }
+      className="group flex min-h-[190px] flex-col border border-white/[0.08] bg-[#101010] p-5 transition hover:border-[#ff7a00]/40 hover:bg-[#141414]"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex size-10 items-center justify-center bg-[#ff7a00]/10 text-[#ff8d22]">
+          {
+            icon
+          }
+        </div>
+
+        <ArrowUpRight
+          size={
+            16
+          }
+          className="text-white/20 transition group-hover:text-[#ff8d22]"
+        />
+      </div>
+
+
+      <h3 className="mt-5 text-lg font-black tracking-[-0.03em]">
+        {
+          title
+        }
+      </h3>
+
+
+      <p className="mt-2 flex-1 text-xs font-bold leading-5 text-white/35">
+        {
+          description
+        }
+      </p>
+
+
+      <div className="mt-5 flex items-center gap-2 border-t border-white/[0.07] pt-4 font-mono text-[8px] uppercase tracking-[0.07em] text-[#ff8d22]">
+        <span>
+          {
+            actionLabel
+          }
+        </span>
+
+        <ArrowRight
+          size={
+            13
+          }
+          className={
+            dir ===
+            "rtl"
+              ? "rotate-180"
+              : ""
+          }
+        />
+      </div>
+    </Link>
   );
 }
 
@@ -689,6 +1008,7 @@ function ServiceCard({
   href = null,
   actionLabel = "",
   children = null,
+  dir,
 }) {
   const content = (
     <>
@@ -754,7 +1074,15 @@ function ServiceCard({
           </span>
 
           <ArrowRight
-            size={17}
+            size={
+              17
+            }
+            className={
+              dir ===
+              "rtl"
+                ? "rotate-180"
+                : ""
+            }
           />
         </div>
       )}
@@ -767,7 +1095,9 @@ function ServiceCard({
   ) {
     return (
       <Link
-        to={href}
+        to={
+          href
+        }
         className="group block rounded-[30px] border border-white/10 bg-[#111111] p-5 transition hover:-translate-y-1 hover:border-[#ff7a00]/35 hover:bg-[#151515]"
       >
         {
