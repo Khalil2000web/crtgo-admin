@@ -53,7 +53,7 @@ export default function AuthPage() {
       <header className="mx-auto flex max-w-6xl items-center py-6">
         <div>
           <div className="text-xl font-black tracking-[-0.05em]" dir="ltr">CRTGO</div>
-          <div className="text-xs font-bold text-white/35">لوحة إدارة المطعم</div>
+          <div className="text-xs font-bold text-white/35">إدارة المطعم</div>
         </div>
       </header>
 
@@ -61,7 +61,7 @@ export default function AuthPage() {
         <form onSubmit={handleSubmit} className="w-full max-w-md rounded-[30px] border border-white/10 bg-[#111] p-6 shadow-2xl sm:p-8">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#ff7a00] text-black"><LockKeyhole size={20} /></div>
           <h1 className="mt-6 text-4xl font-black tracking-[-0.055em]">تسجيل الدخول</h1>
-          <p className="mt-2 text-sm font-bold leading-6 text-white/40">هذه اللوحة مخصصة لعملاء CRTGO. الحسابات يتم إنشاؤها من طرفنا فقط.</p>
+          <p className="mt-2 text-sm font-bold leading-6 text-white/40">أدخل بيانات حسابك.</p>
 
           <label className="mt-7 block text-xs font-black text-white/55">البريد الإلكتروني</label>
           <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" autoComplete="email" dir="ltr" className="input mt-2" />
