@@ -27,7 +27,7 @@ export default function AppShell() {
       </NavLink>
       <NavLink to="/menu" className={({ isActive }) => navClass(isActive)}>
         <Menu size={18} />
-        <span>إدارة القائمة</span>
+        <span>القائمة</span>
       </NavLink>
       <NavLink to="/billing" className={({ isActive }) => navClass(isActive)}>
         <CreditCard size={18} />
@@ -37,8 +37,8 @@ export default function AppShell() {
   );
 
   return (
-    <main dir="rtl" className="flex min-h-screen bg-[#080808] text-white">
-      <aside className="fixed inset-y-0 left-0 hidden w-72 shrink-0 border-r border-white/10 bg-[#0b0b0b] p-4 lg:flex lg:flex-col">
+    <main dir="rtl" className="flex h-dvh min-h-0 overflow-hidden bg-[#080808] text-white">
+      <aside className="fixed inset-y-0 left-0 hidden h-dvh w-72 shrink-0 overflow-y-auto border-r border-white/10 bg-[#0b0b0b] p-4 lg:flex lg:flex-col">
         <Brand />
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
@@ -58,7 +58,7 @@ export default function AppShell() {
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 lg:hidden" onMouseDown={(e) => e.target === e.currentTarget && setMobileOpen(false)}>
-          <aside className="flex h-full w-80 max-w-[88vw] flex-col border-r border-white/10 bg-[#0b0b0b] p-4" dir="rtl">
+          <aside className="flex h-full w-80 max-w-[88vw] flex-col overflow-y-auto border-r border-white/10 bg-[#0b0b0b] p-4" dir="rtl">
             <div className="flex items-center justify-between">
               <Brand />
               <button onClick={() => setMobileOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-white/50">
@@ -76,14 +76,17 @@ export default function AppShell() {
         </div>
       )}
 
-      <section className="min-w-0 flex-1 lg:ml-72">
-        <header className="sticky top-0 z-30 flex h-16 items-center border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl lg:hidden">
+      <section className="flex h-dvh min-h-0 min-w-0 flex-1 flex-col lg:ml-72">
+        <header className="flex h-16 shrink-0 items-center border-b border-white/10 bg-[#080808]/90 px-4 backdrop-blur-xl lg:hidden">
           <button onClick={() => setMobileOpen(true)} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-white/60">
             <PanelLeft size={18} />
           </button>
           <div className="mr-3"><Brand compact /></div>
         </header>
-        <Outlet />
+
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+          <Outlet />
+        </div>
       </section>
     </main>
   );
@@ -93,7 +96,7 @@ function Brand({ compact = false }) {
   return (
     <div>
       <div className={`${compact ? "text-lg" : "text-xl"} font-black tracking-[-0.05em]`} dir="ltr">CRTGO</div>
-      {!compact && <div className="text-xs font-bold text-white/30">لوحة إدارة المطعم</div>}
+      {!compact && <div className="text-xs font-bold text-white/30">إدارة المطعم</div>}
     </div>
   );
 }
