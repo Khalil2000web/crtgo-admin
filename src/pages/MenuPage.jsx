@@ -118,7 +118,7 @@ export default function MenuPage() {
     const current = new Set(enabledLanguages);
 
     if (current.has(code)) {
-      if (current.size === 1) return toast.error("يجب اختيار لغة واحدة على الأقل.");
+      if (current.size === 1) return toast.error("اختر لغة واحدة على الأقل.");
       current.delete(code);
     } else {
       current.add(code);
@@ -222,7 +222,7 @@ export default function MenuPage() {
         }
       }
 
-      toast.success("تم حفظ القائمة بنجاح.");
+      toast.success("تم الحفظ.");
       await supabase.functions.invoke("revalidate-public-menu", { body: {} }).catch(() => null);
     } catch (error) {
       toast.error(error.message);
@@ -232,14 +232,14 @@ export default function MenuPage() {
   }
 
   async function deleteCategory(category) {
-    if (!confirm("حذف هذا القسم وكل عناصره؟")) return;
+    if (!confirm("حذف القسم وكل عناصره؟")) return;
     const { error } = await supabase.from("categories").delete().eq("id", category.id);
     if (error) return toast.error(error.message);
     setCategories((rows) => rows.filter((row) => row.id !== category.id));
   }
 
   async function deleteItem(categoryId, itemId) {
-    if (!confirm("حذف هذا العنصر؟")) return;
+    if (!confirm("حذف العنصر؟")) return;
     const { error } = await supabase.from("items").delete().eq("id", itemId);
     if (error) return toast.error(error.message);
     setCategories((rows) => rows.map((row) => row.id === categoryId
@@ -264,9 +264,8 @@ export default function MenuPage() {
     <Page>
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.15em] text-[#ff7a00]">CRTGO MENU</p>
-          <h1 className="mt-2 text-4xl font-black tracking-[-0.055em]">إدارة القائمة</h1>
-          <p className="mt-2 text-sm font-bold text-white/35">{menu.business_name}</p>
+          <p className="text-xs font-black text-white/35">القائمة</p>
+          <h1 className="mt-2 text-4xl font-black tracking-[-0.04em]">{menu.business_name}</h1>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -274,14 +273,16 @@ export default function MenuPage() {
             <Plus size={16} /> إضافة قسم
           </button>
           <button onClick={saveAll} disabled={saving} className="inline-flex items-center gap-2 rounded-2xl bg-[#ff7a00] px-4 py-3 text-sm font-black text-black disabled:opacity-60">
-            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} حفظ التغييرات
+            {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} حفظ
           </button>
         </div>
       </div>
 
       <section className="mt-8 rounded-[28px] border border-white/10 bg-[#111] p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-[#ff7a00]"><Globe2 size={18} /><h2 className="text-lg font-black text-white">لغات القائمة</h2></div>
-        <p className="mt-2 text-sm font-bold leading-6 text-white/35">اختر اللغات التي يستطيع الزبون التبديل بينها. يمكنك كتابة اسم ووصف مختلف لكل لغة.</p>
+        <div className="flex items-center gap-2 text-[#ff7a00]">
+          <Globe2 size={18} />
+          <h2 className="text-lg font-black text-white">اللغات</h2>
+        </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
           {LANGUAGES.map((language) => {
@@ -301,10 +302,10 @@ export default function MenuPage() {
             </select>
           </Field>
 
-          <Field label="حالة القائمة">
+          <Field label="النشر">
             <label className="flex h-12 items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 text-sm font-black text-white/70">
               <input type="checkbox" checked={menu.is_published} onChange={(e) => patchMenu({ is_published: e.target.checked })} />
-              {menu.is_published ? "منشورة للزبائن" : "غير منشورة"}
+              {menu.is_published ? "منشورة" : "غير منشورة"}
             </label>
           </Field>
         </div>
@@ -312,10 +313,7 @@ export default function MenuPage() {
 
       <section className="mt-5 rounded-[28px] border border-white/10 bg-[#111] p-5 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="text-lg font-black">محتوى القائمة</h2>
-            <p className="mt-2 text-sm font-bold text-white/35">اختر اللغة التي تريد تعديل نصوصها.</p>
-          </div>
+          <h2 className="text-lg font-black">بيانات المطعم</h2>
           <div className="flex flex-wrap gap-2">
             {LANGUAGES.filter((language) => enabledLanguages.includes(language.code)).map((language) => (
               <button key={language.code} onClick={() => setEditingLanguage(language.code)} className={`rounded-xl px-4 py-2 text-sm font-black ${editingLanguage === language.code ? "bg-white text-black" : "border border-white/10 text-white/45"}`}>
@@ -333,7 +331,7 @@ export default function MenuPage() {
             <input value={menu.location_i18n?.[editingLanguage] || ""} onChange={(e) => patchMenuTranslation("location_i18n", editingLanguage, e.target.value)} className="input" />
           </Field>
           <div className="lg:col-span-2">
-            <Field label="وصف المطعم">
+            <Field label="الوصف">
               <textarea value={menu.description_i18n?.[editingLanguage] || ""} onChange={(e) => patchMenuTranslation("description_i18n", editingLanguage, e.target.value)} className="input min-h-24 resize-y py-3" />
             </Field>
           </div>
@@ -392,9 +390,9 @@ function Field({ label, children }) {
 }
 
 function Page({ children }) {
-  return <div className="mx-auto max-w-7xl p-5 sm:p-8 lg:p-10">{children}</div>;
+  return <div className="mx-auto w-full max-w-7xl p-5 sm:p-8 lg:p-10">{children}</div>;
 }
 
 function Empty() {
-  return <div className="rounded-[26px] border border-white/10 bg-[#111] p-6"><h1 className="text-2xl font-black">لم يتم تفعيل قائمة لهذا الحساب بعد.</h1></div>;
+  return <div className="rounded-[26px] border border-white/10 bg-[#111] p-6"><h1 className="text-2xl font-black">لا توجد قائمة مرتبطة بهذا الحساب.</h1></div>;
 }
