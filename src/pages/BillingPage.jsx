@@ -62,10 +62,27 @@ export default function BillingPage() {
   );
 
   async function refreshAfterCheckout() {
-    for (const delay of [1000, 2500, 5000]) {
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      await load({ silent: true });
+    if (!menu?.id) {
+      window.location.reload();
+      return;
     }
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("menu_id", menu.id)
+        .maybeSingle();
+
+      if (!error && ["active", "trialing"].includes(data?.status)) {
+        window.location.reload();
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 750));
+    }
+
+    await load({ silent: true });
   }
 
   async function startCheckout() {
@@ -99,6 +116,10 @@ export default function BillingPage() {
         eventCallback: async (event) => {
           if (event?.name === "checkout.completed") {
             toast.success("تم الدفع. جارٍ تحديث الاشتراك...");
+            await refreshAfterCheckout();
+          }
+
+          if (event?.name === "checkout.closed") {
             await refreshAfterCheckout();
           }
         },
