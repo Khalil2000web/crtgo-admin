@@ -61,6 +61,16 @@ export default function BillingPage() {
     ["active", "trialing", "past_due", "paused", "canceled"].includes(subscription?.status)
   );
 
+  const cancellationScheduled = Boolean(
+    active &&
+    subscription?.cancel_at_period_end &&
+    subscription?.current_period_end
+  );
+
+  const cancellationDate = cancellationScheduled
+    ? new Date(subscription.current_period_end).toLocaleDateString("ar-IL")
+    : null;
+
   async function refreshAfterCheckout() {
     if (!menu?.id) {
       window.location.reload();
@@ -213,7 +223,13 @@ export default function BillingPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm font-bold text-white/45">
+        {cancellationScheduled && (
+          <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4 text-sm font-bold text-amber-100">
+            تم إلغاء التجديد. سيبقى اشتراكك فعالاً حتى {cancellationDate}، ولن يتم تجديده تلقائياً بعد ذلك.
+          </div>
+        )}
+
+        <div className={`${cancellationScheduled ? "mt-3" : "mt-6"} grid gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm font-bold text-white/45`}>
           {subscription?.next_billed_at && (
             <Row
               label="الدفعة القادمة"
