@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import MenuPage from "./pages/MenuPage";
 import BillingPage from "./pages/BillingPage";
 import QrPage from "./pages/QrPage";
+import RestaurantSettingsPage from "./pages/RestaurantSettingsPage";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/qr" element={<QrPage />} />
+          <Route path="/settings" element={<RestaurantSettingsPage />} />
         </Route>
       </Route>
 
