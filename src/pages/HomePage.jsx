@@ -68,7 +68,7 @@ export default function HomePage() {
   }, []);
 
   const publicUrl = useMemo(
-    () => (menu ? `https://menu.crtrgo.com/${menu.slug}` : ""),
+    () => (menu ? `https://${menu.slug}.crtgo.com` : ""),
     [menu]
   );
 
@@ -105,7 +105,7 @@ export default function HomePage() {
         <div>
           <p className="text-xs font-black text-white/35">الرئيسية</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-0.04em]">{menu.business_name}</h1>
-          <p className="mt-2 text-sm font-bold text-white/30" dir="ltr">menu.crtrgo.com/{menu.slug}</p>
+          <p className="mt-2 text-sm font-bold text-white/30" dir="ltr">{menu.slug}.crtgo.com</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
