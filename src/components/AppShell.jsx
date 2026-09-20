@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { CreditCard, Home, LogOut, Menu, PanelLeft, X } from "lucide-react";
+import { CreditCard, Home, LogOut, Menu, PanelLeft, QrCode, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { supabase } from "../lib/supabase";
 
@@ -28,6 +28,10 @@ export default function AppShell() {
       <NavLink to="/menu" className={({ isActive }) => navClass(isActive)}>
         <Menu size={18} />
         <span>القائمة</span>
+      </NavLink>
+      <NavLink to="/qr" className={({ isActive }) => navClass(isActive)}>
+        <QrCode size={18} />
+        <span>رمز QR</span>
       </NavLink>
       <NavLink to="/billing" className={({ isActive }) => navClass(isActive)}>
         <CreditCard size={18} />
