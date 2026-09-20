@@ -9,6 +9,8 @@ import {
   Loader2,
   Menu as MenuIcon,
   Package,
+  QrCode,
+  Settings2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -155,11 +157,23 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="grid gap-4">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
           <Link to="/menu" className="rounded-[26px] border border-white/10 bg-[#111] p-6 transition hover:border-[#ff7a00]/40">
             <MenuIcon className="text-[#ff7a00]" />
             <h2 className="mt-5 text-xl font-black">القائمة</h2>
             <p className="mt-2 text-sm font-bold leading-6 text-white/35">الأقسام، العناصر، الأسعار، الصور واللغات.</p>
+          </Link>
+
+          <Link to="/settings" className="rounded-[26px] border border-white/10 bg-[#111] p-6 transition hover:border-[#ff7a00]/40">
+            <Settings2 className="text-[#ff7a00]" />
+            <h2 className="mt-5 text-xl font-black">إعدادات المطعم</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-white/35">الشعار، الغلاف، التواصل وألوان القائمة.</p>
+          </Link>
+
+          <Link to="/qr" className="rounded-[26px] border border-white/10 bg-[#111] p-6 transition hover:border-[#ff7a00]/40">
+            <QrCode className="text-[#ff7a00]" />
+            <h2 className="mt-5 text-xl font-black">رمز QR</h2>
+            <p className="mt-2 text-sm font-bold leading-6 text-white/35">نزّل رمز القائمة أو بطاقة طاولة جاهزة للطباعة.</p>
           </Link>
 
           <Link to="/billing" className="rounded-[26px] border border-white/10 bg-[#111] p-6 transition hover:border-[#ff7a00]/40">
