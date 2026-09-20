@@ -6,6 +6,7 @@ import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/HomePage";
 import MenuPage from "./pages/MenuPage";
 import BillingPage from "./pages/BillingPage";
+import QrPage from "./pages/QrPage";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/billing" element={<BillingPage />} />
+          <Route path="/qr" element={<QrPage />} />
         </Route>
       </Route>
 
