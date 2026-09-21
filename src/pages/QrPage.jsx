@@ -14,6 +14,7 @@ import { supabase } from "../lib/supabase";
 
 export default function QrPage() {
   const rawQrRef = useRef(null);
+  const rawDownloadQrRef = useRef(null);
   const cardQrRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [downloadingCard, setDownloadingCard] = useState(false);
@@ -82,7 +83,7 @@ export default function QrPage() {
   }
 
   function downloadRawQr() {
-    const canvas = rawQrRef.current?.querySelector("canvas");
+    const canvas = rawDownloadQrRef.current?.querySelector("canvas");
 
     if (!canvas || !menu?.slug) {
       toast.error("تعذر تجهيز صورة QR.");
@@ -384,6 +385,17 @@ export default function QrPage() {
             تنزيل بطاقة الطاولة
           </button>
         </aside>
+      </div>
+
+      <div ref={rawDownloadQrRef} className="fixed -left-[9999px] -top-[9999px]">
+        <QRCodeCanvas
+          value={publicUrl}
+          size={1024}
+          level="H"
+          includeMargin={true}
+          bgColor="#ffffff"
+          fgColor="#000000"
+        />
       </div>
 
       <div ref={cardQrRef} className="fixed -left-[9999px] -top-[9999px]">
