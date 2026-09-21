@@ -8,6 +8,21 @@ export async function uploadProjectImage(
     throw new Error("No image selected.");
   }
 
+  const allowedTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/avif",
+  ]);
+
+  if (!allowedTypes.has(file.type)) {
+    throw new Error("Unsupported image type. Use JPG, PNG, WEBP, or AVIF.");
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("Image is too large. Maximum size is 10 MB.");
+  }
+
   const {
     data: { user },
     error: userError,
@@ -27,12 +42,13 @@ export async function uploadProjectImage(
       .pop()
       ?.toLowerCase() || "jpg";
 
-  const cleanName = file.name
-    .replace(/\.[^/.]+$/, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
+  const cleanName =
+    file.name
+      .replace(/\.[^/.]+$/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "image";
 
   const path =
     `${user.id}/${folder}/${Date.now()}-${cleanName}.${ext}`;
