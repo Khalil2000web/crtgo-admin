@@ -59,7 +59,7 @@ export default function QrPage() {
 
   const publicUrl = useMemo(() => {
     const slug = String(menu?.slug || "").trim().toLowerCase();
-    return slug ? `https://${slug}.crtgo.com` : "";
+    return slug ? `https://${slug}.crtrgo.com` : "";
   }, [menu?.slug]);
 
   const palette = useMemo(
