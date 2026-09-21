@@ -78,14 +78,18 @@ export default function RestaurantSettingsPage() {
   async function save() {
     if (!menu) return;
 
+    if (
+      !isValidHex(menu.accent_color || "#ff7a00") ||
+      !isValidHex(menu.background_color || "#f7f7f5") ||
+      !isValidHex(menu.text_color || "#171717")
+    ) {
+      toast.error("تأكد من أن جميع الألوان بصيغة HEX صحيحة، مثل #ff7a00.");
+      return;
+    }
+
     const accentColor = normalizeColor(menu.accent_color, "#ff7a00");
     const backgroundColor = normalizeColor(menu.background_color, "#f7f7f5");
     const textColor = normalizeColor(menu.text_color, "#171717");
-
-    if (!accentColor || !backgroundColor || !textColor) {
-      toast.error("تأكد من أن جميع الألوان بصيغة HEX صحيحة.");
-      return;
-    }
 
     setSaving(true);
 
@@ -432,9 +436,13 @@ function cleanNullable(value) {
   return clean || null;
 }
 
+function isValidHex(value) {
+  return /^#[0-9a-f]{6}$/i.test(String(value || "").trim());
+}
+
 function normalizeColor(value, fallback = null) {
   const clean = String(value || "").trim();
-  if (/^#[0-9a-f]{6}$/i.test(clean)) return clean.toLowerCase();
+  if (isValidHex(clean)) return clean.toLowerCase();
   return fallback;
 }
 
