@@ -71,6 +71,11 @@ export default function BillingPage() {
     ? new Date(subscription.current_period_end).toLocaleDateString("ar-IL")
     : null;
 
+  const paymentPastDue = subscription?.status === "past_due";
+  const graceDate = paymentPastDue && subscription?.grace_period_ends_at
+    ? new Date(subscription.grace_period_ends_at).toLocaleDateString("ar-IL")
+    : null;
+
   async function refreshAfterCheckout() {
     if (!menu?.id) {
       window.location.reload();
@@ -229,7 +234,14 @@ export default function BillingPage() {
           </div>
         )}
 
-        <div className={`${cancellationScheduled ? "mt-3" : "mt-6"} grid gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm font-bold text-white/45`}>
+        {paymentPastDue && (
+          <div className="mt-6 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4 text-sm font-bold leading-6 text-amber-100">
+            هناك دفعة متأخرة. حدّث وسيلة الدفع من إدارة الاشتراك
+            {graceDate ? ` قبل ${graceDate} للحفاظ على القائمة متاحة.` : "."}
+          </div>
+        )}
+
+        <div className={`${cancellationScheduled || paymentPastDue ? "mt-3" : "mt-6"} grid gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4 text-sm font-bold text-white/45`}>
           {subscription?.next_billed_at && (
             <Row
               label="الدفعة القادمة"
